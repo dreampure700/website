@@ -1,0 +1,89 @@
+/* TEENSPACE 2026 - RESPONSIVE STYLES */
+
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  
+  .hero-title {
+    font-size: 2.8rem;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-light);
+    flex-direction: column;
+    padding: 2rem;
+    gap: 1.5rem;
+    display: none;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .nav-links.active {
+    display: flex;
+  }
+
+  .mobile-toggle {
+    display: block;
+  }
+
+  .nav-actions {
+    display: none;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .countdown-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .timeline::before {
+    left: 20px;
+  }
+
+  .timeline-item {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-left: 45px;
+  }
+
+  .timeline-time {
+    width: auto;
+    text-align: left;
+  }
+
+  .timeline-dot {
+    left: 13px;
+    top: 5px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-grid {
+    grid-template-columns: 1fr;
+  }
+}
