@@ -1,7 +1,7 @@
 // TEENSPACE 2026 - REGISTRATION & GOOGLE SHEETS INTEGRATION
 
 // Paste your Google Web App URL here after deploying (e.g. https://script.google.com/macros/s/.../exec)
-const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5pC5We1rbWxn_eQLzH3RqsZ_w_9DhIIkIP9fjgelcTrnjyti7EyeRssslCRMqwcSW/exec";
 
 function openRegisterModal() {
   const modal = document.getElementById('regModal');
