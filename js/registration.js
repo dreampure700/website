@@ -52,13 +52,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const registrationData = { regId, name, studentClass, place, phone, school, timestamp: new Date().toISOString() };
       localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(registrationData));
 
-      // Prep pass layout details
-      document.getElementById('passRegId').textContent = regId;
-      document.getElementById('passName').textContent = name;
-      document.getElementById('passClass').textContent = 'Class ' + studentClass;
-      document.getElementById('passPlace').textContent = place;
-      document.getElementById('passPhone').textContent = phone;
-      document.getElementById('passSchool').textContent = school;
+      // Prep pass layout details safely
+      const elRegId = document.getElementById('passRegId');
+      const elName = document.getElementById('passName');
+      const elClass = document.getElementById('passClass');
+      const elPlace = document.getElementById('passPlace');
+      const elPhone = document.getElementById('passPhone');
+      const elSchool = document.getElementById('passSchool');
+
+      if (elRegId) elRegId.textContent = regId;
+      if (elName) elName.textContent = name;
+      if (elClass) elClass.textContent = 'Class ' + studentClass;
+      if (elPlace) elPlace.textContent = place;
+      if (elPhone) elPhone.textContent = phone;
+      if (elSchool) elSchool.textContent = school;
       generatePassQR(regId, name);
 
       // Send to Google Sheets if Web App URL is configured
