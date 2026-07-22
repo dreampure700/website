@@ -29,12 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       const name = document.getElementById('studentName').value.trim();
-      const studentClass = document.getElementById('studentClass').value;
-      const place = document.getElementById('studentPlace').value.trim();
       const phone = document.getElementById('studentPhone').value.trim();
-      const school = document.getElementById('studentSchool').value.trim() || 'Thrissur District';
 
-      if (!name || !studentClass || !place || !phone) {
+      if (!name || !phone) {
         alert('Please fill in all required fields.');
         return;
       }
@@ -49,23 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Save to localStorage
-      const registrationData = { regId, name, studentClass, place, phone, school, timestamp: new Date().toISOString() };
+      const registrationData = { regId, name, phone, timestamp: new Date().toISOString() };
       localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(registrationData));
 
       // Prep pass layout details safely
       const elRegId = document.getElementById('passRegId');
       const elName = document.getElementById('passName');
-      const elClass = document.getElementById('passClass');
-      const elPlace = document.getElementById('passPlace');
       const elPhone = document.getElementById('passPhone');
-      const elSchool = document.getElementById('passSchool');
 
       if (elRegId) elRegId.textContent = regId;
       if (elName) elName.textContent = name;
-      if (elClass) elClass.textContent = 'Class ' + studentClass;
-      if (elPlace) elPlace.textContent = place;
       if (elPhone) elPhone.textContent = phone;
-      if (elSchool) elSchool.textContent = school;
       generatePassQR(regId, name);
 
       // Send to Google Sheets if Web App URL is configured
@@ -73,10 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const queryParams = new URLSearchParams({
           regId: regId,
           name: name,
-          studentClass: studentClass,
-          place: place,
+          studentClass: "",
+          place: "",
           phone: phone,
-          school: school
+          school: ""
         }).toString();
 
         // Use Image beacon to completely bypass CORS / 302 redirect blocks
