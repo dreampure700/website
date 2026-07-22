@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEENSPACE 2026 | Admin Dashboard</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="icon" type="image/png" href="assets/images/TEENSPACE LOGO.png?v=1.3">
+  
+  <!-- FontAwesome & Chart.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    body {
+      background-color: #F8FAFC;
+      color: #0F172A;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Login Screen */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #F8FAFC;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    
+    .login-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+      text-align: center;
+    }
+    
+    /* Dashboard Layout */
+    .admin-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      padding: 1.25rem 0;
+      box-shadow: 0 4px 15px rgba(15, 23, 42, 0.02);
+    }
+    
+    .admin-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .admin-main {
+      padding: 3rem 0;
+      flex-grow: 1;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 20px;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+    }
+    
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(230, 0, 103, 0.08);
+      color: var(--magenta);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    
+    .stat-icon.cyan-icon {
+      background: rgba(0, 168, 232, 0.08);
+      color: var(--cyan);
+    }
+    
+    .stat-val {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Table styling */
+    .table-container {
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 20px;
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+      margin-bottom: 3rem;
+    }
+    
+    .table-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    
+    .search-input {
+      padding: 0.7rem 1.2rem;
+      border-radius: 10px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      outline: none;
+      width: 100%;
+      max-width: 320px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+    }
+    
+    .search-input:focus {
+      border-color: var(--cyan);
+    }
+    
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    .data-table th {
+      padding: 1rem;
+      border-bottom: 2px solid rgba(15, 23, 42, 0.08);
+      font-weight: 700;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .data-table td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+      font-size: 0.95rem;
+    }
+    
+    .data-table tr:hover td {
+      background-color: #F8FAFC;
+    }
+    
+    .badge-reg {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(0, 168, 232, 0.08);
+      color: var(--cyan);
+    }
+    
+    /* Loading spinner overlay */
+    .loading-spinner {
+      text-align: center;
+      padding: 3rem 0;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PASSWORD PROTECTION SCREEN -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace" style="height: 60px; margin-bottom: 1.5rem;">
+      <h2 style="font-family: var(--font-heading); font-size: 1.75rem; margin-bottom: 0.5rem;">Admin Access</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Please enter password to unlock dashboard</p>
+      
+      <form id="loginForm">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="adminPassword"><i class="fas fa-lock text-magenta"></i> Password</label>
+          <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required autofocus style="text-align: center; font-size: 1.2rem; letter-spacing: 2px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem;">
+          <i class="fas fa-unlock"></i> Unlock Dashboard
+        </button>
+        <p id="loginError" style="color: red; font-size: 0.85rem; margin-top: 1rem; display: none;"><i class="fas fa-exclamation-triangle"></i> Incorrect password. Try again.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- DASHBOARD HEADER -->
+  <header class="admin-header">
+    <div class="container admin-container">
+      <div class="brand-logo" style="font-size: 1.6rem;">
+        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img" style="height: 38px;">
+        <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace <span style="font-weight:400; font-size:1.1rem; color:var(--text-dim);">Admin</span></span>
+      </div>
+      
+      <div style="display:flex; gap:0.8rem;">
+        <button class="btn btn-outline" onclick="logoutAdmin()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- DASHBOARD MAIN BODY -->
+  <main class="admin-main">
+    <div class="container">
+      
+      <!-- Stats Dashboard -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div>
+            <div class="stat-val" id="totalCount">0</div>
+            <div class="stat-label">Total Delegates</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon cyan-icon"><i class="fas fa-mobile-alt"></i></div>
+          <div>
+            <div class="stat-val" id="todayCount">0</div>
+            <div class="stat-label">Added Today</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Table -->
+      <div class="table-container">
+        <div class="table-header-row">
+          <h3 style="font-family: var(--font-heading); font-size: 1.4rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
+          
+          <div style="display: flex; gap: 1rem; flex-grow: 1; justify-content: flex-end; flex-wrap: wrap;">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search Name or Phone Number...">
+            <button class="btn btn-cyan" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export to Excel/CSV</button>
+            <button class="btn btn-outline" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <div class="loading-spinner" id="loadingSpinner">
+            <i class="fas fa-spinner fa-spin fa-2x" style="color:var(--magenta); margin-bottom: 0.5rem;"></i>
+            <div>Loading registrations from Google Sheets...</div>
+          </div>
+          
+          <table class="data-table" id="dataTable" style="display: none;">
+            <thead>
+              <tr>
+                <th>Reg ID</th>
+                <th>Name</th>
+                <th>Mobile Number</th>
+                <th>Registered On</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Zone Wise Data (Infrastructure Placeholder) -->
+      <div class="table-container">
+        <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 1.5rem;">
+          <i class="fas fa-map-marked-alt text-cyan"></i> Zone-Wise Delegate Breakdown
+        </h3>
+        
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Zone Name</th>
+                <th>Villages / Areas Included</th>
+                <th>Count of Delegates</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Thrissur North</strong></td>
+                <td>Kunnamkulam, Wadakkanchery, Chelakkara</td>
+                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Thrissur Central</strong></td>
+                <td>Poothole, Town Hall, Ollur, Cherpu</td>
+                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
+              </tr>
+              <tr>
+                <td><strong>Thrissur South</strong></td>
+                <td>Irinjalakuda, Chalakudy, Kodungallur</td>
+                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Script references -->
+  <script src="js/registration.js?v=1.3"></script>
+  <script>
+    // Configuration
+    const ADMIN_PASSWORD = "teenspace2026"; // Default password
+    let allData = [];
+
+    // Session-based authentication check
+    if (sessionStorage.getItem('admin_authenticated') === 'true') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      loadData();
+    }
+
+    // Login Form Submit
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const enteredPassword = document.getElementById('adminPassword').value;
+      const errorMsg = document.getElementById('loginError');
+      
+      if (enteredPassword === ADMIN_PASSWORD) {
+        sessionStorage.setItem('admin_authenticated', 'true');
+        document.getElementById('loginOverlay').style.display = 'none';
+        errorMsg.style.display = 'none';
+        loadData();
+      } else {
+        errorMsg.style.display = 'block';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('adminPassword').focus();
+      }
+    });
+
+    // Logout
+    function logoutAdmin() {
+      sessionStorage.removeItem('admin_authenticated');
+      location.reload();
+    }
+
+    // Load Data from Google Sheets Script Endpoint
+    function loadData() {
+      const spinner = document.getElementById('loadingSpinner');
+      const table = document.getElementById('dataTable');
+      const tableBody = document.getElementById('tableBody');
+
+      spinner.style.display = 'block';
+      table.style.display = 'none';
+      tableBody.innerHTML = '';
+
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+        spinner.innerHTML = `<i class="fas fa-exclamation-circle fa-2x" style="color:orange;"></i><br><br>Google Web App URL is not set in <strong>js/registration.js</strong>.`;
+        return;
+      }
+
+      // Append action=get_data parameter to retrieve the data
+      fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`)
+        .then(response => response.json())
+        .then(data => {
+          allData = data;
+          populateDashboard(data);
+        })
+        .catch(err => {
+          console.error(err);
+          spinner.innerHTML = `<i class="fas fa-times-circle fa-2x" style="color:red;"></i><br><br>Error connecting to Google Sheets. Verify Web App is deployed with Access: 'Anyone'.`;
+        });
+    }
+
+    // Populate Data into Dashboard
+    function populateDashboard(data) {
+      const spinner = document.getElementById('loadingSpinner');
+      const table = document.getElementById('dataTable');
+      const tableBody = document.getElementById('tableBody');
+      const totalCount = document.getElementById('totalCount');
+      const todayCount = document.getElementById('todayCount');
+
+      totalCount.textContent = data.length;
+
+      // Count registrations from today
+      const todayStr = new Date().toDateString();
+      const todayRegistrations = data.filter(row => {
+        if (!row.Timestamp) return false;
+        return new Date(row.Timestamp).toDateString() === todayStr;
+      }).length;
+      todayCount.textContent = todayRegistrations;
+
+      // Populate Table Rows
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        
+        // Format Timestamp
+        let dateStr = "N/A";
+        if (item.Timestamp) {
+          dateStr = new Date(item.Timestamp).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        }
+
+        row.innerHTML = `
+          <td><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
+          <td><strong>${item.Name || item.name || 'N/A'}</strong></td>
+          <td>${item["Mobile Number"] || item.phone || 'N/A'}</td>
+          <td>${dateStr}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+
+      spinner.style.display = 'none';
+      table.style.display = 'table';
+    }
+
+    // Search Filtering
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const searchStr = e.target.value.toLowerCase();
+      const rows = document.querySelectorAll('#tableBody tr');
+
+      rows.forEach(row => {
+        const name = row.cells[1].textContent.toLowerCase();
+        const phone = row.cells[2].textContent.toLowerCase();
+        
+        if (name.includes(searchStr) || phone.includes(searchStr)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Export to Excel / CSV File
+    function exportToCSV() {
+      if (allData.length === 0) {
+        alert('No data available to export.');
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      // Headers
+      const headers = Object.keys(allData[0]);
+      csvContent += headers.join(",") + "\n";
+
+      // Rows
+      allData.forEach(row => {
+        const values = headers.map(header => {
+          let val = row[header] ? row[header].toString() : '';
+          // Escape quotes in values
+          return `"${val.replace(/"/g, '""')}"`;
+        });
+        csvContent += values.join(",") + "\n";
+      });
+
+      // Download trigger
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `TEENSPACE_2026_Registrations_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
