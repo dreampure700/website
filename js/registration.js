@@ -1,4 +1,7 @@
-// TEENSPACE 2026 - REGISTRATION & DIGITAL TICKET PASS GENERATOR (WHITE THEME)
+// TEENSPACE 2026 - REGISTRATION & GOOGLE SHEETS INTEGRATION
+
+// Paste your Google Web App URL here after deploying (e.g. https://script.google.com/macros/s/.../exec)
+const GOOGLE_SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
 
 function openRegisterModal() {
   const modal = document.getElementById('regModal');
@@ -19,6 +22,7 @@ function closeRegisterModal() {
 document.addEventListener('DOMContentLoaded', () => {
   const regForm = document.getElementById('registrationForm');
   const ticketView = document.getElementById('ticketPassView');
+  const submitBtn = regForm ? regForm.querySelector('button[type="submit"]') : null;
 
   if (regForm) {
     regForm.addEventListener('submit', (e) => {
@@ -38,25 +42,60 @@ document.addEventListener('DOMContentLoaded', () => {
       // Generate unique delegate ID
       const regId = 'TS26-' + Math.floor(10000 + Math.random() * 90000);
 
-      // Populate Ticket View
+      // Disable submit button and show loading state
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+      }
+
+      // Save to localStorage
+      const registrationData = { regId, name, studentClass, place, phone, school, timestamp: new Date().toISOString() };
+      localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(registrationData));
+
+      // Prep pass layout details
       document.getElementById('passRegId').textContent = regId;
       document.getElementById('passName').textContent = name;
       document.getElementById('passClass').textContent = 'Class ' + studentClass;
       document.getElementById('passPlace').textContent = place;
       document.getElementById('passPhone').textContent = phone;
       document.getElementById('passSchool').textContent = school;
-
-      // Draw QR Code on Canvas
       generatePassQR(regId, name);
 
-      // Swap views
+      // Send to Google Sheets if Web App URL is configured
+      if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+        const queryParams = new URLSearchParams({
+          regId: regId,
+          name: name,
+          studentClass: studentClass,
+          place: place,
+          phone: phone,
+          school: school
+        }).toString();
+
+        fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`, {
+          method: 'GET',
+          mode: 'no-cors' // Prevents CORS preflight blocks for simple static hosts
+        })
+        .then(() => {
+          showTicketView();
+        })
+        .catch((error) => {
+          console.error('Error submitting data:', error);
+          // Proceed anyway so student gets their pass if connection is slow
+          showTicketView();
+        });
+      } else {
+        // Fallback if URL is not configured yet
+        showTicketView();
+      }
+    });
+  }
+
+  function showTicketView() {
+    if (regForm && ticketView) {
       regForm.style.display = 'none';
       ticketView.style.display = 'block';
-
-      // Save to localStorage
-      const registrationData = { regId, name, studentClass, place, phone, school, timestamp: new Date().toISOString() };
-      localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(registrationData));
-    });
+    }
   }
 });
 
@@ -67,9 +106,8 @@ function generatePassQR(regId, name) {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, 100, 100);
 
-  // Draw QR pattern for white theme
+  // Draw QR pattern
   ctx.fillStyle = '#0F172A';
-  // Outer corners
   ctx.fillRect(10, 10, 25, 25);
   ctx.fillRect(65, 10, 25, 25);
   ctx.fillRect(10, 65, 25, 25);
@@ -122,7 +160,15 @@ function printTicketPass() {
 }
 
 function resetRegForm() {
-  document.getElementById('registrationForm').reset();
-  document.getElementById('registrationForm').style.display = 'block';
+  const regForm = document.getElementById('registrationForm');
+  const submitBtn = regForm ? regForm.querySelector('button[type="submit"]') : null;
+  if (regForm) {
+    regForm.reset();
+    regForm.style.display = 'block';
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass';
+    }
+  }
   document.getElementById('ticketPassView').style.display = 'none';
 }
