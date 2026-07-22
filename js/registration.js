@@ -72,18 +72,20 @@ document.addEventListener('DOMContentLoaded', () => {
           school: school
         }).toString();
 
-        fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`, {
-          method: 'GET',
-          mode: 'no-cors' // Prevents CORS preflight blocks for simple static hosts
-        })
-        .then(() => {
+        // Use Image beacon to completely bypass CORS / 302 redirect blocks
+        const beacon = new Image();
+        
+        // 2-second safety timeout backup to guarantee pass displays even on weak network
+        const backupTimeout = setTimeout(() => {
           showTicketView();
-        })
-        .catch((error) => {
-          console.error('Error submitting data:', error);
-          // Proceed anyway so student gets their pass if connection is slow
+        }, 2000);
+
+        beacon.onload = beacon.onerror = () => {
+          clearTimeout(backupTimeout);
           showTicketView();
-        });
+        };
+
+        beacon.src = `${GOOGLE_SCRIPT_URL}?${queryParams}`;
       } else {
         // Fallback if URL is not configured yet
         showTicketView();
