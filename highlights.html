@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Program Highlights | TEENSPACE 2026</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="icon" type="image/png" href="assets/images/TEENSPACE LOGO.png?v=1.5">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <a href="index.html" class="brand-logo">
+        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
+        <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="highlights.html" class="nav-link active">Highlights</a></li>
+        <li><a href="schedule.html" class="nav-link">Schedule</a></li>
+        <li><a href="media.html" class="nav-link">Media</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-primary" onclick="openRegisterModal()"><i class="fas fa-edit"></i> Register</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- INNER PAGE HEADER -->
+  <section class="section" style="background: radial-gradient(circle at 10% 20%, rgba(0, 168, 232, 0.05) 0%, rgba(230, 0, 103, 0.05) 90%); padding: 5rem 0 3rem 0;">
+    <div class="container" style="text-align: center;">
+      <span class="section-tag"><i class="fas fa-star"></i> Core Experience</span>
+      <h1 style="font-family: var(--font-heading); font-size: 2.75rem; font-weight: 900; margin-bottom: 1rem;">Program Highlights</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6;">Discover the spiritual, personal growth, wellness, and academic development pillars of TEENSPACE 2026.</p>
+    </div>
+  </section>
+
+  <!-- CORE PROGRAM PILLARS -->
+  <section class="section">
+    <div class="container">
+      <div class="features-grid">
+        <!-- Pillar 1: Pure Islamic Learning -->
+        <div class="feature-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-quran"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Pure Islam & Salaf Understanding</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Learn Islam in its purest form through how the Salaf-us-Salih (Pious Predecessors) learned, comprehended, and practiced the Holy Quran and Sunnah.</p>
+        </div>
+
+        <!-- Pillar 2: Fiqh Foundation -->
+        <div class="feature-card cyan-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-book-open"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Practical Fiqh Sessions</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Interactive learning of essential Fiqh (Islamic Jurisprudence) regarding daily prayers, purification, youth ethics, and personal conduct.</p>
+        </div>
+
+        <!-- Pillar 3: Career Counseling -->
+        <div class="feature-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-compass"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Best Career Guidance & Session</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Top career guidance session outlining competitive exams, NEET/JEE strategies, high-growth modern careers, higher education roadmaps, and personal skills.</p>
+        </div>
+
+        <!-- Pillar 4: Anti-Drug Awareness -->
+        <div class="feature-card cyan-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-shield-alt"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Anti-Drug & Substance Awareness</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Vital session equipping students with awareness, mental resilience, and strategies to recognize and resist drug traps and harmful peer influences.</p>
+        </div>
+
+        <!-- Pillar 5: Social Media Detox -->
+        <div class="feature-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-mobile-alt"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Social Media & Digital Detox</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Practical solutions for overcoming smartphone addiction, screen burnout, cyber distractions, and channeling digital tools productively.</p>
+        </div>
+
+        <!-- Pillar 6: Interactive Seminars & Lectures -->
+        <div class="feature-card cyan-card" style="padding: 2.5rem;">
+          <div class="feature-icon-box" style="margin-bottom: 1.5rem;"><i class="fas fa-chalkboard-teacher"></i></div>
+          <h3 class="feature-title" style="font-size: 1.35rem; margin-bottom: 0.8rem;">Seminars & Visual Presentations</h3>
+          <p class="feature-desc" style="line-height: 1.6;">Engaging keynote lectures, multimedia slide presentations, group discussions, and open Q&A sessions with prominent guest speakers.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGISTRATION MODAL CONTAINER -->
+  <div class="modal-overlay" id="regModal">
+    <!-- Form code will load here dynamically or standard modal structure -->
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
+            <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace 2026</span>
+          </div>
+          <p>An empowering educational & Islamic summit organized by Wisdom Students Thrissur District Committee.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="highlights.html">Highlights</a></li>
+            <li><a href="schedule.html">Schedule</a></li>
+            <li><a href="media.html">Media</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div style="font-size:0.9rem; color:var(--text-muted); line-height:1.8;">
+            Poothole, Near Railway station, Thrissur<br>
+            Phone: 9656677700<br>
+            Email: wisdomstudentstsr@gmail.com
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <p>&copy; 2026 Wisdom Students Thrissur. All Rights Reserved.</p>
+        <a href="admin.html" style="color:var(--text-dim); text-decoration:none; font-size:0.85rem;"><i class="fas fa-lock"></i> Admin Panel</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js?v=1.5"></script>
+  <script src="js/registration.js?v=1.5"></script>
+</body>
+</html>

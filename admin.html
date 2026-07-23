@@ -274,12 +274,12 @@
         </div>
       </div>
       
-      <!-- Tab Navigation Link items -->
       <nav class="tab-nav" id="dashboardTabs" style="display: none;">
         <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')"><i class="fas fa-city"></i> Panchayath & Wards</button>
         <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Transportation</button>
         <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate Directory</button>
+        <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Manager</button>
       </nav>
     </div>
   </header>
@@ -484,6 +484,65 @@
         </div>
       </div>
 
+      <!-- Tab 5: Media Manager -->
+      <div id="tab-media" class="dashboard-section" style="display: none;">
+        <div class="card" style="padding: 2rem;">
+          <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
+            <i class="fas fa-photo-video text-magenta"></i> Add Media Update
+          </h2>
+          <form id="addMediaForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="form-group">
+              <label class="form-label" for="mediaType">Media Type</label>
+              <select id="mediaType" class="form-select" required>
+                <option value="Photo">Photo (Instagram or Image URL)</option>
+                <option value="Video">Video (YouTube or Instagram Reel URL)</option>
+                <option value="Press Release">Press Release (News / PDF Link)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="mediaTitle">Title</label>
+              <input type="text" id="mediaTitle" class="form-input" placeholder="e.g. TEENSPACE 2026 Promo Poster" required>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="mediaUrl">URL Link</label>
+              <input type="url" id="mediaUrl" class="form-input" placeholder="e.g. https://www.instagram.com/reel/..." required>
+              <small style="color:var(--text-muted); font-size:0.8rem; margin-top:0.25rem; display:block;">Pasting Instagram Reel/Post links or YouTube links will automatically generate embeds on the Media page!</small>
+            </div>
+
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="mediaDesc">Short Description</label>
+              <textarea id="mediaDesc" class="form-input" style="height: 80px; resize: none;" placeholder="Provide brief context for the gallery item..."></textarea>
+            </div>
+
+            <button type="submit" id="mediaSubmitBtn" class="btn btn-primary" style="grid-column: 1 / -1; padding: 0.9rem;">
+              <i class="fas fa-upload"></i> Publish Media Update
+            </button>
+          </form>
+        </div>
+
+        <div class="card" style="padding: 2rem; margin-top: 2rem;">
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1rem;"><i class="fas fa-list text-cyan"></i> Published Media Updates</h3>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Type</th>
+                  <th>Title</th>
+                  <th>URL Link</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody id="adminMediaTableBody">
+                <!-- Dynamically populated from spreadsheet -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -526,6 +585,7 @@
     let mapping = [];
     let targets = [];
     let vehicles = [];
+    let media = [];
 
     // Session authentication check
     if (sessionStorage.getItem('auth_user')) {
@@ -611,16 +671,20 @@
       const spinner = document.getElementById('loadingSpinner');
       spinner.style.display = 'block';
 
-      // 1. Fetch Mapping & Targets & Vehicles
+      // 1. Fetch Mapping & Targets & Vehicles & Media
       fetch(`${GOOGLE_SCRIPT_URL}?action=get_mapping`)
         .then(res => res.json())
         .then(mapData => {
           mapping = mapData.mapping || [];
           targets = mapData.targets || [];
           vehicles = mapData.vehicles || [];
+          media = mapData.media || [];
 
           // Populate Filters
           populateFilterOptions();
+
+          // Render Media updates table
+          renderAdminMediaTable(media);
 
           // 2. Fetch Registrations
           return fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`);
@@ -1000,6 +1064,75 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    // Render Admin Media Table
+    function renderAdminMediaTable(items) {
+      const tbody = document.getElementById('adminMediaTableBody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No media uploads posted yet.</td></tr>';
+        return;
+      }
+      
+      // Sort newest first
+      const sorted = [...items].sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+      
+      sorted.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="font-size:0.8rem; white-space:nowrap;">${item.Timestamp ? new Date(item.Timestamp).toLocaleString() : 'N/A'}</td>
+          <td><span class="badge" style="font-size:0.75rem;">${item.Type}</span></td>
+          <td style="font-weight:700;">${item.Title || ''}</td>
+          <td><a href="${item.URL || '#'}" target="_blank" style="color:var(--cyan); max-width:200px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.URL || ''}</a></td>
+          <td style="font-size:0.85rem; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.Description || ''}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Add Media Form Submit
+    document.getElementById('addMediaForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      if (!sessionUser) {
+        alert('Access Denied: Please log in first.');
+        return;
+      }
+
+      const type = document.getElementById('mediaType').value;
+      const title = document.getElementById('mediaTitle').value.trim();
+      const url = document.getElementById('mediaUrl').value.trim();
+      const desc = document.getElementById('mediaDesc').value.trim();
+      const submitBtn = document.getElementById('mediaSubmitBtn');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+
+      const postUrl = `${GOOGLE_SCRIPT_URL}?action=add_media&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&desc=${encodeURIComponent(desc)}`;
+
+      fetch(postUrl)
+        .then(res => res.json())
+        .then(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-upload"></i> Publish Media Update';
+          
+          if (res.result === 'success') {
+            alert('Media published successfully!');
+            document.getElementById('addMediaForm').reset();
+            loadData(); // reload media list
+          } else {
+            alert('Error publishing media: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-upload"></i> Publish Media Update';
+          alert('Network error when publishing media. Try again.');
+        });
+    });
   </script>
 </body>
 </html>

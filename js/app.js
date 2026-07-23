@@ -28,25 +28,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Active Section Observer for Nav links
+  // Active Section Observer for Nav links (Only active on Home Page)
   const sections = document.querySelectorAll('section[id]');
-  window.addEventListener('scroll', () => {
-    const scrollY = window.pageYOffset;
+  const isHomePage = window.location.pathname === '/' || window.location.pathname.endsWith('index.html') || window.location.pathname === '';
+  if (isHomePage && sections.length > 0) {
+    window.addEventListener('scroll', () => {
+      const scrollY = window.pageYOffset;
 
-    sections.forEach(current => {
-      const sectionHeight = current.offsetHeight;
-      const sectionTop = current.offsetTop - 100;
-      const sectionId = current.getAttribute('id');
-      const navLink = document.querySelector(`.nav-link[href*="${sectionId}"]`);
+      sections.forEach(current => {
+        const sectionHeight = current.offsetHeight;
+        const sectionTop = current.offsetTop - 100;
+        const sectionId = current.getAttribute('id');
+        const navLink = document.querySelector(`.nav-link[href*="${sectionId}"]`);
 
-      if (navLink) {
-        if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-          document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-          navLink.classList.add('active');
+        if (navLink) {
+          if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            navLink.classList.add('active');
+          }
         }
-      }
+      });
     });
-  });
+  }
 });
 
 // Helper to launch direct WhatsApp message

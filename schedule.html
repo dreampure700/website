@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Program Schedule | TEENSPACE 2026</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="icon" type="image/png" href="assets/images/TEENSPACE LOGO.png?v=1.5">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <a href="index.html" class="brand-logo">
+        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
+        <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="highlights.html" class="nav-link">Highlights</a></li>
+        <li><a href="schedule.html" class="nav-link active">Schedule</a></li>
+        <li><a href="media.html" class="nav-link">Media</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn btn-primary" onclick="openRegisterModal()"><i class="fas fa-edit"></i> Register</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- INNER PAGE HEADER -->
+  <section class="section" style="background: radial-gradient(circle at 10% 20%, rgba(0, 168, 232, 0.05) 0%, rgba(230, 0, 103, 0.05) 90%); padding: 5rem 0 3rem 0;">
+    <div class="container" style="text-align: center;">
+      <span class="section-tag"><i class="fas fa-clock"></i> Timings & Sessions</span>
+      <h1 style="font-family: var(--font-heading); font-size: 2.75rem; font-weight: 900; margin-bottom: 1rem;">Event Schedule</h1>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto; line-height: 1.6;">Full-day structured sessions planned for October 18th, 2026 at Dream Palace, Paroor.</p>
+    </div>
+  </section>
+
+  <!-- SCHEDULE CONTENT -->
+  <section class="section">
+    <div class="container">
+      <div style="max-width: 750px; margin: 0 auto; text-align: center; background: #FFFFFF; border: 2px dashed var(--cyan); border-radius: 24px; padding: 4.5rem 2rem; box-shadow: 0 10px 30px rgba(0, 168, 232, 0.08);">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(0, 168, 232, 0.1); border: 1px solid rgba(0, 168, 232, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2.2rem; color: var(--cyan);">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        
+        <h3 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; margin-bottom: 0.8rem; color: var(--text-main);">
+          Detailed Schedule Updating Soon!
+        </h3>
+        
+        <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; margin-bottom: 2.5rem; max-width: 580px; margin-left: auto; margin-right: auto;">
+          We are currently finalizing the complete hour-by-hour session breakdown, guest speaker lineup, and workshop timings for Quran & Salaf Studies, Practical Fiqh, Career Counseling, Anti-Drug Awareness, and Social Media Detox.
+        </p>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="openRegisterModal()">
+            <i class="fas fa-bell"></i> Pre-Register to Get Notified
+          </button>
+          <a href="https://wa.me/919656677700?text=Hi,%20please%20notify%20me%20when%20the%20TEENSPACE%202026%20detailed%20schedule%20is%20released." target="_blank" class="btn btn-whatsapp">
+            <i class="fab fa-whatsapp"></i> Get Updates on WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-logo">
+            <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
+            <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace 2026</span>
+          </div>
+          <p>An empowering educational & Islamic summit organized by Wisdom Students Thrissur District Committee.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="highlights.html">Highlights</a></li>
+            <li><a href="schedule.html">Schedule</a></li>
+            <li><a href="media.html">Media</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Contact</h4>
+          <div style="font-size:0.9rem; color:var(--text-muted); line-height:1.8;">
+            Poothole, Near Railway station, Thrissur<br>
+            Phone: 9656677700<br>
+            Email: wisdomstudentstsr@gmail.com
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <p>&copy; 2026 Wisdom Students Thrissur. All Rights Reserved.</p>
+        <a href="admin.html" style="color:var(--text-dim); text-decoration:none; font-size:0.85rem;"><i class="fas fa-lock"></i> Admin Panel</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/app.js?v=1.5"></script>
+  <script src="js/registration.js?v=1.5"></script>
+</body>
+</html>
