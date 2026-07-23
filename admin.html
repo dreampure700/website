@@ -395,7 +395,10 @@
       <!-- ================= SECTION 3: TRANSPORTATION ================= -->
       <div id="tab-transport" class="dashboard-section">
         <div class="table-container">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bus text-cyan"></i> Vehicles and Seats Capacity Tracker</h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-bus text-cyan"></i> Vehicles and Seats Capacity Tracker</h3>
+            <button class="btn btn-primary btn-sm" onclick="openVehicleModal()"><i class="fas fa-plus"></i> Add Vehicle</button>
+          </div>
           <div style="overflow-x: auto;">
             <table class="data-table">
               <thead>
@@ -406,6 +409,7 @@
                   <th>Seats Filled</th>
                   <th>Total Seating Capacity</th>
                   <th>Progress</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="transportStatsBody">
@@ -422,6 +426,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
             <h3 style="font-family: var(--font-heading); font-size: 1.25rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm" onclick="openStudentModal()"><i class="fas fa-plus"></i> Add Delegate</button>
               <button class="btn btn-cyan btn-sm" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export to CSV</button>
               <button class="btn btn-outline btn-sm" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
@@ -572,6 +577,136 @@
         
         <button type="submit" id="assignSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
           <i class="fas fa-check"></i> Save Vehicle Assignment
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- VEHICLE CRUD MODAL -->
+  <div class="modal-overlay" id="vehicleModal">
+    <div class="modal-content" style="max-width: 480px; padding: 2rem;">
+      <button class="modal-close" onclick="closeVehicleModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;" id="vehicleModalTitle"><i class="fas fa-bus text-cyan"></i> Add Vehicle</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter vehicle profile details below.</p>
+
+      <form id="vehicleForm">
+        <input type="hidden" id="vehicleMode" value="add">
+        
+        <div class="form-group">
+          <label class="form-label" for="vehicleIdInput">Vehicle ID *</label>
+          <input type="text" id="vehicleIdInput" class="form-input" placeholder="e.g. BUS-05" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vehicleNameInput">Vehicle Name *</label>
+          <input type="text" id="vehicleNameInput" class="form-input" placeholder="e.g. Chavakkad Route Bus" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vehicleCapacityInput">Seating Capacity *</label>
+          <input type="number" id="vehicleCapacityInput" class="form-input" placeholder="e.g. 50" required min="1">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vehicleZoneInput">Zone *</label>
+          <select id="vehicleZoneInput" class="form-select" required>
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vehicleUnitInput">Unit (Optional)</label>
+          <select id="vehicleUnitInput" class="form-select">
+            <option value="">Select Unit</option>
+            <!-- Filled dynamically -->
+          </select>
+        </div>
+        
+        <button type="submit" id="vehicleSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
+          <i class="fas fa-check"></i> Save Vehicle
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- STUDENT CRUD MODAL -->
+  <div class="modal-overlay" id="studentModal">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="closeStudentModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;" id="studentModalTitle"><i class="fas fa-user-graduate text-magenta"></i> Add Delegate</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter delegate profile details below.</p>
+
+      <form id="studentForm">
+        <input type="hidden" id="studentMode" value="add">
+        <input type="hidden" id="studentRegIdInput">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="studentNameInput">Student Name *</label>
+            <input type="text" id="studentNameInput" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentPhoneInput">Student Mobile Number *</label>
+            <input type="tel" id="studentPhoneInput" class="form-input" required pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentParentPhoneInput">Parent Mobile Number *</label>
+            <input type="tel" id="studentParentPhoneInput" class="form-input" required pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentClassInput">Class *</label>
+            <select id="studentClassInput" class="form-select" required>
+              <option value="11th">11th</option>
+              <option value="12th">12th</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentSchoolInput">School (Optional)</label>
+            <input type="text" id="studentSchoolInput" class="form-input">
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="studentPlaceInput">Place *</label>
+            <input type="text" id="studentPlaceInput" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentPanchayathInput">Panchayath *</label>
+            <select id="studentPanchayathInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentWardInput">Ward *</label>
+            <select id="studentWardInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentZoneInput">Zone *</label>
+            <select id="studentZoneInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentUnitInput">Unit *</label>
+            <select id="studentUnitInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" id="studentSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 0.9rem;">
+          <i class="fas fa-check"></i> Save Delegate Profile
         </button>
       </form>
     </div>
@@ -867,6 +1002,10 @@
               <span style="font-size:0.75rem; font-weight:700;">${percentage}%</span>
             </div>
           </td>
+          <td>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openVehicleEditModal('${vehicle["Vehicle ID"]}')"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteVehicle('${vehicle["Vehicle ID"]}')"><i class="fas fa-trash-alt"></i> Delete</button>
+          </td>
         `;
         tbody.appendChild(row);
       });
@@ -894,8 +1033,14 @@
           <td>${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
           <td>${vehicleBadge}</td>
           <td>
-            <button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.75rem;" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
               <i class="fas fa-bus"></i> Assign
+            </button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-left:0.25rem;" onclick="openStudentEditModal('${item["Registration ID"] || item.regId}')">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteStudent('${item["Registration ID"] || item.regId}')">
+              <i class="fas fa-trash-alt"></i> Delete
             </button>
           </td>
         `;
@@ -1133,6 +1278,343 @@
           alert('Network error when publishing media. Try again.');
         });
     });
+
+    // ========================================================
+    // VEHICLE CRUD AND MANAGEMENT LOGIC
+    // ========================================================
+    function openVehicleModal() {
+      const modal = document.getElementById('vehicleModal');
+      const form = document.getElementById('vehicleForm');
+      form.reset();
+      
+      document.getElementById('vehicleModalTitle').innerHTML = '<i class="fas fa-bus text-cyan"></i> Add Vehicle';
+      document.getElementById('vehicleMode').value = 'add';
+      document.getElementById('vehicleIdInput').disabled = false;
+
+      populateVehicleDropdowns();
+      modal.classList.add('active');
+    }
+
+    function openVehicleEditModal(vId) {
+      const modal = document.getElementById('vehicleModal');
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vId);
+      if (!vehicle) return;
+
+      document.getElementById('vehicleModalTitle').innerHTML = '<i class="fas fa-bus text-cyan"></i> Edit Vehicle';
+      document.getElementById('vehicleMode').value = 'edit';
+      
+      const idInput = document.getElementById('vehicleIdInput');
+      idInput.value = vehicle["Vehicle ID"];
+      idInput.disabled = true;
+
+      document.getElementById('vehicleNameInput').value = vehicle["Vehicle Name"] || '';
+      document.getElementById('vehicleCapacityInput').value = vehicle.Capacity || '';
+
+      populateVehicleDropdowns();
+      
+      document.getElementById('vehicleZoneInput').value = vehicle.Zone || '';
+      document.getElementById('vehicleUnitInput').value = vehicle.Unit || '';
+
+      modal.classList.add('active');
+    }
+
+    function closeVehicleModal() {
+      document.getElementById('vehicleModal').classList.remove('active');
+    }
+
+    function populateVehicleDropdowns() {
+      const zoneSelect = document.getElementById('vehicleZoneInput');
+      const unitSelect = document.getElementById('vehicleUnitInput');
+
+      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
+      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
+
+      zoneSelect.innerHTML = '<option value="">Select Zone</option>';
+      unitSelect.innerHTML = '<option value="">Select Unit (Optional)</option>';
+
+      zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
+      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+      // Lock based on role
+      if (sessionUser.role === 'Zone') {
+        if (![...zoneSelect.options].some(opt => opt.value === sessionUser.target)) {
+          zoneSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
+        }
+        zoneSelect.value = sessionUser.target;
+        zoneSelect.disabled = true;
+      } else if (sessionUser.role === 'Unit') {
+        const match = mapping.find(m => m.Unit === sessionUser.target);
+        const userZone = match ? match.Zone : '';
+        if (userZone && ![...zoneSelect.options].some(opt => opt.value === userZone)) {
+          zoneSelect.appendChild(new Option(userZone, userZone));
+        }
+        zoneSelect.value = userZone;
+        zoneSelect.disabled = true;
+        
+        if (![...unitSelect.options].some(opt => opt.value === sessionUser.target)) {
+          unitSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
+        }
+        unitSelect.value = sessionUser.target;
+        unitSelect.disabled = true;
+      } else {
+        zoneSelect.disabled = false;
+        unitSelect.disabled = false;
+      }
+    }
+
+    // Vehicle Form Submit
+    document.getElementById('vehicleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('vehicleMode').value;
+      const vehicleId = document.getElementById('vehicleIdInput').value.trim();
+      const name = document.getElementById('vehicleNameInput').value.trim();
+      const capacity = document.getElementById('vehicleCapacityInput').value;
+      
+      // Temporarily enable fields to grab values if they are disabled
+      const zoneSelect = document.getElementById('vehicleZoneInput');
+      const unitSelect = document.getElementById('vehicleUnitInput');
+      const zone = zoneSelect.value;
+      const unit = unitSelect.value;
+
+      const submitBtn = document.getElementById('vehicleSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      const action = mode === 'add' ? 'add_vehicle' : 'edit_vehicle';
+      const url = `${GOOGLE_SCRIPT_URL}?action=${action}&vehicleId=${encodeURIComponent(vehicleId)}&name=${encodeURIComponent(name)}&capacity=${encodeURIComponent(capacity)}&zone=${encodeURIComponent(zone)}&unit=${encodeURIComponent(unit)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle';
+          if (res.result === 'success') {
+            alert('Vehicle saved successfully!');
+            closeVehicleModal();
+            loadData();
+          } else {
+            alert('Error saving vehicle: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle';
+          alert('Network error. Try again.');
+        });
+    });
+
+    function deleteVehicle(vId) {
+      if (!confirm(`Are you sure you want to delete vehicle ${vId}? This will not unassign students automatically, but they will no longer belong to this vehicle ID.`)) {
+        return;
+      }
+      fetch(`${GOOGLE_SCRIPT_URL}?action=delete_vehicle&vehicleId=${encodeURIComponent(vId)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert('Vehicle deleted successfully.');
+            loadData();
+          } else {
+            alert('Error deleting vehicle: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
+
+    // ========================================================
+    // STUDENT CRUD AND DIRECTORY MANAGEMENT LOGIC
+    // ========================================================
+    function openStudentModal() {
+      const modal = document.getElementById('studentModal');
+      const form = document.getElementById('studentForm');
+      form.reset();
+
+      document.getElementById('studentModalTitle').innerHTML = '<i class="fas fa-user-graduate text-magenta"></i> Add Delegate';
+      document.getElementById('studentMode').value = 'add';
+      
+      const randomId = 'TS26-' + Math.floor(10000 + Math.random() * 90000);
+      document.getElementById('studentRegIdInput').value = randomId;
+
+      populateStudentDropdowns();
+      modal.classList.add('active');
+    }
+
+    function openStudentEditModal(regId) {
+      const modal = document.getElementById('studentModal');
+      const student = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      document.getElementById('studentModalTitle').innerHTML = '<i class="fas fa-user-graduate text-magenta"></i> Edit Delegate';
+      document.getElementById('studentMode').value = 'edit';
+      document.getElementById('studentRegIdInput').value = regId;
+
+      document.getElementById('studentNameInput').value = student["Student Name"] || student.name || '';
+      document.getElementById('studentPhoneInput').value = student["Student Mobile Number"] || student.phone || '';
+      document.getElementById('studentParentPhoneInput').value = student["Parent Mobile Number"] || '';
+      document.getElementById('studentClassInput').value = student.Class || '11th';
+      document.getElementById('studentSchoolInput').value = student.School || '';
+      document.getElementById('studentPlaceInput').value = student.Place || '';
+
+      populateStudentDropdowns();
+
+      document.getElementById('studentPanchayathInput').value = student.Panchayath || '';
+      // Trigger ward load
+      updateStudentModalWards();
+      document.getElementById('studentWardInput').value = student.Ward || '';
+
+      document.getElementById('studentZoneInput').value = student["Organization Zone"] || student.zone || '';
+      document.getElementById('studentUnitInput').value = student["Organization Unit"] || student.unit || '';
+
+      modal.classList.add('active');
+    }
+
+    function closeStudentModal() {
+      document.getElementById('studentModal').classList.remove('active');
+    }
+
+    function populateStudentDropdowns() {
+      const pSelect = document.getElementById('studentPanchayathInput');
+      const zoneSelect = document.getElementById('studentZoneInput');
+      const unitSelect = document.getElementById('studentUnitInput');
+
+      const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
+      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
+      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
+
+      pSelect.innerHTML = '<option value="">Select Panchayath</option>';
+      zoneSelect.innerHTML = '<option value="">Select Zone</option>';
+      unitSelect.innerHTML = '<option value="">Select Unit</option>';
+
+      panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
+      zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
+      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+      // Lock based on role
+      if (sessionUser.role === 'Zone') {
+        if (![...zoneSelect.options].some(opt => opt.value === sessionUser.target)) {
+          zoneSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
+        }
+        zoneSelect.value = sessionUser.target;
+        zoneSelect.disabled = true;
+        // Filter units to only show ones in this zone
+        const zoneUnits = [...new Set(mapping.filter(m => m.Zone === sessionUser.target).map(m => m.Unit))].filter(Boolean).sort();
+        unitSelect.innerHTML = '<option value="">Select Unit</option>';
+        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+      } 
+      else if (sessionUser.role === 'Unit') {
+        const match = mapping.find(m => m.Unit === sessionUser.target);
+        const userZone = match ? match.Zone : '';
+        if (userZone && ![...zoneSelect.options].some(opt => opt.value === userZone)) {
+          zoneSelect.appendChild(new Option(userZone, userZone));
+        }
+        zoneSelect.value = userZone;
+        zoneSelect.disabled = true;
+        
+        if (![...unitSelect.options].some(opt => opt.value === sessionUser.target)) {
+          unitSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
+        }
+        unitSelect.value = sessionUser.target;
+        unitSelect.disabled = true;
+      } 
+      else {
+        zoneSelect.disabled = false;
+        unitSelect.disabled = false;
+      }
+
+      // Add Panchayath change listener to update Wards dropdown
+      pSelect.onchange = updateStudentModalWards;
+    }
+
+    function updateStudentModalWards() {
+      const pVal = document.getElementById('studentPanchayathInput').value;
+      const wardSelect = document.getElementById('studentWardInput');
+      
+      wardSelect.innerHTML = '<option value="">Select Ward</option>';
+      if (!pVal) return;
+
+      const wards = [...new Set(mapping.filter(m => m.Panchayath === pVal).map(m => m.Ward))].filter(Boolean).sort();
+      wards.forEach(w => wardSelect.appendChild(new Option(w, w)));
+    }
+
+    // Student Form Submit
+    document.getElementById('studentForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('studentMode').value;
+      const regId = document.getElementById('studentRegIdInput').value;
+      const name = document.getElementById('studentNameInput').value.trim();
+      const phone = document.getElementById('studentPhoneInput').value.trim();
+      const parentPhone = document.getElementById('studentParentPhoneInput').value.trim();
+      const studentClass = document.getElementById('studentClassInput').value;
+      const school = document.getElementById('studentSchoolInput').value.trim();
+      const place = document.getElementById('studentPlaceInput').value.trim();
+      const panchayath = document.getElementById('studentPanchayathInput').value;
+      const ward = document.getElementById('studentWardInput').value;
+
+      // Extract values even if disabled
+      const zone = document.getElementById('studentZoneInput').value;
+      const unit = document.getElementById('studentUnitInput').value;
+
+      const submitBtn = document.getElementById('studentSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Profile...';
+
+      const action = mode === 'add' ? 'add_student' : 'edit_student';
+      const url = `${GOOGLE_SCRIPT_URL}?action=${action}` +
+        `&regId=${encodeURIComponent(regId)}` +
+        `&name=${encodeURIComponent(name)}` +
+        `&phone=${encodeURIComponent(phone)}` +
+        `&parentPhone=${encodeURIComponent(parentPhone)}` +
+        `&studentClass=${encodeURIComponent(studentClass)}` +
+        `&school=${encodeURIComponent(school || 'N/A')}` +
+        `&place=${encodeURIComponent(place)}` +
+        `&panchayath=${encodeURIComponent(panchayath)}` +
+        `&ward=${encodeURIComponent(ward)}` +
+        `&zone=${encodeURIComponent(zone)}` +
+        `&unit=${encodeURIComponent(unit)}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Delegate Profile';
+          if (res.result === 'success') {
+            alert('Delegate profile saved successfully!');
+            closeStudentModal();
+            loadData();
+          } else {
+            alert('Error saving profile: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Delegate Profile';
+          alert('Network error. Try again.');
+        });
+    });
+
+    function deleteStudent(regId) {
+      if (!confirm(`Are you sure you want to delete delegate ${regId}? This will remove all their registration logs permanently.`)) {
+        return;
+      }
+      fetch(`${GOOGLE_SCRIPT_URL}?action=delete_student&regId=${encodeURIComponent(regId)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert('Delegate deleted successfully.');
+            loadData();
+          } else {
+            alert('Error deleting delegate: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
   </script>
 </body>
 </html>
