@@ -342,6 +342,7 @@
                   <th>Registered</th>
                   <th>Target</th>
                   <th>Completion Progress</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="zoneTargetBody">
@@ -374,7 +375,7 @@
       <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
       <div id="tab-panchayath" class="dashboard-section">
         <div class="table-container">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-city text-magenta"></i> Panchayath & Ward Directory</h3>
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-city text-magenta"></i> Panchayath & Ward Registered Counts</h3>
           <div style="overflow-x: auto;">
             <table class="data-table">
               <thead>
@@ -385,6 +386,29 @@
                 </tr>
               </thead>
               <tbody id="panchayathStatsBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="table-container" style="margin-top: 2rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Master Panchayath-Ward-Unit-Zone Mapping</h3>
+            <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping</button>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Panchayath / Municipality</th>
+                  <th>Ward</th>
+                  <th>Organization Unit</th>
+                  <th>Organization Zone</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="masterMappingTableBody">
                 <!-- Populated dynamically -->
               </tbody>
             </table>
@@ -538,6 +562,7 @@
                   <th>Title</th>
                   <th>URL Link</th>
                   <th>Description</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="adminMediaTableBody">
@@ -712,6 +737,54 @@
     </div>
   </div>
 
+  <!-- MAPPING CRUD MODAL -->
+  <div class="modal-overlay" id="mappingModal">
+    <div class="modal-content" style="max-width: 480px; padding: 2rem;">
+      <button class="modal-close" onclick="closeMappingModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;" id="mappingModalTitle"><i class="fas fa-network-wired text-cyan"></i> Add New Mapping</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter organizational mapping coordinates below.</p>
+
+      <form id="mappingForm">
+        <input type="hidden" id="mappingMode" value="add">
+        <input type="hidden" id="origPanchayathInput">
+        <input type="hidden" id="origWardInput">
+        
+        <div class="form-group">
+          <label class="form-label" for="mapPanchayathInput">Panchayath / Municipality *</label>
+          <input type="text" id="mapPanchayathInput" class="form-input" placeholder="e.g. Chavakkad (M) or Punnayur" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mapWardInput">Ward Name / Number *</label>
+          <input type="text" id="mapWardInput" class="form-input" placeholder="e.g. Ward 12 or Attupuram" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mapUnitInput">Organization Unit Name *</label>
+          <input type="text" id="mapUnitInput" class="form-input" placeholder="e.g. Edakkazhiyoor" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mapZoneInput">Organization Zone *</label>
+          <select id="mapZoneInput" class="form-select" required>
+            <option value="Chavakkad">Chavakkad</option>
+            <option value="Guruvayur">Guruvayur</option>
+            <option value="Kaipamangalam">Kaipamangalam</option>
+            <option value="Kodungallur">Kodungallur</option>
+            <option value="Kunnamkulam">Kunnamkulam</option>
+            <option value="Pavaratty">Pavaratty</option>
+            <option value="Thrissur">Thrissur</option>
+          </select>
+        </div>
+        
+        <button type="submit" id="mappingSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
+          <i class="fas fa-check"></i> Save Mapping
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/registration.js?v=1.5"></script>
   <script>
@@ -821,6 +894,9 @@
           // Render Media updates table
           renderAdminMediaTable(media);
 
+          // Render Master Mapping Table
+          renderMasterMapping();
+
           // 2. Fetch Registrations
           return fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`);
         })
@@ -905,6 +981,9 @@
               </div>
               <span style="font-weight:700; min-width:45px; text-align:right;">${percentage}%</span>
             </div>
+          </td>
+          <td>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${targetVal})"><i class="fas fa-edit"></i> Edit Target</button>
           </td>
         `;
         tbody.appendChild(row);
@@ -1217,7 +1296,7 @@
       
       tbody.innerHTML = '';
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No media uploads posted yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No media uploads posted yet.</td></tr>';
         return;
       }
       
@@ -1232,6 +1311,9 @@
           <td style="font-weight:700;">${item.Title || ''}</td>
           <td><a href="${item.URL || '#'}" target="_blank" style="color:var(--cyan); max-width:200px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.URL || ''}</a></td>
           <td style="font-size:0.85rem; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.Description || ''}</td>
+          <td>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="deleteMedia('${item.Title.replace(/'/g, "\\'")}', '${item.URL.replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Delete</button>
+          </td>
         `;
         tbody.appendChild(row);
       });
@@ -1608,6 +1690,288 @@
             loadData();
           } else {
             alert('Error deleting delegate: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
+
+    // ========================================================
+    // DYNAMIC BUS ID AUTO-GENERATION AND ZONES PREFIXES
+    // ========================================================
+    const ZONE_PREFIXES = {
+      'CHAVAKKAD': 'CKD',
+      'GURUVAYUR': 'GVR',
+      'KAIPAMANGALAM': 'KPM',
+      'KODUNGALLUR': 'KDR',
+      'KUNNAMKULAM': 'KNM',
+      'PAVARATTY': 'PVT',
+      'THRISSUR': 'TSR'
+    };
+
+    function generateNextVehicleId(zoneName) {
+      if (!zoneName) return '';
+      const prefix = ZONE_PREFIXES[zoneName.toUpperCase().trim()] || 'BUS';
+      
+      const prefixMatch = prefix + '-';
+      const numbers = vehicles
+        .map(v => v["Vehicle ID"] || '')
+        .filter(id => id.startsWith(prefixMatch))
+        .map(id => {
+          const parts = id.split('-');
+          const num = parseInt(parts[1]);
+          return isNaN(num) ? 0 : num;
+        })
+        .filter(n => n > 0);
+
+      const sortedNums = [...new Set(numbers)].sort((a,b) => a - b);
+      let nextNum = 1;
+      for (let i = 0; i < sortedNums.length; i++) {
+        if (sortedNums[i] === nextNum) {
+          nextNum++;
+        } else if (sortedNums[i] > nextNum) {
+          break;
+        }
+      }
+      
+      return `${prefix}-${String(nextNum).padStart(2, '0')}`;
+    }
+
+    // Trigger auto-ID generation when Zone selection changes in Vehicle Modal
+    document.getElementById('vehicleZoneInput').addEventListener('change', (e) => {
+      const mode = document.getElementById('vehicleMode').value;
+      if (mode === 'add') {
+        const nextId = generateNextVehicleId(e.target.value);
+        const idInput = document.getElementById('vehicleIdInput');
+        idInput.value = nextId;
+        idInput.disabled = true;
+      }
+    });
+
+    // Update openVehicleModal to trigger auto-generation on load
+    const origOpenVehicleModal = openVehicleModal;
+    openVehicleModal = function() {
+      origOpenVehicleModal();
+      const zoneSelect = document.getElementById('vehicleZoneInput');
+      const idInput = document.getElementById('vehicleIdInput');
+      
+      if (zoneSelect.value) {
+        idInput.value = generateNextVehicleId(zoneSelect.value);
+        idInput.disabled = true;
+      } else {
+        idInput.value = '';
+        idInput.disabled = false;
+      }
+    };
+
+    // ========================================================
+    // DIRECT TARGET EDITING FROM DASHBOARD
+    // ========================================================
+    function promptEditTarget(zone, currentVal) {
+      const newValStr = prompt(`Enter new registration target count for ${zone}:`, currentVal);
+      if (newValStr === null) return;
+      
+      const newVal = parseInt(newValStr);
+      if (isNaN(newVal) || newVal <= 0) {
+        alert('Please enter a valid positive integer.');
+        return;
+      }
+
+      fetch(`${GOOGLE_SCRIPT_URL}?action=edit_target&zone=${encodeURIComponent(zone)}&target=${newVal}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert(`Target for ${zone} successfully set to ${newVal}!`);
+            loadData();
+          } else {
+            alert('Error setting target: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
+
+    // ========================================================
+    // MASTER PANCHAYATH-WARD-UNIT-ZONE MAPPING DIRECTORY CRUD
+    // ========================================================
+    function renderMasterMapping() {
+      const tbody = document.getElementById('masterMappingTableBody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      if (mapping.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No mapping entries found.</td></tr>';
+        return;
+      }
+
+      const sorted = [...mapping].sort((a,b) => {
+        const pComp = (a.Panchayath || '').localeCompare(b.Panchayath || '');
+        if (pComp !== 0) return pComp;
+        return (a.Ward || '').localeCompare(b.Ward || '');
+      });
+
+      sorted.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${item.Panchayath || 'N/A'}</strong></td>
+          <td>${item.Ward || 'N/A'}</td>
+          <td><span class="badge-reg">${item.Unit || 'N/A'}</span></td>
+          <td><span class="badge-reg badge-vehicle">${item.Zone || 'N/A'}</span></td>
+          <td>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openMappingEditModal('${item.Panchayath.replace(/'/g, "\\'")}', '${item.Ward.replace(/'/g, "\\'")}')"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteMapping('${item.Panchayath.replace(/'/g, "\\'")}', '${item.Ward.replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function openMappingModal() {
+      const modal = document.getElementById('mappingModal');
+      const form = document.getElementById('mappingForm');
+      form.reset();
+
+      document.getElementById('mappingModalTitle').innerHTML = '<i class="fas fa-network-wired text-cyan"></i> Add New Mapping';
+      document.getElementById('mappingMode').value = 'add';
+      
+      const zoneSelect = document.getElementById('mapZoneInput');
+      const unitInput = document.getElementById('mapUnitInput');
+
+      if (sessionUser.role === 'Zone') {
+        zoneSelect.value = sessionUser.target;
+        zoneSelect.disabled = true;
+      } else if (sessionUser.role === 'Unit') {
+        const match = mapping.find(m => m.Unit === sessionUser.target);
+        const userZone = match ? match.Zone : '';
+        zoneSelect.value = userZone;
+        zoneSelect.disabled = true;
+        unitInput.value = sessionUser.target;
+        unitInput.disabled = true;
+      } else {
+        zoneSelect.disabled = false;
+        unitInput.disabled = false;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function openMappingEditModal(p, w) {
+      const modal = document.getElementById('mappingModal');
+      const item = mapping.find(m => m.Panchayath === p && m.Ward === w);
+      if (!item) return;
+
+      document.getElementById('mappingModalTitle').innerHTML = '<i class="fas fa-network-wired text-cyan"></i> Edit Mapping';
+      document.getElementById('mappingMode').value = 'edit';
+      
+      document.getElementById('origPanchayathInput').value = p;
+      document.getElementById('origWardInput').value = w;
+      
+      document.getElementById('mapPanchayathInput').value = item.Panchayath;
+      document.getElementById('mapWardInput').value = item.Ward;
+      
+      const unitInput = document.getElementById('mapUnitInput');
+      unitInput.value = item.Unit;
+      
+      const zoneSelect = document.getElementById('mapZoneInput');
+      zoneSelect.value = item.Zone;
+
+      if (sessionUser.role === 'Zone') {
+        zoneSelect.disabled = true;
+      } else if (sessionUser.role === 'Unit') {
+        zoneSelect.disabled = true;
+        unitInput.disabled = true;
+      } else {
+        zoneSelect.disabled = false;
+        unitInput.disabled = false;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeMappingModal() {
+      document.getElementById('mappingModal').classList.remove('active');
+    }
+
+    document.getElementById('mappingForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('mappingMode').value;
+      const origP = document.getElementById('origPanchayathInput').value;
+      const origW = document.getElementById('origWardInput').value;
+      const panchayath = document.getElementById('mapPanchayathInput').value.trim();
+      const ward = document.getElementById('mapWardInput').value.trim();
+      const unit = document.getElementById('mapUnitInput').value.trim();
+      const zone = document.getElementById('mapZoneInput').value;
+
+      const submitBtn = document.getElementById('mappingSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      let url = `${GOOGLE_SCRIPT_URL}?action=add_mapping&panchayath=${encodeURIComponent(panchayath)}&ward=${encodeURIComponent(ward)}&unit=${encodeURIComponent(unit)}&zone=${encodeURIComponent(zone)}`;
+      
+      if (mode === 'edit') {
+        url = `${GOOGLE_SCRIPT_URL}?action=edit_mapping&origPanchayath=${encodeURIComponent(origP)}&origWard=${encodeURIComponent(origW)}&panchayath=${encodeURIComponent(panchayath)}&ward=${encodeURIComponent(ward)}&unit=${encodeURIComponent(unit)}&zone=${encodeURIComponent(zone)}`;
+      }
+
+      fetch(url)
+        .then(res => res.json())
+        .then(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Mapping';
+          if (res.result === 'success') {
+            alert('Mapping entry saved successfully!');
+            closeMappingModal();
+            loadData();
+          } else {
+            alert('Error saving mapping: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Mapping';
+          alert('Network error. Try again.');
+        });
+    });
+
+    function deleteMapping(p, w) {
+      if (!confirm(`Are you sure you want to delete the mapping for Panchayath "${p}", Ward "${w}"? This may impact delegate zone-unit resolution if they register in this ward.`)) {
+        return;
+      }
+      fetch(`${GOOGLE_SCRIPT_URL}?action=delete_mapping&panchayath=${encodeURIComponent(p)}&ward=${encodeURIComponent(w)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert('Mapping row deleted successfully.');
+            loadData();
+          } else {
+            alert('Error deleting mapping: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
+
+    // ========================================================
+    // MEDIA CMS POST DELETION
+    // ========================================================
+    function deleteMedia(title, url) {
+      if (!confirm(`Are you sure you want to delete the media update titled "${title}"?`)) {
+        return;
+      }
+      fetch(`${GOOGLE_SCRIPT_URL}?action=delete_media&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert('Media update deleted successfully!');
+            loadData();
+          } else {
+            alert('Error deleting media: ' + res.message);
           }
         })
         .catch(err => {
