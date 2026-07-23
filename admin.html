@@ -1021,18 +1021,36 @@
       tbody.innerHTML = '';
 
       let activeUnits = [...new Set(mapping.map(m => m.Unit))].filter(Boolean);
+      let activeZones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+
       if (sessionUser.role === 'Zone') {
         activeUnits = [...new Set(mapping.filter(m => m.Zone === sessionUser.target).map(m => m.Unit))];
+        activeZones = [sessionUser.target];
       } else if (sessionUser.role === 'Unit') {
         activeUnits = [sessionUser.target];
+        let userZone = '';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(sessionUser.target)) {
+            userZone = z;
+            break;
+          }
+        }
+        activeZones = userZone ? [userZone] : [];
       }
 
       activeUnits.forEach(unit => {
-        const actualCount = registrations.filter(r => (r["Organization Unit"] || r.unit) === unit).length;
+        const actualCount = registrations.filter(r => {
+          const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase();
+          return u === unit.trim().toLowerCase();
+        }).length;
         
-        // Find matching zone
-        const match = mapping.find(m => m.Unit === unit);
-        const zone = match ? match.Zone : 'N/A';
+        let zone = 'N/A';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(unit)) {
+            zone = z;
+            break;
+          }
+        }
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1041,6 +1059,26 @@
           <td><span class="badge-reg">${actualCount} delegates</span></td>
         `;
         tbody.appendChild(row);
+      });
+
+      // Render unassigned unit row for each active zone if there are any
+      activeZones.forEach(zone => {
+        const unassignedCount = registrations.filter(r => {
+          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
+          const u = (r["Organization Unit"] || r.unit || '').trim();
+          return z === zone.trim().toLowerCase() && (!u || u === '' || u.toLowerCase() === 'n/a');
+        }).length;
+
+        if (unassignedCount > 0) {
+          const row = document.createElement('tr');
+          row.style.background = 'rgba(230, 0, 103, 0.04)';
+          row.innerHTML = `
+            <td><strong style="color:var(--text-muted); font-style:italic;">[Unassigned / No Unit]</strong></td>
+            <td>${zone}</td>
+            <td><span class="badge-reg" style="background:#64748B; color:white;">${unassignedCount} delegates</span></td>
+          `;
+          tbody.appendChild(row);
+        }
       });
     }
 
