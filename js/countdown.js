@@ -1,7 +1,7 @@
 // TEENSPACE 2026 - COUNTDOWN TIMER
 document.addEventListener('DOMContentLoaded', () => {
-  // Event Date: October 25, 2026 09:00:00 IST
-  const eventDate = new Date('October 25, 2026 09:00:00').getTime();
+  // Event Date: October 18, 2026 09:00:00 IST
+  const eventDate = new Date('October 18, 2026 09:00:00').getTime();
 
   const daysEl = document.getElementById('cd-days');
   const hoursEl = document.getElementById('cd-hours');
