@@ -762,7 +762,9 @@
 
         <div class="form-group">
           <label class="form-label" for="mapUnitInput">Organization Unit Name *</label>
-          <input type="text" id="mapUnitInput" class="form-input" placeholder="e.g. Edakkazhiyoor" required>
+          <select id="mapUnitInput" class="form-select" required>
+            <option value="">Select Unit</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -794,6 +796,26 @@
     let targets = [];
     let vehicles = [];
     let media = [];
+
+    // Exact Wisdom Students Thrissur District Zone & Unit Mapping
+    const ORGANIZATIONAL_MAP = {
+      'Chavakkad': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
+      'Chavakkad Zone': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
+      'Pavaratty': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
+      'Pavaratty Zone': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
+      'Kunnamkulam': ['Chowallurpadi', 'Kechery', 'Paninthadam', 'Perumpilavu'],
+      'Kunnamkulam Zone': ['Chowallurpadi', 'Kechery', 'Paninthadam', 'Perumpilavu'],
+      'Guruvayoor': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
+      'Guruvayur': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
+      'Guruvayoor Zone': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
+      'Thrissur': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
+      'Thrissur City': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
+      'Thrissur City Zone': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
+      'Kodungallur': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
+      'Kodungallur Zone': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
+      'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
+      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar']
+    };
 
     // Session authentication check
     if (sessionStorage.getItem('auth_user')) {
@@ -1408,34 +1430,40 @@
       const zoneSelect = document.getElementById('vehicleZoneInput');
       const unitSelect = document.getElementById('vehicleUnitInput');
 
-      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
-      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
-
+      // Extract unique base zone names (avoiding duplicate ' Zone' keys)
+      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      
       zoneSelect.innerHTML = '<option value="">Select Zone</option>';
-      unitSelect.innerHTML = '<option value="">Select Unit (Optional)</option>';
-
       zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
-      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+      function updateVehicleUnits() {
+        const zoneVal = zoneSelect.value;
+        unitSelect.innerHTML = '<option value="">Select Unit (Optional)</option>';
+        if (!zoneVal) return;
+
+        const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+      }
+
+      zoneSelect.onchange = updateVehicleUnits;
 
       // Lock based on role
       if (sessionUser.role === 'Zone') {
-        if (![...zoneSelect.options].some(opt => opt.value === sessionUser.target)) {
-          zoneSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
-        }
         zoneSelect.value = sessionUser.target;
         zoneSelect.disabled = true;
+        updateVehicleUnits();
       } else if (sessionUser.role === 'Unit') {
-        const match = mapping.find(m => m.Unit === sessionUser.target);
-        const userZone = match ? match.Zone : '';
-        if (userZone && ![...zoneSelect.options].some(opt => opt.value === userZone)) {
-          zoneSelect.appendChild(new Option(userZone, userZone));
+        let userZone = 'Chavakkad';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(sessionUser.target)) {
+            userZone = z;
+            break;
+          }
         }
         zoneSelect.value = userZone;
         zoneSelect.disabled = true;
+        updateVehicleUnits();
         
-        if (![...unitSelect.options].some(opt => opt.value === sessionUser.target)) {
-          unitSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
-        }
         unitSelect.value = sessionUser.target;
         unitSelect.disabled = true;
       } else {
@@ -1563,8 +1591,7 @@
       const unitSelect = document.getElementById('studentUnitInput');
 
       const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
-      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
-      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
+      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
 
       pSelect.innerHTML = '<option value="">Select Panchayath</option>';
       zoneSelect.innerHTML = '<option value="">Select Zone</option>';
@@ -1572,38 +1599,44 @@
 
       panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
       zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
-      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+      function updateStudentUnits() {
+        const zoneVal = zoneSelect.value;
+        unitSelect.innerHTML = '<option value="">Select Unit</option>';
+        if (!zoneVal) return;
+
+        const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+      }
+
+      zoneSelect.onchange = updateStudentUnits;
 
       // Lock based on role
       if (sessionUser.role === 'Zone') {
-        if (![...zoneSelect.options].some(opt => opt.value === sessionUser.target)) {
-          zoneSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
-        }
         zoneSelect.value = sessionUser.target;
         zoneSelect.disabled = true;
-        // Filter units to only show ones in this zone
-        const zoneUnits = [...new Set(mapping.filter(m => m.Zone === sessionUser.target).map(m => m.Unit))].filter(Boolean).sort();
-        unitSelect.innerHTML = '<option value="">Select Unit</option>';
-        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+        updateStudentUnits();
       } 
       else if (sessionUser.role === 'Unit') {
-        const match = mapping.find(m => m.Unit === sessionUser.target);
-        const userZone = match ? match.Zone : '';
-        if (userZone && ![...zoneSelect.options].some(opt => opt.value === userZone)) {
-          zoneSelect.appendChild(new Option(userZone, userZone));
+        let userZone = 'Chavakkad';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(sessionUser.target)) {
+            userZone = z;
+            break;
+          }
         }
         zoneSelect.value = userZone;
         zoneSelect.disabled = true;
+        updateStudentUnits();
         
-        if (![...unitSelect.options].some(opt => opt.value === sessionUser.target)) {
-          unitSelect.appendChild(new Option(sessionUser.target, sessionUser.target));
-        }
         unitSelect.value = sessionUser.target;
         unitSelect.disabled = true;
       } 
       else {
         zoneSelect.disabled = false;
         unitSelect.disabled = false;
+        // Bind change listener for District admins
+        zoneSelect.addEventListener('change', updateStudentUnits);
       }
 
       // Add Panchayath change listener to update Wards dropdown
@@ -1830,6 +1863,18 @@
       });
     }
 
+    function updateMappingUnits() {
+      const zoneSelect = document.getElementById('mapZoneInput');
+      const unitSelect = document.getElementById('mapUnitInput');
+      const zoneVal = zoneSelect.value;
+      
+      unitSelect.innerHTML = '<option value="">Select Unit</option>';
+      if (!zoneVal) return;
+
+      const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+      zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+    }
+
     function openMappingModal() {
       const modal = document.getElementById('mappingModal');
       const form = document.getElementById('mappingForm');
@@ -1839,21 +1884,32 @@
       document.getElementById('mappingMode').value = 'add';
       
       const zoneSelect = document.getElementById('mapZoneInput');
-      const unitInput = document.getElementById('mapUnitInput');
+      const unitSelect = document.getElementById('mapUnitInput');
+
+      zoneSelect.onchange = updateMappingUnits;
 
       if (sessionUser.role === 'Zone') {
         zoneSelect.value = sessionUser.target;
         zoneSelect.disabled = true;
+        updateMappingUnits();
       } else if (sessionUser.role === 'Unit') {
-        const match = mapping.find(m => m.Unit === sessionUser.target);
-        const userZone = match ? match.Zone : '';
+        let userZone = 'Chavakkad';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(sessionUser.target)) {
+            userZone = z;
+            break;
+          }
+        }
         zoneSelect.value = userZone;
         zoneSelect.disabled = true;
-        unitInput.value = sessionUser.target;
-        unitInput.disabled = true;
+        updateMappingUnits();
+        
+        unitSelect.value = sessionUser.target;
+        unitSelect.disabled = true;
       } else {
         zoneSelect.disabled = false;
-        unitInput.disabled = false;
+        unitSelect.disabled = false;
+        updateMappingUnits();
       }
 
       modal.classList.add('active');
@@ -1873,20 +1929,22 @@
       document.getElementById('mapPanchayathInput').value = item.Panchayath;
       document.getElementById('mapWardInput').value = item.Ward;
       
-      const unitInput = document.getElementById('mapUnitInput');
-      unitInput.value = item.Unit;
-      
       const zoneSelect = document.getElementById('mapZoneInput');
-      zoneSelect.value = item.Zone;
+      zoneSelect.onchange = updateMappingUnits;
+      zoneSelect.value = item.Zone || '';
+      updateMappingUnits();
+
+      const unitSelect = document.getElementById('mapUnitInput');
+      unitSelect.value = item.Unit || '';
 
       if (sessionUser.role === 'Zone') {
         zoneSelect.disabled = true;
       } else if (sessionUser.role === 'Unit') {
         zoneSelect.disabled = true;
-        unitInput.disabled = true;
+        unitSelect.disabled = true;
       } else {
         zoneSelect.disabled = false;
-        unitInput.disabled = false;
+        unitSelect.disabled = false;
       }
 
       modal.classList.add('active');
