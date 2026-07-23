@@ -1,0 +1,22 @@
+{
+  "name": "TEENSPACE 2026",
+  "short_name": "Teenspace",
+  "description": "Wisdom Students Thrissur District Student Summit",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#E60067",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/images/teenspace_logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/TEENSPACE LOGO.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
