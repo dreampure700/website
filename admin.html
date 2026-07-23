@@ -1005,7 +1005,10 @@
             </div>
           </td>
           <td>
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${targetVal})"><i class="fas fa-edit"></i> Edit Target</button>
+            ${sessionUser.role === 'District' 
+              ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${targetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
+              : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`
+            }
           </td>
         `;
         tbody.appendChild(row);
@@ -1842,6 +1845,10 @@
     // DIRECT TARGET EDITING FROM DASHBOARD
     // ========================================================
     function promptEditTarget(zone, currentVal) {
+      if (!sessionUser || sessionUser.role !== 'District') {
+        alert('Access Denied: Only District Admins can edit targets.');
+        return;
+      }
       const newValStr = prompt(`Enter new registration target count for ${zone}:`, currentVal);
       if (newValStr === null) return;
       
