@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="icon" type="image/png" href="assets/images/TEENSPACE LOGO.png?v=1.3">
   
-  <!-- FontAwesome & Chart.js -->
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
@@ -49,11 +49,11 @@
       text-align: center;
     }
     
-    /* Dashboard Layout */
+    /* Dashboard Header & Navigation Tabs */
     .admin-header {
       background: #FFFFFF;
       border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-      padding: 1.25rem 0;
+      padding: 1rem 0;
       box-shadow: 0 4px 15px rgba(15, 23, 42, 0.02);
     }
     
@@ -63,39 +63,64 @@
       justify-content: space-between;
     }
     
+    .tab-nav {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+      padding-bottom: 0.5rem;
+    }
+    
+    .tab-link {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: var(--transition-fast);
+    }
+    
+    .tab-link:hover, .tab-link.active {
+      color: var(--magenta);
+      background: rgba(230, 0, 103, 0.05);
+    }
+    
     .admin-main {
-      padding: 3rem 0;
+      padding: 2.5rem 0;
       flex-grow: 1;
     }
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1.5rem;
-      margin-bottom: 3rem;
+      margin-bottom: 2.5rem;
     }
     
     .stat-card {
       background: #FFFFFF;
       border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 20px;
-      padding: 1.5rem 2rem;
+      padding: 1.25rem 1.75rem;
       display: flex;
       align-items: center;
-      gap: 1.5rem;
+      gap: 1.25rem;
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
     }
     
     .stat-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
       background: rgba(230, 0, 103, 0.08);
       color: var(--magenta);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
     }
     
     .stat-icon.cyan-icon {
@@ -104,51 +129,27 @@
     }
     
     .stat-val {
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 800;
       line-height: 1.2;
     }
     
     .stat-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-dim);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     
-    /* Table styling */
+    /* Table / Card layout */
     .table-container {
       background: #FFFFFF;
       border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 20px;
       padding: 1.75rem;
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
-      margin-bottom: 3rem;
-    }
-    
-    .table-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    
-    .search-input {
-      padding: 0.7rem 1.2rem;
-      border-radius: 10px;
-      border: 1px solid rgba(15, 23, 42, 0.15);
-      outline: none;
-      width: 100%;
-      max-width: 320px;
-      font-family: var(--font-body);
-      font-size: 0.9rem;
-    }
-    
-    .search-input:focus {
-      border-color: var(--cyan);
+      margin-bottom: 2.5rem;
     }
     
     .data-table {
@@ -158,23 +159,47 @@
     }
     
     .data-table th {
-      padding: 1rem;
+      padding: 0.85rem 1rem;
       border-bottom: 2px solid rgba(15, 23, 42, 0.08);
       font-weight: 700;
       color: var(--text-dim);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     
     .data-table td {
-      padding: 1rem;
+      padding: 0.85rem 1rem;
       border-bottom: 1px solid rgba(15, 23, 42, 0.05);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
     
-    .data-table tr:hover td {
-      background-color: #F8FAFC;
+    /* Progress Bar */
+    .progress-track {
+      width: 100%;
+      background: #E2E8F0;
+      height: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 0.4rem;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: var(--grad-primary);
+      border-radius: 10px;
+      transition: width 0.5s ease-in-out;
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      background: #F8FAFC;
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid rgba(15, 23, 42, 0.05);
     }
     
     .badge-reg {
@@ -187,11 +212,24 @@
       color: var(--cyan);
     }
     
-    /* Loading spinner overlay */
-    .loading-spinner {
-      text-align: center;
-      padding: 3rem 0;
-      color: var(--text-dim);
+    .badge-vehicle {
+      background: rgba(37, 211, 102, 0.1);
+      color: #20ba5a;
+      border: 1px solid rgba(37, 211, 102, 0.2);
+    }
+    
+    .badge-unassigned {
+      background: rgba(230, 0, 103, 0.06);
+      color: var(--magenta);
+      border: 1px solid rgba(230, 0, 103, 0.15);
+    }
+    
+    .dashboard-section {
+      display: none;
+    }
+    
+    .dashboard-section.active {
+      display: block;
     }
   </style>
 </head>
@@ -200,34 +238,49 @@
   <!-- PASSWORD PROTECTION SCREEN -->
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
-      <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace" style="height: 60px; margin-bottom: 1.5rem;">
-      <h2 style="font-family: var(--font-heading); font-size: 1.75rem; margin-bottom: 0.5rem;">Admin Access</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Please enter password to unlock dashboard</p>
+      <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace" style="height: 55px; margin-bottom: 1.5rem;">
+      <h2 style="font-family: var(--font-heading); font-size: 1.6rem; margin-bottom: 0.5rem;">TEENSPACE Login</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 2rem;">Authorized Organization Access Only</p>
       
       <form id="loginForm">
-        <div class="form-group" style="text-align: left;">
-          <label class="form-label" for="adminPassword"><i class="fas fa-lock text-magenta"></i> Password</label>
-          <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required autofocus style="text-align: center; font-size: 1.2rem; letter-spacing: 2px;">
+        <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
+          <label class="form-label" for="adminUser"><i class="fas fa-user text-cyan"></i> Username</label>
+          <input type="text" id="adminUser" class="form-input" placeholder="Enter username" required autofocus>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem;">
-          <i class="fas fa-unlock"></i> Unlock Dashboard
+        <div class="form-group" style="text-align: left; margin-bottom: 1.8rem;">
+          <label class="form-label" for="adminPassword"><i class="fas fa-lock text-magenta"></i> Password</label>
+          <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem;">
+          <i class="fas fa-sign-in-alt"></i> Login
         </button>
-        <p id="loginError" style="color: red; font-size: 0.85rem; margin-top: 1rem; display: none;"><i class="fas fa-exclamation-triangle"></i> Incorrect password. Try again.</p>
+        <p id="loginError" style="color: red; font-size: 0.85rem; margin-top: 1rem; display: none;"><i class="fas fa-exclamation-triangle"></i> Invalid credentials. Try again.</p>
       </form>
     </div>
   </div>
 
   <!-- DASHBOARD HEADER -->
   <header class="admin-header">
-    <div class="container admin-container">
-      <div class="brand-logo" style="font-size: 1.6rem;">
-        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img" style="height: 38px;">
-        <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace <span style="font-weight:400; font-size:1.1rem; color:var(--text-dim);">Admin</span></span>
+    <div class="container">
+      <div class="admin-container">
+        <div class="brand-logo" style="font-size: 1.5rem;">
+          <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img" style="height: 35px;">
+          <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace <span style="font-weight:400; font-size:1rem; color:var(--text-dim);" id="headerRole">Admin</span></span>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <span style="font-size:0.9rem; font-weight:700; color:var(--text-dim);" id="welcomeUser"></span>
+          <button class="btn btn-outline" onclick="logoutAdmin()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
       </div>
       
-      <div style="display:flex; gap:0.8rem;">
-        <button class="btn btn-outline" onclick="logoutAdmin()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </div>
+      <!-- Tab Navigation Link items -->
+      <nav class="tab-nav" id="dashboardTabs" style="display: none;">
+        <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')"><i class="fas fa-city"></i> Panchayath & Wards</button>
+        <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Transportation</button>
+        <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate Directory</button>
+      </nav>
     </div>
   </header>
 
@@ -238,7 +291,7 @@
       <!-- Stats Dashboard -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
           <div>
             <div class="stat-val" id="totalCount">0</div>
             <div class="stat-label">Total Delegates</div>
@@ -246,7 +299,23 @@
         </div>
         
         <div class="stat-card">
-          <div class="stat-icon cyan-icon"><i class="fas fa-mobile-alt"></i></div>
+          <div class="stat-icon"><i class="fas fa-chalkboard text-magenta"></i></div>
+          <div>
+            <div class="stat-val" id="class11Count">0</div>
+            <div class="stat-label">11th Class</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon cyan-icon"><i class="fas fa-graduation-cap"></i></div>
+          <div>
+            <div class="stat-val" id="class12Count">0</div>
+            <div class="stat-label">12th Class</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon cyan-icon"><i class="fas fa-check-double"></i></div>
           <div>
             <div class="stat-val" id="todayCount">0</div>
             <div class="stat-label">Added Today</div>
@@ -254,236 +323,679 @@
         </div>
       </div>
 
-      <!-- Registration Table -->
-      <div class="table-container">
-        <div class="table-header-row">
-          <h3 style="font-family: var(--font-heading); font-size: 1.4rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
-          
-          <div style="display: flex; gap: 1rem; flex-grow: 1; justify-content: flex-end; flex-wrap: wrap;">
-            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search Name or Phone Number...">
-            <button class="btn btn-cyan" onclick="exportToCSV()"><i class="fas fa-file-excel"></i> Export to Excel/CSV</button>
-            <button class="btn btn-outline" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+      <!-- LOADING PANEL -->
+      <div class="loading-spinner" id="loadingSpinner" style="display:none; background:#FFF; border:1px solid rgba(15,23,42,0.08); border-radius:20px; padding:4rem;">
+        <i class="fas fa-spinner fa-spin fa-3x" style="color:var(--magenta); margin-bottom: 1rem;"></i>
+        <div>Fetching database records from Google Sheets...</div>
+      </div>
+
+      <!-- ================= SECTION 1: OVERVIEW DASHBOARD ================= -->
+      <div id="tab-overview" class="dashboard-section active">
+        <!-- Zone Progress Card -->
+        <div class="table-container" id="zoneOverviewCard">
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bullseye text-magenta"></i> Zone-Wise Registration Target Progress</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Zone Name</th>
+                  <th>Registered</th>
+                  <th>Target</th>
+                  <th>Completion Progress</th>
+                </tr>
+              </thead>
+              <tbody id="zoneTargetBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <div style="overflow-x: auto;">
-          <div class="loading-spinner" id="loadingSpinner">
-            <i class="fas fa-spinner fa-spin fa-2x" style="color:var(--magenta); margin-bottom: 0.5rem;"></i>
-            <div>Loading registrations from Google Sheets...</div>
+        <!-- Unit Breakdown Card -->
+        <div class="table-container">
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-building text-cyan"></i> Unit-Wise Counts</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Unit Name</th>
+                  <th>Zone</th>
+                  <th>Registered Delegates</th>
+                </tr>
+              </thead>
+              <tbody id="unitStatsBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
           </div>
-          
-          <table class="data-table" id="dataTable" style="display: none;">
-            <thead>
-              <tr>
-                <th>Reg ID</th>
-                <th>Name</th>
-                <th>Mobile Number</th>
-                <th>Registered On</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
         </div>
       </div>
 
-      <!-- Zone Wise Data (Infrastructure Placeholder) -->
-      <div class="table-container">
-        <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 1.5rem;">
-          <i class="fas fa-map-marked-alt text-cyan"></i> Zone-Wise Delegate Breakdown
-        </h3>
-        
-        <div style="overflow-x: auto;">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Zone Name</th>
-                <th>Villages / Areas Included</th>
-                <th>Count of Delegates</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Thrissur North</strong></td>
-                <td>Kunnamkulam, Wadakkanchery, Chelakkara</td>
-                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Thrissur Central</strong></td>
-                <td>Poothole, Town Hall, Ollur, Cherpu</td>
-                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
-              </tr>
-              <tr>
-                <td><strong>Thrissur South</strong></td>
-                <td>Irinjalakuda, Chalakudy, Kodungallur</td>
-                <td><span class="badge-reg" style="background:rgba(230,0,103,0.08); color:var(--magenta);">Placeholder (Zone Data Upload Coming Soon)</span></td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
+      <div id="tab-panchayath" class="dashboard-section">
+        <div class="table-container">
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-city text-magenta"></i> Panchayath & Ward Directory</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Panchayath / Municipality</th>
+                  <th>Ward</th>
+                  <th>Registered Count</th>
+                </tr>
+              </thead>
+              <tbody id="panchayathStatsBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION 3: TRANSPORTATION ================= -->
+      <div id="tab-transport" class="dashboard-section">
+        <div class="table-container">
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bus text-cyan"></i> Vehicles and Seats Capacity Tracker</h3>
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Vehicle ID</th>
+                  <th>Vehicle Name</th>
+                  <th>Zone / Unit</th>
+                  <th>Seats Filled</th>
+                  <th>Total Seating Capacity</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody id="transportStatsBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION 4: DELEGATE DIRECTORY ================= -->
+      <div id="tab-directory" class="dashboard-section">
+        <div class="table-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.25rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-cyan btn-sm" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export to CSV</button>
+              <button class="btn btn-outline btn-sm" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+          </div>
+
+          <!-- Advanced Filters Grid -->
+          <div class="filter-grid">
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Class</label>
+              <select id="filterClass" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
+                <option value="">All Classes</option>
+                <option value="11th">11th</option>
+                <option value="12th">12th</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Zone</label>
+              <select id="filterZone" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
+                <option value="">All Zones</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Unit</label>
+              <select id="filterUnit" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
+                <option value="">All Units</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Panchayath</label>
+              <select id="filterPanchayath" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
+                <option value="">All Panchayaths</option>
+              </select>
+            </div>
+            <div style="flex-grow:1.5;">
+              <label class="form-label" style="font-size:0.8rem;">Search Bar</label>
+              <input type="text" id="searchInput" class="search-input" style="max-width:100%; padding:0.5rem; font-size:0.85rem;" placeholder="Search Name, Phone..." oninput="applyFilters()">
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Reg ID</th>
+                  <th>Name</th>
+                  <th>Class</th>
+                  <th>Mobile Number</th>
+                  <th>Parent Mobile</th>
+                  <th>Panchayath / Ward</th>
+                  <th>Zone / Unit</th>
+                  <th>Assigned Vehicle</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="directoryBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
     </div>
   </main>
 
-  <!-- Script references -->
-  <script src="js/registration.js?v=1.3"></script>
-  <script>
-    // Configuration
-    const ADMIN_PASSWORD = "teenspace2026"; // Default password
-    let allData = [];
+  <!-- TRANSPORT ASSIGN MODAL -->
+  <div class="modal-overlay" id="assignModal">
+    <div class="modal-content" style="max-width: 450px; padding: 2rem;">
+      <button class="modal-close" onclick="closeAssignModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;"><i class="fas fa-bus text-magenta"></i> Assign Vehicle</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Select an available vehicle to allocate for this delegate.</p>
 
-    // Session-based authentication check
-    if (sessionStorage.getItem('admin_authenticated') === 'true') {
-      document.getElementById('loginOverlay').style.display = 'none';
-      loadData();
+      <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.05); padding:1rem; border-radius:10px; margin-bottom:1.5rem;">
+        <div style="font-size:0.8rem; color:var(--text-dim);">DELEGATE NAME</div>
+        <div style="font-weight:700;" id="assignStudentName">Loading...</div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-top:0.5rem;">ZONE / UNIT</div>
+        <div style="font-weight:700; font-size:0.9rem;"><span id="assignStudentZone"></span> / <span id="assignStudentUnit"></span></div>
+      </div>
+
+      <form id="assignForm">
+        <input type="hidden" id="assignRegId">
+        <div class="form-group">
+          <label class="form-label" for="assignVehicleSelect">Select Vehicle</label>
+          <select id="assignVehicleSelect" class="form-select" required>
+            <!-- Dynamically populated options -->
+          </select>
+        </div>
+        
+        <button type="submit" id="assignSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
+          <i class="fas fa-check"></i> Save Vehicle Assignment
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/registration.js?v=1.4"></script>
+  <script>
+    let sessionUser = null;
+    let registrations = [];
+    let mapping = [];
+    let targets = [];
+    let vehicles = [];
+
+    // Session authentication check
+    if (sessionStorage.getItem('auth_user')) {
+      sessionUser = JSON.parse(sessionStorage.getItem('auth_user'));
+      initDashboard();
     }
 
     // Login Form Submit
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
-      const enteredPassword = document.getElementById('adminPassword').value;
+      const u = document.getElementById('adminUser').value.trim();
+      const p = document.getElementById('adminPassword').value;
       const errorMsg = document.getElementById('loginError');
-      
-      if (enteredPassword === ADMIN_PASSWORD) {
-        sessionStorage.setItem('admin_authenticated', 'true');
-        document.getElementById('loginOverlay').style.display = 'none';
-        errorMsg.style.display = 'none';
-        loadData();
-      } else {
-        errorMsg.style.display = 'block';
-        document.getElementById('adminPassword').value = '';
-        document.getElementById('adminPassword').focus();
+      const submitBtn = document.getElementById('loginSubmitBtn');
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+
+      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+        alert("Google Sheets Web App URL is not set in js/registration.js.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        return;
       }
+
+      fetch(`${GOOGLE_SCRIPT_URL}?action=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}`)
+        .then(response => response.json())
+        .then(res => {
+          if (res.result === "success") {
+            sessionUser = { username: u, role: res.role, target: res.target };
+            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+            initDashboard();
+          } else {
+            errorMsg.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          errorMsg.textContent = "Error connecting to server. Try again.";
+          errorMsg.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        });
     });
 
     // Logout
     function logoutAdmin() {
-      sessionStorage.removeItem('admin_authenticated');
+      sessionStorage.removeItem('auth_user');
       location.reload();
     }
 
-    // Load Data from Google Sheets Script Endpoint
-    function loadData() {
-      const spinner = document.getElementById('loadingSpinner');
-      const table = document.getElementById('dataTable');
-      const tableBody = document.getElementById('tableBody');
+    // Initialize Dashboard after Auth
+    function initDashboard() {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('dashboardTabs').style.display = 'flex';
+      document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
+      document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
 
-      spinner.style.display = 'block';
-      table.style.display = 'none';
-      tableBody.innerHTML = '';
-
-      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-        spinner.innerHTML = `<i class="fas fa-exclamation-circle fa-2x" style="color:orange;"></i><br><br>Google Web App URL is not set in <strong>js/registration.js</strong>.`;
-        return;
+      // Hide Panchayath link if role is Unit
+      if (sessionUser.role === 'Unit') {
+        document.getElementById('tabPanchayathLink').style.display = 'none';
       }
 
-      // Append action=get_data parameter to retrieve the data
-      fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`)
-        .then(response => response.json())
-        .then(data => {
-          allData = data;
-          populateDashboard(data);
+      loadData();
+    }
+
+    // Switch Dashboard Tabs
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+      document.querySelectorAll('.dashboard-section').forEach(sec => sec.classList.remove('active'));
+      
+      const activeLink = document.querySelector(`.tab-link[onclick="switchTab('${tabId}')"]`);
+      if (activeLink) activeLink.classList.add('active');
+      
+      const activeSec = document.getElementById(tabId);
+      if (activeSec) activeSec.classList.add('active');
+    }
+
+    // Load Data
+    function loadData() {
+      const spinner = document.getElementById('loadingSpinner');
+      spinner.style.display = 'block';
+
+      // 1. Fetch Mapping & Targets & Vehicles
+      fetch(`${GOOGLE_SCRIPT_URL}?action=get_mapping`)
+        .then(res => res.json())
+        .then(mapData => {
+          mapping = mapData.mapping || [];
+          targets = mapData.targets || [];
+          vehicles = mapData.vehicles || [];
+
+          // Populate Filters
+          populateFilterOptions();
+
+          // 2. Fetch Registrations
+          return fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`);
+        })
+        .then(res => res.json())
+        .then(regs => {
+          registrations = regs;
+          spinner.style.display = 'none';
+          renderDashboard();
         })
         .catch(err => {
           console.error(err);
-          spinner.innerHTML = `<i class="fas fa-times-circle fa-2x" style="color:red;"></i><br><br>Error connecting to Google Sheets. Verify Web App is deployed with Access: 'Anyone'.`;
+          spinner.innerHTML = `<i class="fas fa-exclamation-triangle fa-2x" style="color:red;"></i><br><br>Error loading dashboard. Please verify Google Sheet connections.`;
         });
     }
 
-    // Populate Data into Dashboard
-    function populateDashboard(data) {
-      const spinner = document.getElementById('loadingSpinner');
-      const table = document.getElementById('dataTable');
-      const tableBody = document.getElementById('tableBody');
-      const totalCount = document.getElementById('totalCount');
-      const todayCount = document.getElementById('todayCount');
+    // Render Stats and Tables
+    function renderDashboard() {
+      // 1. Apply Role Data Isolation
+      let filteredRegs = registrations;
+      if (sessionUser.role === 'Zone') {
+        filteredRegs = registrations.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+      } else if (sessionUser.role === 'Unit') {
+        filteredRegs = registrations.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+      }
 
-      totalCount.textContent = data.length;
-
-      // Count registrations from today
+      // 2. Header counters
+      document.getElementById('totalCount').textContent = filteredRegs.length;
+      document.getElementById('class11Count').textContent = filteredRegs.filter(r => r.Class === '11th').length;
+      document.getElementById('class12Count').textContent = filteredRegs.filter(r => r.Class === '12th').length;
+      
       const todayStr = new Date().toDateString();
-      const todayRegistrations = data.filter(row => {
-        if (!row.Timestamp) return false;
-        return new Date(row.Timestamp).toDateString() === todayStr;
+      document.getElementById('todayCount').textContent = filteredRegs.filter(r => {
+        if (!r.Timestamp) return false;
+        return new Date(r.Timestamp).toDateString() === todayStr;
       }).length;
-      todayCount.textContent = todayRegistrations;
 
-      // Populate Table Rows
-      data.forEach(item => {
-        const row = document.createElement('tr');
-        
-        // Format Timestamp
-        let dateStr = "N/A";
-        if (item.Timestamp) {
-          dateStr = new Date(item.Timestamp).toLocaleDateString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        }
+      // 3. Render Zone Target Progress
+      renderZoneTargets(filteredRegs);
 
-        row.innerHTML = `
-          <td><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
-          <td><strong>${item.Name || item.name || 'N/A'}</strong></td>
-          <td>${item["Mobile Number"] || item.phone || 'N/A'}</td>
-          <td>${dateStr}</td>
-        `;
-        tableBody.appendChild(row);
-      });
+      // 4. Render Unit Counts
+      renderUnitCounts(filteredRegs);
 
-      spinner.style.display = 'none';
-      table.style.display = 'table';
+      // 5. Render Panchayath & Wards Breakdown
+      if (sessionUser.role !== 'Unit') {
+        renderPanchayathBreakdown(filteredRegs);
+      }
+
+      // 6. Render Transportation Vehicles
+      renderTransportation(filteredRegs);
+
+      // 7. Render Registrations directory
+      renderDirectory(filteredRegs);
     }
 
-    // Search Filtering
-    document.getElementById('searchInput').addEventListener('input', (e) => {
-      const searchStr = e.target.value.toLowerCase();
-      const rows = document.querySelectorAll('#tableBody tr');
+    // Render Zone Targets & Progress Bars
+    function renderZoneTargets(filteredRegs) {
+      const tbody = document.getElementById('zoneTargetBody');
+      tbody.innerHTML = '';
 
-      rows.forEach(row => {
-        const name = row.cells[1].textContent.toLowerCase();
-        const phone = row.cells[2].textContent.toLowerCase();
+      // Find unique zones in mapping
+      let activeZones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean);
+      if (sessionUser.role === 'Zone') activeZones = [sessionUser.target];
+
+      activeZones.forEach(zone => {
+        const actualCount = registrations.filter(r => (r["Organization Zone"] || r.zone) === zone).length;
         
-        if (name.includes(searchStr) || phone.includes(searchStr)) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
+        // Find target
+        const targetObj = targets.find(t => t.Zone === zone);
+        const targetVal = targetObj ? parseInt(targetObj.Target) : 100; // default target fallback
+
+        const percentage = Math.min(Math.round((actualCount / targetVal) * 100), 100);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${zone}</strong></td>
+          <td><strong>${actualCount}</strong></td>
+          <td>${targetVal}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <div class="progress-track" style="flex-grow:1;">
+                <div class="progress-fill" style="width: ${percentage}%;"></div>
+              </div>
+              <span style="font-weight:700; min-width:45px; text-align:right;">${percentage}%</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
       });
+    }
+
+    // Render Unit list counts
+    function renderUnitCounts(filteredRegs) {
+      const tbody = document.getElementById('unitStatsBody');
+      tbody.innerHTML = '';
+
+      let activeUnits = [...new Set(mapping.map(m => m.Unit))].filter(Boolean);
+      if (sessionUser.role === 'Zone') {
+        activeUnits = [...new Set(mapping.filter(m => m.Zone === sessionUser.target).map(m => m.Unit))];
+      } else if (sessionUser.role === 'Unit') {
+        activeUnits = [sessionUser.target];
+      }
+
+      activeUnits.forEach(unit => {
+        const actualCount = registrations.filter(r => (r["Organization Unit"] || r.unit) === unit).length;
+        
+        // Find matching zone
+        const match = mapping.find(m => m.Unit === unit);
+        const zone = match ? match.Zone : 'N/A';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${unit}</strong></td>
+          <td>${zone}</td>
+          <td><span class="badge-reg">${actualCount} delegates</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Panchayath & Ward Counts
+    function renderPanchayathBreakdown(filteredRegs) {
+      const tbody = document.getElementById('panchayathStatsBody');
+      tbody.innerHTML = '';
+
+      // Group actual registrations by Panchayath and Ward
+      const breakdown = {};
+      filteredRegs.forEach(r => {
+        const p = r.Panchayath || 'N/A';
+        const w = r.Ward || 'N/A';
+        const key = `${p}::${w}`;
+        breakdown[key] = (breakdown[key] || 0) + 1;
+      });
+
+      // Populate Table Rows
+      Object.keys(breakdown).sort().forEach(key => {
+        const [p, w] = key.split('::');
+        const count = breakdown[key];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${p}</strong></td>
+          <td>${w}</td>
+          <td><span class="badge-reg">${count}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Transportation Dashboard list
+    function renderTransportation(filteredRegs) {
+      const tbody = document.getElementById('transportStatsBody');
+      tbody.innerHTML = '';
+
+      // Filter vehicles based on logged in role
+      let activeVehicles = vehicles;
+      if (sessionUser.role === 'Zone') {
+        activeVehicles = vehicles.filter(v => v.Zone === sessionUser.target);
+      } else if (sessionUser.role === 'Unit') {
+        activeVehicles = vehicles.filter(v => v.Unit === sessionUser.target);
+      }
+
+      activeVehicles.forEach(vehicle => {
+        // Count how many registrations have been assigned this vehicle ID or name
+        const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length;
+        const capacity = parseInt(vehicle.Capacity) || 50;
+        const percentage = Math.min(Math.round((filled / capacity) * 100), 100);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><span class="badge-reg badge-vehicle">${vehicle["Vehicle ID"]}</span></td>
+          <td><strong>${vehicle["Vehicle Name"]}</strong></td>
+          <td>${vehicle.Zone} ${vehicle.Unit ? '/ ' + vehicle.Unit : ''}</td>
+          <td><strong>${filled}</strong></td>
+          <td>${capacity} seats</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:0.5rem; min-width:120px;">
+              <div class="progress-track" style="flex-grow:1; height:6px;">
+                <div class="progress-fill" style="width: ${percentage}%; background:${percentage >= 100 ? 'red' : 'green'};"></div>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700;">${percentage}%</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render registrations directory list
+    function renderDirectory(filteredRegs) {
+      const tbody = document.getElementById('directoryBody');
+      tbody.innerHTML = '';
+
+      filteredRegs.forEach(item => {
+        const vehicleAssigned = item["Assigned Vehicle"] || '';
+        const vehicleBadge = vehicleAssigned 
+          ? `<span class="badge-reg badge-vehicle"><i class="fas fa-bus"></i> ${vehicleAssigned}</span>` 
+          : `<span class="badge-reg badge-unassigned">Not Assigned</span>`;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
+          <td><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
+          <td>${item.Class || 'N/A'}</td>
+          <td>${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
+          <td>${item["Parent Mobile Number"] || 'N/A'}</td>
+          <td>${item.Panchayath || 'N/A'} / ${item.Ward || 'N/A'}</td>
+          <td>${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
+          <td>${vehicleBadge}</td>
+          <td>
+            <button class="btn btn-outline" style="padding:0.4rem 0.8rem; font-size:0.75rem;" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+              <i class="fas fa-bus"></i> Assign
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Populate advanced search/filters options
+    function populateFilterOptions() {
+      const zoneSelect = document.getElementById('filterZone');
+      const unitSelect = document.getElementById('filterUnit');
+      const pSelect = document.getElementById('filterPanchayath');
+
+      // Unique Values
+      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
+      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
+      const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
+
+      // Clear
+      zoneSelect.innerHTML = '<option value="">All Zones</option>';
+      unitSelect.innerHTML = '<option value="">All Units</option>';
+      pSelect.innerHTML = '<option value="">All Panchayaths</option>';
+
+      zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
+      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
+      panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
+    }
+
+    // Apply Advanced Filters Client-side
+    function applyFilters() {
+      const searchStr = document.getElementById('searchInput').value.toLowerCase();
+      const classVal = document.getElementById('filterClass').value;
+      const zoneVal = document.getElementById('filterZone').value;
+      const unitVal = document.getElementById('filterUnit').value;
+      const pVal = document.getElementById('filterPanchayath').value;
+
+      // Filter local registrations list array
+      let filtered = registrations;
+      
+      // Role level isolation
+      if (sessionUser.role === 'Zone') {
+        filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+      } else if (sessionUser.role === 'Unit') {
+        filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+      }
+
+      // Filter inputs
+      if (classVal) filtered = filtered.filter(r => r.Class === classVal);
+      if (zoneVal) filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
+      if (unitVal) filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
+      if (pVal) filtered = filtered.filter(r => r.Panchayath === pVal);
+
+      if (searchStr) {
+        filtered = filtered.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          return name.includes(searchStr) || phone.includes(searchStr);
+        });
+      }
+
+      renderDirectory(filtered);
+    }
+
+    // Open Assign Vehicle Modal
+    function openAssignModal(regId, name, zone, unit) {
+      const modal = document.getElementById('assignModal');
+      const select = document.getElementById('assignVehicleSelect');
+
+      document.getElementById('assignRegId').value = regId;
+      document.getElementById('assignStudentName').textContent = name;
+      document.getElementById('assignStudentZone').textContent = zone;
+      document.getElementById('assignStudentUnit').textContent = unit;
+
+      // Filter vehicles belonging to the student's Zone & Unit
+      // Only list vehicles that still have available seats capacity
+      select.innerHTML = '<option value="">Choose Vehicle</option>';
+      const matchVehicles = vehicles.filter(v => v.Zone === zone && (!v.Unit || v.Unit === unit));
+
+      if (matchVehicles.length === 0) {
+        select.innerHTML = '<option value="">No vehicles found for this Zone/Unit</option>';
+      } else {
+        matchVehicles.forEach(vehicle => {
+          const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length;
+          const capacity = parseInt(vehicle.Capacity) || 50;
+          const available = capacity - filled;
+
+          const opt = document.createElement('option');
+          opt.value = vehicle["Vehicle ID"];
+          opt.textContent = `${vehicle["Vehicle Name"]} (${available} seats left)`;
+          if (available <= 0) {
+            opt.disabled = true;
+          }
+          select.appendChild(opt);
+        });
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeAssignModal() {
+      document.getElementById('assignModal').classList.remove('active');
+    }
+
+    // Assign Form Submit
+    document.getElementById('assignForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const regId = document.getElementById('assignRegId').value;
+      const vehicleId = document.getElementById('assignVehicleSelect').value;
+      const submitBtn = document.getElementById('assignSubmitBtn');
+
+      if (!vehicleId) {
+        alert('Please choose a vehicle.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+
+      fetch(`${GOOGLE_SCRIPT_URL}?action=assign_vehicle&regId=${regId}&vehicleId=${vehicleId}`)
+        .then(res => res.json())
+        .then(res => {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
+          closeAssignModal();
+          loadData(); // reload
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Error updating assignment. Try again.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
+        });
     });
 
-    // Export to Excel / CSV File
+    // Export to CSV
     function exportToCSV() {
-      if (allData.length === 0) {
+      let filtered = registrations;
+      if (sessionUser.role === 'Zone') {
+        filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+      } else if (sessionUser.role === 'Unit') {
+        filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+      }
+
+      if (filtered.length === 0) {
         alert('No data available to export.');
         return;
       }
 
       let csvContent = "data:text/csv;charset=utf-8,";
-      
-      // Headers
-      const headers = Object.keys(allData[0]);
+      const headers = Object.keys(filtered[0]);
       csvContent += headers.join(",") + "\n";
 
-      // Rows
-      allData.forEach(row => {
+      filtered.forEach(row => {
         const values = headers.map(header => {
           let val = row[header] ? row[header].toString() : '';
-          // Escape quotes in values
           return `"${val.replace(/"/g, '""')}"`;
         });
         csvContent += values.join(",") + "\n";
       });
 
-      // Download trigger
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `TEENSPACE_2026_Registrations_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute("download", `TEENSPACE_2026_Delegates_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
