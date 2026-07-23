@@ -98,6 +98,7 @@
   /* Iframe heights optimized for mobile aspect ratios */
   iframe[src*="instagram.com/reel"], 
   iframe[src*="youtube.com/embed"],
+  .feature-card div[style*="height: 400px"],
   .feature-card div[style*="height: 480px"] {
     height: 320px !important;
   }
