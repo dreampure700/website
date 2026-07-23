@@ -24,6 +24,155 @@ function closeRegisterModal() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Auto-inject modal markup if the current page container is empty (e.g. highlights, schedule, media subpages)
+  const modalContainer = document.getElementById('regModal');
+  if (modalContainer && (modalContainer.innerHTML.trim() === '' || modalContainer.innerHTML.includes('Form code will load here dynamically'))) {
+    modalContainer.innerHTML = `
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeRegisterModal()"><i class="fas fa-times"></i></button>
+
+      <!-- REGISTRATION FORM -->
+      <form id="registrationForm">
+        <div style="text-align:center; margin-bottom: 1.5rem;">
+          <span class="section-tag"><i class="fas fa-user-plus"></i> Online Registration</span>
+          <h2 style="font-family:var(--font-heading); font-size:1.8rem;">TEENSPACE 2026 Pass</h2>
+          <p style="color:var(--text-muted); font-size:0.9rem;">For Boys Studying in Classes 10, 11 & 12</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="studentName"><i class="fas fa-user text-magenta"></i> Student Name *</label>
+          <input type="text" id="studentName" class="form-input" placeholder="Enter student's full name" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="studentPhone"><i class="fas fa-phone text-cyan"></i> Student Mobile Number *</label>
+            <input type="tel" id="studentPhone" class="form-input" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="parentPhone"><i class="fas fa-phone-square text-magenta"></i> Parent Mobile Number *</label>
+            <input type="tel" id="parentPhone" class="form-input" placeholder="10-digit parent mobile number" required pattern="[0-9]{10}">
+            <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+              <input type="checkbox" id="sameAsStudent" style="cursor: pointer;">
+              <label for="sameAsStudent" style="cursor: pointer; user-select: none;">Same as Student Mobile Number</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="studentClass"><i class="fas fa-graduation-cap text-cyan"></i> Class *</label>
+            <select id="studentClass" class="form-select" required>
+              <option value="">Select Class</option>
+              <option value="11th">11th</option>
+              <option value="12th">12th</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentSchool"><i class="fas fa-school text-magenta"></i> School / Higher Secondary *</label>
+            <input type="text" id="studentSchool" class="form-input" placeholder="Start typing school name (Optional)..." list="schoolList">
+            <datalist id="schoolList">
+              <option value="Model Boys HSS Thrissur"></option>
+              <option value="Govt Model HSS Calicut"></option>
+              <option value="St. Thomas College HSS Thrissur"></option>
+              <option value="CMS HSS Thrissur"></option>
+            </datalist>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="studentPlace"><i class="fas fa-map-marker-alt text-cyan"></i> Place *</label>
+          <input type="text" id="studentPlace" class="form-input" placeholder="Enter place / area name" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="studentPanchayath"><i class="fas fa-city text-magenta"></i> Panchayath / Municipality *</label>
+            <select id="studentPanchayath" class="form-select" required>
+              <option value="">Loading Panchayaths...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="studentWard"><i class="fas fa-map-signs text-cyan"></i> Ward *</label>
+            <select id="studentWard" class="form-select" required disabled>
+              <option value="">Select Panchayath first</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.9rem;">
+          <i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass
+        </button>
+      </form>
+
+      <!-- DIGITAL TICKET VIEW (Hidden by default) -->
+      <div id="ticketPassView" style="display: none;">
+        <div style="text-align: center; margin-bottom: 1rem;">
+          <div style="width: 50px; height: 50px; background: rgba(37,211,102,0.15); border:1px solid #25D366; color:#25D366; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 0.5rem auto; font-size:1.5rem;">
+            <i class="fas fa-check"></i>
+          </div>
+          <h3 style="font-family:var(--font-heading); color: var(--text-main);">Registration Confirmed!</h3>
+          <p style="color:var(--text-muted); font-size:0.85rem;">Your official delegate entry pass has been generated.</p>
+        </div>
+
+        <!-- WhatsApp Updates Group Call-to-action Banner -->
+        <div style="background: rgba(37, 211, 102, 0.08); border: 1px dashed #25D366; border-radius: 16px; padding: 1.25rem; margin-bottom: 1.5rem; text-align: center;">
+          <div style="font-weight: 800; color: #128C7E; font-size: 1rem; margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+            <i class="fab fa-whatsapp" style="font-size: 1.2rem;"></i> JOIN WHATSAPP UPDATES GROUP
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem; line-height: 1.45;">
+            <strong>Important!</strong> Transportation updates, route timings, vehicle coordinators, and announcements will be shared exclusively through this group.
+          </p>
+          <a href="https://chat.whatsapp.com/IVt78jCmz9y4l2tUG1C3gq" target="_blank" class="btn btn-primary" style="background:#25D366; border-color:#25D366; padding:0.55rem 1.2rem; font-size:0.85rem; border-radius:8px; display:inline-flex; align-items:center; gap:0.4rem; font-weight:700; width:auto; margin:0; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
+            <i class="fab fa-whatsapp"></i> Join Updates Group
+          </a>
+        </div>
+
+        <div class="ticket-card" id="ticketPassCard">
+          <div class="ticket-header">
+            <div class="ticket-logo" style="display:flex; align-items:center; justify-content:center; gap:0.6rem;">
+              <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img" style="height:42px;">
+              <span>t<span style="color:var(--magenta)">e</span><span style="color:var(--cyan)">e</span>nspace 2026</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">OCTOBER 18, 2026 | DREAM PALACE, PAROOR</div>
+          </div>
+
+          <canvas id="passQrCanvas" width="100" height="100" class="ticket-qr"></canvas>
+
+          <div class="ticket-grid" style="grid-template-columns: 1fr;">
+            <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 0.5rem; margin-bottom: 0.5rem;">
+              <div class="ticket-field-label">Delegate Name</div>
+              <div class="ticket-field-val" id="passName" style="font-size: 1.25rem;">Student Name</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="ticket-field-label">Registration ID</div>
+                <div class="ticket-field-val" id="passRegId" style="color:var(--cyan); font-size: 1.1rem;">TS26-00000</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="ticket-field-label">Mobile Number</div>
+                <div class="ticket-field-val" id="passPhone" style="font-size: 1.1rem;">9656677700</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-size:0.75rem; color:var(--text-dim); border-top:1px solid var(--border-light); padding-top:0.8rem;">
+            Organized by Wisdom Students Thrissur District Committee
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.8rem; margin-top:1.5rem; justify-content:center;">
+          <button class="btn btn-outline" onclick="printTicketPass()"><i class="fas fa-print"></i> Print / Save Pass</button>
+          <button class="btn btn-primary" onclick="resetRegForm(); closeRegisterModal();">Done</button>
+        </div>
+      </div>
+    </div>
+    `;
+  }
+
   const regForm = document.getElementById('registrationForm');
   const ticketView = document.getElementById('ticketPassView');
   const submitBtn = regForm ? regForm.querySelector('button[type="submit"]') : null;
