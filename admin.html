@@ -1875,8 +1875,17 @@
       if (!tbody) return;
       
       tbody.innerHTML = '';
-      if (mapping.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No mapping entries found.</td></tr>';
+
+      // Filter master mapping based on role
+      let activeMapping = mapping;
+      if (sessionUser.role === 'Zone') {
+        activeMapping = mapping.filter(m => m.Zone === sessionUser.target);
+      } else if (sessionUser.role === 'Unit') {
+        activeMapping = mapping.filter(m => m.Unit === sessionUser.target);
+      }
+
+      if (activeMapping.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No mapping entries found for your zone/unit.</td></tr>';
         return;
       }
 
