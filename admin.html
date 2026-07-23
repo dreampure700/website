@@ -1155,19 +1155,58 @@
       const unitSelect = document.getElementById('filterUnit');
       const pSelect = document.getElementById('filterPanchayath');
 
-      // Unique Values
-      const zones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean).sort();
-      const units = [...new Set(mapping.map(m => m.Unit))].filter(Boolean).sort();
+      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
 
-      // Clear
       zoneSelect.innerHTML = '<option value="">All Zones</option>';
       unitSelect.innerHTML = '<option value="">All Units</option>';
       pSelect.innerHTML = '<option value="">All Panchayaths</option>';
 
       zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
-      units.forEach(u => unitSelect.appendChild(new Option(u, u)));
       panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
+
+      function updateFilterUnits() {
+        const zoneVal = zoneSelect.value;
+        unitSelect.innerHTML = '<option value="">All Units</option>';
+        if (!zoneVal) {
+          const allUnits = [...new Set(Object.values(ORGANIZATIONAL_MAP).flat())].sort();
+          allUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+          return;
+        }
+        const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+      }
+
+      zoneSelect.onchange = () => {
+        updateFilterUnits();
+        applyFilters();
+      };
+
+      if (sessionUser.role === 'Zone') {
+        zoneSelect.value = sessionUser.target;
+        zoneSelect.disabled = true;
+        updateFilterUnits();
+      } 
+      else if (sessionUser.role === 'Unit') {
+        let userZone = '';
+        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+          if (uList.includes(sessionUser.target)) {
+            userZone = z;
+            break;
+          }
+        }
+        zoneSelect.value = userZone;
+        zoneSelect.disabled = true;
+        updateFilterUnits();
+
+        unitSelect.value = sessionUser.target;
+        unitSelect.disabled = true;
+      } 
+      else {
+        zoneSelect.disabled = false;
+        unitSelect.disabled = false;
+        updateFilterUnits();
+      }
     }
 
     // Apply Advanced Filters Client-side
