@@ -1,5 +1,9 @@
 /* TEENSPACE 2026 - RESPONSIVE STYLES */
 
+.mobile-only {
+  display: none !important;
+}
+
 @media (max-width: 1024px) {
   .hero-grid {
     grid-template-columns: 1fr;
@@ -17,6 +21,10 @@
 }
 
 @media (max-width: 768px) {
+  .mobile-only {
+    display: block !important;
+  }
+
   .nav-links {
     position: fixed;
     top: 70px;
@@ -85,5 +93,12 @@
 
   .ticket-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Iframe heights optimized for mobile aspect ratios */
+  iframe[src*="instagram.com/reel"], 
+  iframe[src*="youtube.com/embed"],
+  .feature-card div[style*="height: 480px"] {
+    height: 320px !important;
   }
 }

@@ -24,17 +24,23 @@
         <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace</span>
       </a>
 
-      <ul class="nav-links">
+      <ul class="nav-links" id="navLinks">
         <li><a href="index.html" class="nav-link">Home</a></li>
         <li><a href="highlights.html" class="nav-link">Highlights</a></li>
         <li><a href="schedule.html" class="nav-link active">Schedule</a></li>
         <li><a href="media.html" class="nav-link">Media</a></li>
+        <li class="mobile-only"><a href="admin.html" class="nav-link"><i class="fas fa-lock text-cyan"></i> Admin Login</a></li>
+        <li class="mobile-only"><a href="#" onclick="openRegisterModal(); return false;" class="nav-link" style="color:var(--magenta); font-weight:700;"><i class="fas fa-edit"></i> Register Now</a></li>
       </ul>
 
       <div class="nav-actions">
         <a href="admin.html" class="btn btn-outline" style="border-color: var(--border-light); margin-right: 0.5rem; display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 1rem;"><i class="fas fa-lock text-cyan" style="margin-right: 0.4rem;"></i> Admin</a>
         <button class="btn btn-primary" onclick="openRegisterModal()"><i class="fas fa-edit"></i> Register</button>
       </div>
+
+      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
+        <i class="fas fa-bars"></i>
+      </button>
     </div>
   </header>
 
