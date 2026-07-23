@@ -103,7 +103,7 @@ function showInstallBanner() {
   
   banner.innerHTML = `
     <div style="display:flex; align-items:center; gap:0.75rem; text-align:left;">
-      <img src="assets/images/teenspace_logo.png" alt="Teenspace App" style="width:36px; height:36px; border-radius:8px;">
+      <img src="assets/images/teenspace_pwa_logo.png" alt="Teenspace App" style="width:36px; height:36px; border-radius:8px;">
       <div>
         <div style="font-weight:700; font-size:0.9rem;">Install TEENSPACE App</div>
         <div style="font-size:0.75rem; color:#94A3B8;">Add to home screen for fast access</div>
