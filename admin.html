@@ -609,7 +609,24 @@
     </div>
   </div>
 
-  <!-- VEHICLE CRUD MODAL -->
+  <!-- TRAVEL TICKET GENERATOR MODAL -->
+  <div class="modal-overlay" id="travelTicketModal">
+    <div class="modal-content" style="max-width: 650px; padding: 2rem; text-align: center; border-radius: 20px;">
+      <button class="modal-close" onclick="closeTravelTicketModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;"><i class="fas fa-ticket-alt text-magenta"></i> Digital Travel Pass</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Download this ticket pass as an image or share it to the delegate via WhatsApp.</p>
+
+      <div style="margin-bottom: 1.5rem; overflow: auto; display: flex; justify-content: center;">
+        <canvas id="travelTicketCanvas" width="600" height="360" style="max-width:100%; height:auto; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.1);"></canvas>
+      </div>
+
+      <div style="display:flex; gap:1rem; justify-content:center; flex-wrap: wrap;">
+        <button id="downloadTicketBtn" class="btn btn-outline" style="height: 42px; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fas fa-download"></i> Download Ticket Image</button>
+        <button id="shareWhatsAppTicketBtn" class="btn btn-primary" style="background:#25D366; border-color:#25D366; height: 42px; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fab fa-whatsapp"></i> Share on WhatsApp</button>
+      </div>
+    </div>
+  </div>
   <div class="modal-overlay" id="vehicleModal">
     <div class="modal-content" style="max-width: 480px; padding: 2rem;">
       <button class="modal-close" onclick="closeVehicleModal()"><i class="fas fa-times"></i></button>
@@ -1188,6 +1205,10 @@
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
               <i class="fas fa-bus"></i> Assign
             </button>
+            ${vehicleAssigned ? `
+            <button class="btn btn-primary" style="padding:0.3rem 0.5rem; font-size:0.75rem; background:#10B981; border-color:#10B981; margin-left:0.25rem;" onclick="openTravelTicketModal('${item["Registration ID"] || item.regId}')">
+              <i class="fas fa-ticket-alt"></i> Ticket
+            </button>` : ''}
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-left:0.25rem;" onclick="openStudentEditModal('${item["Registration ID"] || item.regId}')">
               <i class="fas fa-edit"></i> Edit
             </button>
@@ -1353,6 +1374,262 @@
 
     function closeAssignModal() {
       document.getElementById('assignModal').classList.remove('active');
+    }
+
+    function drawTeenspaceLogo(ctx, x, y, scale) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Pink bubble (left)
+      ctx.fillStyle = '#E60067';
+      ctx.beginPath();
+      // Use roundRect if supported, or standard rect fallback
+      if (ctx.roundRect) {
+        ctx.roundRect(0, 0, 40, 50, 8);
+      } else {
+        ctx.rect(0, 0, 40, 50);
+      }
+      ctx.fill();
+      // Pointer
+      ctx.beginPath();
+      ctx.moveTo(5, 50);
+      ctx.lineTo(0, 60);
+      ctx.lineTo(15, 50);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Inside cutout curve
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(30, 25, 12, 0.5 * Math.PI, Math.PI);
+      ctx.stroke();
+
+      // Cyan bubble (right)
+      ctx.fillStyle = '#00A8E8';
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(48, 0, 40, 50, 8);
+      } else {
+        ctx.rect(48, 0, 40, 50);
+      }
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(53, 50);
+      ctx.lineTo(48, 60);
+      ctx.lineTo(63, 50);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inside cutout curve
+      ctx.beginPath();
+      ctx.arc(78, 25, 12, 0.5 * Math.PI, Math.PI);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function openTravelTicketModal(regId) {
+      const student = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      const vehicleVal = student["Assigned Vehicle"] || student.assignedVehicle || '';
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleVal) || { "Vehicle ID": vehicleVal, "Vehicle Name": "Special Bus" };
+
+      const modal = document.getElementById('travelTicketModal');
+      const canvas = document.getElementById('travelTicketCanvas');
+      const ctx = canvas.getContext('2d');
+
+      // Clear
+      ctx.clearRect(0, 0, 600, 360);
+
+      // 1. Draw Background Gradient
+      const grad = ctx.createLinearGradient(0, 0, 600, 360);
+      grad.addColorStop(0, '#0F172A'); // Slate 900
+      grad.addColorStop(0.5, '#1E1B4B'); // Indigo 950
+      grad.addColorStop(1, '#0F172A');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 600, 360);
+
+      // Glow effect overlay
+      ctx.fillStyle = 'rgba(230, 0, 103, 0.1)';
+      ctx.beginPath();
+      ctx.arc(100, 50, 150, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(0, 168, 232, 0.08)';
+      ctx.beginPath();
+      ctx.arc(500, 300, 180, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Border frame
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(10, 10, 580, 340);
+
+      // Ticket Stub Semi-circular Cuts
+      ctx.fillStyle = '#0F172A'; // same as page background color to look like a cutout
+      ctx.beginPath();
+      ctx.arc(430, 0, 16, 0, Math.PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(430, 360, 16, Math.PI, 0);
+      ctx.fill();
+
+      // Ticket Stub Dashed Separator Line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath();
+      ctx.moveTo(430, 16);
+      ctx.lineTo(430, 344);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset line dash
+
+      // 2. Draw Vector Logo
+      drawTeenspaceLogo(ctx, 30, 30, 0.5);
+
+      // 3. Draw Branding Header Text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 18px "Outfit", "Inter", sans-serif';
+      ctx.fillText('teenspace', 85, 45);
+      
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '700 10px "Inter", sans-serif';
+      ctx.fillText('STUDENT SUMMIT 2026', 85, 60);
+
+      // Label travel ticket
+      ctx.fillStyle = '#E60067'; // Magenta
+      ctx.font = '800 12px "Inter", sans-serif';
+      ctx.fillText('OFFICIAL TRAVEL PASS', 30, 110);
+
+      // 4. Draw Delegate Details
+      // Name
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 24px "Outfit", "Inter", sans-serif';
+      const displayName = (student["Student Name"] || student.name || 'N/A').toUpperCase();
+      ctx.fillText(displayName.length > 22 ? displayName.substring(0, 22) + '...' : displayName, 30, 145);
+
+      // Reg ID
+      ctx.fillStyle = '#00A8E8'; // Cyan
+      ctx.font = '700 14px "Inter", sans-serif';
+      ctx.fillText(`DELEGATE ID: ${student["Registration ID"] || student.regId || 'N/A'}`, 30, 170);
+
+      // Horizontal separator line
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(30, 195);
+      ctx.lineTo(400, 195);
+      ctx.stroke();
+
+      // Info Labels
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 10px "Inter", sans-serif';
+      ctx.fillText('PANCHAYATH / WARD', 30, 220);
+      ctx.fillText('PLACE / AREA', 220, 220);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 13px "Inter", sans-serif';
+      const panch = student.Panchayath || 'N/A';
+      const ward = student.Ward ? `(Ward ${student.Ward})` : '';
+      ctx.fillText(`${panch} ${ward}`, 30, 240);
+      ctx.fillText(student.Place || 'N/A', 220, 240);
+
+      // Event Details
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '700 10px "Inter", sans-serif';
+      ctx.fillText('VENUE & DATE', 30, 280);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.font = '700 12px "Inter", sans-serif';
+      ctx.fillText('Dream Palace, Paroor | Sunday, October 18, 2026', 30, 300);
+
+      // 5. Draw Ticket Stub Details (Right Side)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.font = '800 10px "Inter", sans-serif';
+      ctx.fillText('VEHICLE CODE', 455, 60);
+
+      // Neon highlight box for Vehicle Code
+      ctx.fillStyle = '#10B981'; // green background
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(455, 75, 115, 50, 8);
+      } else {
+        ctx.rect(455, 75, 115, 50);
+      }
+      ctx.fill();
+
+      // Vehicle code text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 24px "Outfit", "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(vehicle["Vehicle ID"] || 'N/A', 512, 110);
+      ctx.textAlign = 'left'; // reset
+
+      // Vehicle Name details
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '700 10px "Inter", sans-serif';
+      ctx.fillText('ASSIGNED BUS', 455, 160);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '700 13px "Inter", sans-serif';
+      const vName = vehicle["Vehicle Name"] || 'Special Bus';
+      ctx.fillText(vName.length > 18 ? vName.substring(0, 18) + '...' : vName, 455, 180);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '700 10px "Inter", sans-serif';
+      ctx.fillText('ORG ZONE', 455, 215);
+
+      ctx.fillStyle = '#00A8E8'; // Cyan
+      ctx.font = '700 12px "Inter", sans-serif';
+      ctx.fillText(student["Organization Zone"] || student.zone || 'N/A', 455, 235);
+
+      // Stub Bottom watermark
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.font = '800 28px "Outfit", sans-serif';
+      ctx.fillText('T26', 455, 320);
+
+      modal.classList.add('active');
+
+      // Bind Download Image Event
+      document.getElementById('downloadTicketBtn').onclick = () => {
+        const link = document.createElement('a');
+        link.download = `TEENSPACE_TravelTicket_${student["Registration ID"] || student.regId}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+
+      // Bind WhatsApp Share Event
+      document.getElementById('shareWhatsAppTicketBtn').onclick = () => {
+        const phone = student["Student Mobile Number"] || student.phone || '';
+        const rawName = student["Student Name"] || student.name || 'Delegate';
+        const regIdVal = student["Registration ID"] || student.regId || '';
+        const vCode = vehicle["Vehicle ID"] || 'N/A';
+        const vBus = vehicle["Vehicle Name"] || 'Special Bus';
+        const zoneVal = student["Organization Zone"] || student.zone || '';
+        const unitVal = student["Organization Unit"] || student.unit || '';
+
+        const text = `*TEENSPACE 2026 - OFFICIAL TRAVEL PASS*%0A%0A` +
+          `Dear *${rawName}*,%0A` +
+          `Your vehicle assignment for the summit is confirmed!%0A%0A` +
+          `*Registration ID:* ${regIdVal}%0A` +
+          `*Assigned Bus ID:* *${vCode}*%0A` +
+          `*Vehicle Name:* ${vBus}%0A` +
+          `*Organizational Zone:* ${zoneVal}%0A` +
+          `*Organizational Unit:* ${unitVal}%0A%0A` +
+          `Please download your digital travel ticket pass card inside the website to show the coordinator at boarding.%0A%0A` +
+          `*Wisdom Students Thrissur District Committee*`;
+        
+        const waUrl = `https://wa.me/91${phone}?text=${text}`;
+        window.open(waUrl, '_blank');
+      };
+    }
+
+    function closeTravelTicketModal() {
+      document.getElementById('travelTicketModal').classList.remove('active');
     }
 
     // Assign Form Submit
