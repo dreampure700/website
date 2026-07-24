@@ -724,9 +724,17 @@
             </select>
           </div>
 
-          <div class="form-group">
+           <div class="form-group">
             <label class="form-label" for="studentUnitInput">Unit *</label>
             <select id="studentUnitInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="studentVehicleInput">Assigned Vehicle (Optional)</label>
+            <select id="studentVehicleInput" class="form-select">
+              <option value="">No Vehicle Assigned</option>
               <!-- Populated dynamically -->
             </select>
           </div>
@@ -1297,22 +1305,42 @@
       document.getElementById('assignStudentZone').textContent = zone;
       document.getElementById('assignStudentUnit').textContent = unit;
 
-      // Filter vehicles belonging to the student's Zone & Unit
-      // Only list vehicles that still have available seats capacity
       select.innerHTML = '<option value="">Choose Vehicle</option>';
-      const matchVehicles = vehicles.filter(v => v.Zone === zone && (!v.Unit || v.Unit === unit));
+
+      // Filter vehicles based on logged-in admin's role
+      let matchVehicles = [];
+      if (sessionUser.role === 'District') {
+        // District Admin: can assign student to ANY vehicle added
+        matchVehicles = vehicles;
+      } else if (sessionUser.role === 'Zone') {
+        // Zone Admin: can see/assign to every vehicle added in their Zone (and its units)
+        const targetZone = (sessionUser.target || '').trim().toLowerCase();
+        matchVehicles = vehicles.filter(v => (v.Zone || '').trim().toLowerCase() === targetZone);
+      } else if (sessionUser.role === 'Unit') {
+        // Unit Admin: can see/assign to vehicles added in their Unit only
+        const targetUnit = (sessionUser.target || '').trim().toLowerCase();
+        matchVehicles = vehicles.filter(v => (v.Unit || '').trim().toLowerCase() === targetUnit);
+      } else {
+        // Fallback (for any other roles): show vehicles in the student's zone/unit
+        matchVehicles = vehicles.filter(v => 
+          (v.Zone || '').trim().toLowerCase() === (zone || '').trim().toLowerCase() && 
+          ((!v.Unit || v.Unit === '') || (v.Unit || '').trim().toLowerCase() === (unit || '').trim().toLowerCase())
+        );
+      }
 
       if (matchVehicles.length === 0) {
-        select.innerHTML = '<option value="">No vehicles found for this Zone/Unit</option>';
+        select.innerHTML = '<option value="">No vehicles found for your access level</option>';
       } else {
         matchVehicles.forEach(vehicle => {
-          const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length;
+          const filled = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicle["Vehicle ID"]).length;
           const capacity = parseInt(vehicle.Capacity) || 50;
           const available = capacity - filled;
 
           const opt = document.createElement('option');
           opt.value = vehicle["Vehicle ID"];
-          opt.textContent = `${vehicle["Vehicle Name"]} (${available} seats left)`;
+          // Format text to show vehicle details and unit if applicable
+          const unitStr = vehicle.Unit ? ` - Unit: ${vehicle.Unit}` : '';
+          opt.textContent = `${vehicle["Vehicle ID"]} (${vehicle["Vehicle Name"]}${unitStr}) [${available}/${capacity} seats left]`;
           if (available <= 0) {
             opt.disabled = true;
           }
@@ -1631,6 +1659,7 @@
       document.getElementById('studentRegIdInput').value = randomId;
 
       populateStudentDropdowns();
+      populateStudentVehicleDropdown();
       modal.classList.add('active');
     }
 
@@ -1651,6 +1680,7 @@
       document.getElementById('studentPlaceInput').value = student.Place || '';
 
       populateStudentDropdowns();
+      populateStudentVehicleDropdown();
 
       document.getElementById('studentPanchayathInput').value = student.Panchayath || '';
       // Trigger ward load
@@ -1659,6 +1689,7 @@
 
       document.getElementById('studentZoneInput').value = student["Organization Zone"] || student.zone || '';
       document.getElementById('studentUnitInput').value = student["Organization Unit"] || student.unit || '';
+      document.getElementById('studentVehicleInput').value = student["Assigned Vehicle"] || student.assignedVehicle || '';
 
       modal.classList.add('active');
     }
@@ -1736,6 +1767,40 @@
       wards.forEach(w => wardSelect.appendChild(new Option(w, w)));
     }
 
+    function populateStudentVehicleDropdown() {
+      const select = document.getElementById('studentVehicleInput');
+      if (!select) return;
+      select.innerHTML = '<option value="">No Vehicle Assigned</option>';
+
+      let matchVehicles = [];
+      if (sessionUser.role === 'District') {
+        // District Admin: can assign to ANY vehicle added
+        matchVehicles = vehicles;
+      } else if (sessionUser.role === 'Zone') {
+        // Zone Admin: can see/assign to every vehicle added in their Zone (and its units)
+        const targetZone = (sessionUser.target || '').trim().toLowerCase();
+        matchVehicles = vehicles.filter(v => (v.Zone || '').trim().toLowerCase() === targetZone);
+      } else if (sessionUser.role === 'Unit') {
+        // Unit Admin: can see/assign to vehicles added in their Unit only
+        const targetUnit = (sessionUser.target || '').trim().toLowerCase();
+        matchVehicles = vehicles.filter(v => (v.Unit || '').trim().toLowerCase() === targetUnit);
+      } else {
+        matchVehicles = vehicles;
+      }
+
+      matchVehicles.forEach(vehicle => {
+        const filled = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicle["Vehicle ID"]).length;
+        const capacity = parseInt(vehicle.Capacity) || 50;
+        const available = capacity - filled;
+
+        const opt = document.createElement('option');
+        opt.value = vehicle["Vehicle ID"];
+        const unitStr = vehicle.Unit ? ` - Unit: ${vehicle.Unit}` : '';
+        opt.textContent = `${vehicle["Vehicle ID"]} (${vehicle["Vehicle Name"]}${unitStr}) [${available}/${capacity} seats left]`;
+        select.appendChild(opt);
+      });
+    }
+
     // Student Form Submit
     document.getElementById('studentForm').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1753,6 +1818,7 @@
       // Extract values even if disabled
       const zone = document.getElementById('studentZoneInput').value;
       const unit = document.getElementById('studentUnitInput').value;
+      const assignedVehicle = document.getElementById('studentVehicleInput').value;
 
       const submitBtn = document.getElementById('studentSubmitBtn');
       submitBtn.disabled = true;
@@ -1770,7 +1836,8 @@
         `&panchayath=${encodeURIComponent(panchayath)}` +
         `&ward=${encodeURIComponent(ward)}` +
         `&zone=${encodeURIComponent(zone)}` +
-        `&unit=${encodeURIComponent(unit)}`;
+        `&unit=${encodeURIComponent(unit)}` +
+        `&assignedVehicle=${encodeURIComponent(assignedVehicle)}`;
 
       fetch(url)
         .then(res => res.json())
