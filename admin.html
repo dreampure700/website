@@ -627,6 +627,50 @@
       </div>
     </div>
   </div>
+  <!-- VEHICLE PASSENGER LIST MODAL -->
+  <div class="modal-overlay" id="passengerListModal">
+    <div class="modal-content" style="max-width: 700px; padding: 2rem; border-radius: 20px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="closePassengerListModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;"><i class="fas fa-users text-cyan"></i> Vehicle Passenger List</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;" id="passengerModalSubtitle">Loading assigned passengers...</p>
+
+      <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.05); padding:1rem; border-radius:10px; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-dim);">VEHICLE ID & NAME</div>
+          <div style="font-weight:700;" id="passengerVehicleName">Loading...</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem; color:var(--text-dim);">SEAT CAPACITY</div>
+          <div style="font-weight:700;" id="passengerSeatRatio">0 / 50 seats</div>
+        </div>
+      </div>
+
+      <div style="overflow-x: auto; margin-bottom: 1.5rem;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
+              <th style="padding: 0.75rem 0.5rem;">REG ID</th>
+              <th style="padding: 0.75rem 0.5rem;">NAME</th>
+              <th style="padding: 0.75rem 0.5rem;">CLASS</th>
+              <th style="padding: 0.75rem 0.5rem;">MOBILE</th>
+              <th style="padding: 0.75rem 0.5rem;">ZONE / UNIT</th>
+              <th style="padding: 0.75rem 0.5rem; text-align: right;">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="passengerTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex; gap:1rem; justify-content:flex-end;">
+        <button id="shareWhatsAppPassengerListBtn" class="btn btn-primary" style="background:#25D366; border-color:#25D366; height: 40px; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fab fa-whatsapp"></i> Share List on WhatsApp</button>
+        <button class="btn btn-outline" style="height: 40px;" onclick="closePassengerListModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="vehicleModal">
     <div class="modal-content" style="max-width: 480px; padding: 2rem;">
       <button class="modal-close" onclick="closeVehicleModal()"><i class="fas fa-times"></i></button>
@@ -1172,7 +1216,8 @@
             </div>
           </td>
           <td>
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openVehicleEditModal('${vehicle["Vehicle ID"]}')"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:#E60067; border-color:rgba(230,0,103,0.15);" onclick="openPassengerListModal('${vehicle["Vehicle ID"]}')"><i class="fas fa-users"></i> Passengers</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-left:0.25rem;" onclick="openVehicleEditModal('${vehicle["Vehicle ID"]}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteVehicle('${vehicle["Vehicle ID"]}')"><i class="fas fa-trash-alt"></i> Delete</button>
           </td>
         `;
@@ -1630,6 +1675,115 @@
 
     function closeTravelTicketModal() {
       document.getElementById('travelTicketModal').classList.remove('active');
+    }
+
+    function openPassengerListModal(vehicleId) {
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      if (!vehicle) return;
+
+      const modal = document.getElementById('passengerListModal');
+      document.getElementById('passengerVehicleName').textContent = `${vehicle["Vehicle ID"]} - ${vehicle["Vehicle Name"]}`;
+      
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const capacity = parseInt(vehicle.Capacity) || 50;
+      
+      document.getElementById('passengerSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
+      document.getElementById('passengerModalSubtitle').textContent = `Manage passengers for this bus route.`;
+
+      const tbody = document.getElementById('passengerTableBody');
+      tbody.innerHTML = '';
+
+      if (passengers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">
+              <i class="fas fa-bus" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:rgba(0,0,0,0.1);"></i>
+              No students assigned to this vehicle yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        passengers.forEach(item => {
+          const row = document.createElement('tr');
+          row.style.borderBottom = '1px solid var(--border-light)';
+          row.innerHTML = `
+            <td style="padding:0.75rem 0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
+            <td style="padding:0.75rem 0.5rem;"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
+            <td style="padding:0.75rem 0.5rem;">${item.Class || 'N/A'}</td>
+            <td style="padding:0.75rem 0.5rem;">${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
+            <td style="padding:0.75rem 0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
+            <td style="padding:0.75rem 0.5rem; text-align:right;">
+              <button class="btn btn-outline" style="padding:0.2rem 0.4rem; font-size:0.7rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')">
+                <i class="fas fa-user-minus"></i> Remove
+              </button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      // Bind WhatsApp Share Event for Passenger List
+      document.getElementById('shareWhatsAppPassengerListBtn').onclick = () => {
+        let text = `*PASSENGER LIST - ${vehicle["Vehicle ID"]}*%0A` +
+          `*Vehicle:* ${vehicle["Vehicle Name"]}%0A` +
+          `*Zone/Unit:* ${vehicle.Zone} ${vehicle.Unit ? '/ ' + vehicle.Unit : ''}%0A` +
+          `*Filled:* ${passengers.length} / ${capacity} seats%0A%0A`;
+        
+        passengers.forEach((item, index) => {
+          const rawName = item["Student Name"] || item.name || 'N/A';
+          const regIdVal = item["Registration ID"] || item.regId || 'N/A';
+          const p = item["Student Mobile Number"] || item.phone || 'N/A';
+          const u = item["Organization Unit"] || item.unit || 'N/A';
+          text += `${index + 1}. *${rawName}* (${regIdVal}) - ${p} [${u}]%0A`;
+        });
+
+        text += `%0A*Wisdom Students Thrissur District Committee*`;
+        const waUrl = `https://wa.me/?text=${text}`;
+        window.open(waUrl, '_blank');
+      };
+
+      modal.classList.add('active');
+    }
+
+    function closePassengerListModal() {
+      document.getElementById('passengerListModal').classList.remove('active');
+    }
+
+    function unassignPassenger(regId, vehicleId) {
+      if (!confirm(`Are you sure you want to remove this delegate from vehicle ${vehicleId}?`)) return;
+
+      const btn = event.target.closest('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      }
+
+      fetch(`${GOOGLE_SCRIPT_URL}?action=assign_vehicle&regId=${regId}&vehicleId=`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result === 'success') {
+            alert('Passenger removed from vehicle successfully!');
+            loadData();
+            // Re-open/update the passenger list modal dynamically after data load
+            setTimeout(() => {
+              openPassengerListModal(vehicleId);
+            }, 1000);
+          } else {
+            alert('Error removing passenger: ' + res.message);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '<i class="fas fa-user-minus"></i> Remove';
+            }
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error. Try again.');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-minus"></i> Remove';
+          }
+        });
     }
 
     // Assign Form Submit
