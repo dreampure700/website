@@ -1236,13 +1236,32 @@
           ? `<span class="badge-reg badge-vehicle"><i class="fas fa-bus"></i> ${vehicleAssigned}</span>` 
           : `<span class="badge-reg badge-unassigned">Not Assigned</span>`;
 
+        const studentPhone = item["Student Mobile Number"] || item.phone || '';
+        const parentPhone = item["Parent Mobile Number"] || '';
+
+        const studentPhoneHtml = studentPhone 
+          ? `<div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:nowrap;">
+              <span>${studentPhone}</span>
+              <a href="tel:${studentPhone}" title="Call Student" style="color:#2563EB; font-size:0.8rem; margin-left:0.25rem;"><i class="fas fa-phone-alt"></i></a>
+              <a href="https://wa.me/91${studentPhone}" target="_blank" title="WhatsApp Student" style="color:#22C55E; font-size:0.95rem; margin-left:0.15rem;"><i class="fab fa-whatsapp"></i></a>
+             </div>`
+          : 'N/A';
+
+        const parentPhoneHtml = parentPhone 
+          ? `<div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:nowrap;">
+              <span>${parentPhone}</span>
+              <a href="tel:${parentPhone}" title="Call Parent" style="color:#2563EB; font-size:0.8rem; margin-left:0.25rem;"><i class="fas fa-phone-alt"></i></a>
+              <a href="https://wa.me/91${parentPhone}" target="_blank" title="WhatsApp Parent" style="color:#22C55E; font-size:0.95rem; margin-left:0.15rem;"><i class="fab fa-whatsapp"></i></a>
+             </div>`
+          : 'N/A';
+
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
           <td><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
           <td>${item.Class || 'N/A'}</td>
-          <td>${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
-          <td>${item["Parent Mobile Number"] || 'N/A'}</td>
+          <td>${studentPhoneHtml}</td>
+          <td>${parentPhoneHtml}</td>
           <td>${item.Panchayath || 'N/A'} / ${item.Ward || 'N/A'}</td>
           <td>${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
           <td>${vehicleBadge}</td>
