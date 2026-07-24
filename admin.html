@@ -518,10 +518,14 @@
       <!-- Tab 5: Media Manager -->
       <div id="tab-media" class="dashboard-section" style="display: none;">
         <div class="card" style="padding: 2rem;">
-          <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
+          <h2 id="mediaFormTitle" style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
             <i class="fas fa-photo-video text-magenta"></i> Add Media Update
           </h2>
           <form id="addMediaForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <input type="hidden" id="mediaMode" value="add">
+            <input type="hidden" id="mediaOrigTitle" value="">
+            <input type="hidden" id="mediaOrigUrl" value="">
+
             <div class="form-group">
               <label class="form-label" for="mediaType">Media Type</label>
               <select id="mediaType" class="form-select" required>
@@ -547,9 +551,14 @@
               <textarea id="mediaDesc" class="form-input" style="height: 80px; resize: none;" placeholder="Provide brief context for the gallery item..."></textarea>
             </div>
 
-            <button type="submit" id="mediaSubmitBtn" class="btn btn-primary" style="grid-column: 1 / -1; padding: 0.9rem;">
-              <i class="fas fa-upload"></i> Publish Media Update
-            </button>
+            <div style="grid-column: 1 / -1; display: flex; gap: 1rem;">
+              <button type="submit" id="mediaSubmitBtn" class="btn btn-primary" style="flex-grow: 1; padding: 0.9rem;">
+                <i class="fas fa-upload"></i> Publish Media Update
+              </button>
+              <button type="button" id="mediaCancelBtn" class="btn btn-outline" style="display: none; padding: 0.9rem;" onclick="cancelMediaEdit()">
+                Cancel Edit
+              </button>
+            </div>
           </form>
         </div>
 
@@ -1894,6 +1903,7 @@
           <td><a href="${item.URL || '#'}" target="_blank" style="color:var(--cyan); max-width:200px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.URL || ''}</a></td>
           <td style="font-size:0.85rem; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.Description || ''}</td>
           <td>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-right:0.25rem;" onclick="startMediaEdit('${item.Title.replace(/'/g, "\\'")}', '${item.URL.replace(/'/g, "\\'")}', '${item.Type}', '${item.Description.replace(/'/g, "\\'")}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="deleteMedia('${item.Title.replace(/'/g, "\\'")}', '${item.URL.replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Delete</button>
           </td>
         `;
@@ -1910,6 +1920,10 @@
         return;
       }
 
+      const mode = document.getElementById('mediaMode').value;
+      const origTitle = document.getElementById('mediaOrigTitle').value;
+      const origUrl = document.getElementById('mediaOrigUrl').value;
+
       const type = document.getElementById('mediaType').value;
       const title = document.getElementById('mediaTitle').value.trim();
       const url = document.getElementById('mediaUrl').value.trim();
@@ -1917,31 +1931,70 @@
       const submitBtn = document.getElementById('mediaSubmitBtn');
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+      submitBtn.innerHTML = mode === 'add' 
+        ? '<i class="fas fa-spinner fa-spin"></i> Publishing...' 
+        : '<i class="fas fa-spinner fa-spin"></i> Updating...';
 
-      const postUrl = `${GOOGLE_SCRIPT_URL}?action=add_media&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&desc=${encodeURIComponent(desc)}`;
+      let postUrl = `${GOOGLE_SCRIPT_URL}?action=add_media&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&desc=${encodeURIComponent(desc)}`;
+      if (mode === 'edit') {
+        postUrl = `${GOOGLE_SCRIPT_URL}?action=edit_media&origTitle=${encodeURIComponent(origTitle)}&origUrl=${encodeURIComponent(origUrl)}&type=${encodeURIComponent(type)}&title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&desc=${encodeURIComponent(desc)}`;
+      }
 
       fetch(postUrl)
         .then(res => res.json())
         .then(res => {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-upload"></i> Publish Media Update';
+          submitBtn.innerHTML = mode === 'add' 
+            ? '<i class="fas fa-upload"></i> Publish Media Update' 
+            : '<i class="fas fa-check"></i> Update Media Details';
           
           if (res.result === 'success') {
-            alert('Media published successfully!');
-            document.getElementById('addMediaForm').reset();
+            alert(mode === 'add' ? 'Media published successfully!' : 'Media details updated successfully!');
+            cancelMediaEdit(); // Reset form and mode back to Add
             loadData(); // reload media list
           } else {
-            alert('Error publishing media: ' + res.message);
+            alert('Error saving media: ' + res.message);
           }
         })
         .catch(err => {
           console.error(err);
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-upload"></i> Publish Media Update';
-          alert('Network error when publishing media. Try again.');
+          submitBtn.innerHTML = mode === 'add' 
+            ? '<i class="fas fa-upload"></i> Publish Media Update' 
+            : '<i class="fas fa-check"></i> Update Media Details';
+          alert('Network error. Try again.');
         });
     });
+
+    function startMediaEdit(title, url, type, desc) {
+      document.getElementById('mediaMode').value = 'edit';
+      document.getElementById('mediaOrigTitle').value = title;
+      document.getElementById('mediaOrigUrl').value = url;
+
+      document.getElementById('mediaType').value = type;
+      document.getElementById('mediaTitle').value = title;
+      document.getElementById('mediaUrl').value = url;
+      document.getElementById('mediaDesc').value = desc || '';
+
+      document.getElementById('mediaFormTitle').innerHTML = '<i class="fas fa-edit text-magenta"></i> Edit Media Update';
+      document.getElementById('mediaSubmitBtn').innerHTML = '<i class="fas fa-check"></i> Update Media Details';
+      document.getElementById('mediaCancelBtn').style.display = 'block';
+
+      // Scroll form into view
+      document.getElementById('mediaFormTitle').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelMediaEdit() {
+      document.getElementById('mediaMode').value = 'add';
+      document.getElementById('mediaOrigTitle').value = '';
+      document.getElementById('mediaOrigUrl').value = '';
+      
+      document.getElementById('addMediaForm').reset();
+
+      document.getElementById('mediaFormTitle').innerHTML = '<i class="fas fa-photo-video text-magenta"></i> Add Media Update';
+      document.getElementById('mediaSubmitBtn').innerHTML = '<i class="fas fa-upload"></i> Publish Media Update';
+      document.getElementById('mediaCancelBtn').style.display = 'none';
+    }
 
     // ========================================================
     // VEHICLE CRUD AND MANAGEMENT LOGIC
