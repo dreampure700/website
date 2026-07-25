@@ -1829,37 +1829,22 @@
           `*Organizational Unit:* ${unitVal}\n\n` +
           `Please download your digital travel ticket pass card inside the website to show the coordinator at boarding.`;
 
-        // Convert canvas to Blob for file sharing
+        // Convert canvas to Blob for clipboard copying and direct link routing
         canvas.toBlob((blob) => {
           if (!blob) {
             alert('Error generating ticket image blob.');
             return;
           }
 
-          const file = new File([blob], `TEENSPACE_Pass_${regIdVal}.png`, { type: 'image/png' });
-
-          // Helper to trigger standard WhatsApp text chat link
+          // Trigger direct WhatsApp text chat link to bypass contact search/selection
           const triggerWhatsAppText = () => {
             const formattedText = encodeURIComponent(text);
             const waUrl = `https://wa.me/91${phone}?text=${formattedText}`;
             window.open(waUrl, '_blank');
           };
 
-          // Web Share API (Mobile Devices supporting file sharing)
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({
-              files: [file],
-              title: 'Teenspace 2026 Travel Pass',
-              text: text
-            })
-            .catch(err => {
-              console.error("Web Share failed, falling back:", err);
-              copyToClipboardAndOpenWhatsApp(blob, triggerWhatsAppText);
-            });
-          } else {
-            // Clipboard Fallback (Desktop/unsupported browsers)
-            copyToClipboardAndOpenWhatsApp(blob, triggerWhatsAppText);
-          }
+          // Always copy the image blob to clipboard first, then redirect directly to the specific student's chat
+          copyToClipboardAndOpenWhatsApp(blob, triggerWhatsAppText);
         }, 'image/png');
       };
 
