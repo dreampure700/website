@@ -1035,9 +1035,9 @@
       <form id="vehicleForm">
         <input type="hidden" id="vehicleMode" value="add">
         
-        <div class="form-group">
-          <label class="form-label" for="vehicleIdInput">Vehicle ID *</label>
-          <input type="text" id="vehicleIdInput" class="form-input" placeholder="e.g. BUS-05" required>
+        <div class="form-group" style="display: none;">
+          <label class="form-label" for="vehicleIdInput">Vehicle ID</label>
+          <input type="text" id="vehicleIdInput" class="form-input">
         </div>
 
         <div class="form-group">
@@ -2873,61 +2873,6 @@
       'KUNNAMKULAM': 'KNM',
       'PAVARATTY': 'PVT',
       'THRISSUR': 'TSR'
-    };
-
-    function generateNextVehicleId(zoneName) {
-      if (!zoneName) return '';
-      const prefix = ZONE_PREFIXES[zoneName.toUpperCase().trim()] || 'BUS';
-      
-      const prefixMatch = prefix + '-';
-      const numbers = vehicles
-        .map(v => v["Vehicle ID"] || '')
-        .filter(id => id.startsWith(prefixMatch))
-        .map(id => {
-          const parts = id.split('-');
-          const num = parseInt(parts[1]);
-          return isNaN(num) ? 0 : num;
-        })
-        .filter(n => n > 0);
-
-      const sortedNums = [...new Set(numbers)].sort((a,b) => a - b);
-      let nextNum = 1;
-      for (let i = 0; i < sortedNums.length; i++) {
-        if (sortedNums[i] === nextNum) {
-          nextNum++;
-        } else if (sortedNums[i] > nextNum) {
-          break;
-        }
-      }
-      
-      return `${prefix}-${String(nextNum).padStart(2, '0')}`;
-    }
-
-    // Trigger auto-ID generation when Zone selection changes in Vehicle Modal
-    document.getElementById('vehicleZoneInput').addEventListener('change', (e) => {
-      const mode = document.getElementById('vehicleMode').value;
-      if (mode === 'add') {
-        const nextId = generateNextVehicleId(e.target.value);
-        const idInput = document.getElementById('vehicleIdInput');
-        idInput.value = nextId;
-        idInput.disabled = true;
-      }
-    });
-
-    // Update openVehicleModal to trigger auto-generation on load
-    const origOpenVehicleModal = openVehicleModal;
-    openVehicleModal = function() {
-      origOpenVehicleModal();
-      const zoneSelect = document.getElementById('vehicleZoneInput');
-      const idInput = document.getElementById('vehicleIdInput');
-      
-      if (zoneSelect.value) {
-        idInput.value = generateNextVehicleId(zoneSelect.value);
-        idInput.disabled = true;
-      } else {
-        idInput.value = '';
-        idInput.disabled = false;
-      }
     };
 
     // ========================================================
