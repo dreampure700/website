@@ -234,8 +234,216 @@
       display: block;
     }
 
+    /* Bottom Navigation & Mobile Student Card Styles */
+    .bottom-nav {
+      display: none;
+    }
+    .student-mobile-card-list {
+      display: none;
+    }
+
     /* Mobile View Responsive Optimization */
     @media (max-width: 768px) {
+      body {
+        padding-bottom: 75px !important; /* Space for bottom nav bar */
+      }
+
+      .bottom-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background: #FFFFFF;
+        border-top: 1px solid rgba(15, 23, 42, 0.08);
+        z-index: 999;
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.05);
+        padding: 0.25rem 0;
+      }
+      
+      .bottom-nav-item {
+        background: none;
+        border: none;
+        color: #64748B;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        cursor: pointer;
+        flex: 1;
+        transition: var(--transition-fast);
+      }
+      
+      .bottom-nav-item i {
+        font-size: 1.2rem;
+      }
+      
+      .bottom-nav-item.active {
+        color: #10B981; /* Premium Green to match mockup */
+      }
+
+      /* Mobile Cards Layout */
+      #tab-directory .table-container {
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      
+      #tab-directory .table-responsive {
+        display: none !important;
+      }
+      
+      .student-mobile-card-list {
+        display: block !important;
+        margin-top: 1rem;
+      }
+      
+      .student-mobile-card {
+        background: #FFFFFF;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 20px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.02);
+      }
+      
+      .student-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-bottom: 1px dashed rgba(15, 23, 42, 0.06);
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .student-card-name-id {
+        flex-grow: 1;
+      }
+      
+      .student-name {
+        font-size: 0.95rem;
+        color: #0F172A;
+        font-weight: 700;
+      }
+      
+      .student-id {
+        font-size: 0.75rem;
+        color: #64748B;
+        margin-top: 0.15rem;
+        font-weight: 700;
+      }
+      
+      .student-card-ward {
+        flex-shrink: 0;
+      }
+      
+      .ward-circle-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #ECFDF5;
+        color: #059669;
+        font-weight: 800;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(16, 185, 129, 0.15);
+      }
+      
+      .student-card-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .detail-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        font-size: 0.82rem;
+        color: #334155;
+      }
+      
+      .detail-icon {
+        font-size: 0.9rem;
+        margin-top: 0.15rem;
+        width: 16px;
+        text-align: center;
+      }
+      
+      .phone-icon-student {
+        color: #22C55E;
+      }
+      
+      .phone-icon-parent {
+        color: #2563EB;
+      }
+      
+      .map-icon {
+        color: #EF4444;
+      }
+      
+      .bus-icon {
+        color: #E60067;
+      }
+      
+      .detail-text {
+        flex-grow: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .quick-contact-actions {
+        display: inline-flex;
+        gap: 0.4rem;
+      }
+      
+      .quick-contact-actions a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        font-size: 0.72rem;
+        transition: var(--transition-fast);
+      }
+      
+      .quick-contact-actions a[href^="tel"] {
+        background: rgba(37, 99, 235, 0.08);
+        color: #2563EB;
+      }
+      
+      .quick-contact-actions a[href*="wa.me"] {
+        background: rgba(34, 197, 94, 0.08);
+        color: #22C55E;
+      }
+      
+      .student-card-actions {
+        display: flex;
+        gap: 0.4rem;
+        margin-top: 1rem;
+        border-top: 1px solid rgba(15, 23, 42, 0.04);
+        padding-top: 0.75rem;
+        flex-wrap: wrap;
+      }
+      
+      .student-card-actions button {
+        flex: 1;
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.72rem !important;
+        white-space: nowrap;
+        min-width: 65px;
+      }
       .admin-container {
         flex-direction: column;
         align-items: stretch;
@@ -626,7 +834,7 @@
             </div>
           </div>
 
-          <div style="overflow-x: auto;">
+          <div style="overflow-x: auto;" class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
@@ -646,6 +854,9 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Mobile card view placeholder -->
+          <div class="student-mobile-card-list" id="studentMobileCardList"></div>
         </div>
       </div>
 
@@ -1090,9 +1301,11 @@
       document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
       document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
 
-      // Hide Panchayath link if role is Unit
+      // Hide Panchayath / Settings links if role is Unit
       if (sessionUser.role === 'Unit') {
         document.getElementById('tabPanchayathLink').style.display = 'none';
+        const bottomSettings = document.getElementById('bottomTabPanchayathLink');
+        if (bottomSettings) bottomSettings.style.display = 'none';
       }
 
       loadData();
@@ -1106,6 +1319,11 @@
       const activeLink = document.querySelector(`.tab-link[onclick="switchTab('${tabId}')"]`);
       if (activeLink) activeLink.classList.add('active');
       
+      // Synchronize bottom nav items active class
+      document.querySelectorAll('.bottom-nav-item').forEach(item => item.classList.remove('active'));
+      const activeBottomItem = document.querySelector(`.bottom-nav-item[onclick="switchTab('${tabId}')"]`);
+      if (activeBottomItem) activeBottomItem.classList.add('active');
+
       const activeSec = document.getElementById(tabId);
       if (activeSec) activeSec.classList.add('active');
     }
@@ -1368,10 +1586,23 @@
       });
     }
 
+    // Helper to generate a soft background circle avatar with the student's first initial
+    function getStudentAvatarHtml(name) {
+      const initial = name ? name.trim().charAt(0).toUpperCase() : 'S';
+      const colors = ['#ECFDF5', '#EEF2F6', '#FFF7ED', '#FDF2F8', '#EFF6FF', '#F5F3FF'];
+      const textColors = ['#059669', '#475569', '#EA580C', '#DB2777', '#2563EB', '#7C3AED'];
+      const charCode = initial.charCodeAt(0);
+      const index = charCode % colors.length;
+      return `<div class="student-avatar" style="background:${colors[index]}; color:${textColors[index]}; font-weight:700; width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">${initial}</div>`;
+    }
+
     // Render registrations directory list
     function renderDirectory(filteredRegs) {
       const tbody = document.getElementById('directoryBody');
+      const cardList = document.getElementById('studentMobileCardList');
+      
       tbody.innerHTML = '';
+      if (cardList) cardList.innerHTML = '';
 
       filteredRegs.forEach(item => {
         const vehicleAssigned = item["Assigned Vehicle"] || '';
@@ -1398,6 +1629,7 @@
              </div>`
           : 'N/A';
 
+        // 1. Desktop View: Append standard table row
         const row = document.createElement('tr');
         row.innerHTML = `
           <td data-label="Reg ID"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
@@ -1425,6 +1657,85 @@
           </td>
         `;
         tbody.appendChild(row);
+
+        // 2. Mobile View: Append card element matching mockup
+        if (cardList) {
+          const card = document.createElement('div');
+          card.className = 'student-mobile-card';
+          const avatarHtml = getStudentAvatarHtml(item["Student Name"] || item.name || 'Student');
+          
+          card.innerHTML = `
+            <div class="student-card-header">
+              ${avatarHtml}
+              <div class="student-card-name-id">
+                <div class="student-name">${item["Student Name"] || item.name || 'N/A'}</div>
+                <div class="student-id">ID: ${item["Registration ID"] || item.regId || 'N/A'}</div>
+              </div>
+              <div class="student-card-ward">
+                <div class="ward-circle-badge" title="Ward Number">${item.Ward || '00'}</div>
+              </div>
+            </div>
+            
+            <div class="student-card-details">
+              <div class="detail-row">
+                <i class="fas fa-phone-alt detail-icon phone-icon-student"></i>
+                <div class="detail-text">
+                  <span>Student Mobile: <strong>${studentPhone || 'N/A'}</strong></span>
+                  ${studentPhone ? `
+                    <span class="quick-contact-actions">
+                      <a href="tel:${studentPhone}" title="Call"><i class="fas fa-phone-alt"></i></a>
+                      <a href="https://wa.me/91${studentPhone}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+              
+              <div class="detail-row">
+                <i class="fas fa-phone detail-icon phone-icon-parent" style="transform: scaleX(-1);"></i>
+                <div class="detail-text">
+                  <span>Parent Mobile: <strong>${parentPhone || 'N/A'}</strong></span>
+                  ${parentPhone ? `
+                    <span class="quick-contact-actions">
+                      <a href="tel:${parentPhone}" title="Call"><i class="fas fa-phone-alt"></i></a>
+                      <a href="https://wa.me/91${parentPhone}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+              
+              <div class="detail-row">
+                <i class="fas fa-map-marker-alt detail-icon map-icon"></i>
+                <div class="detail-text">
+                  <span>Location: <strong>${item.Place || 'N/A'}, ${item.Panchayath || 'N/A'}</strong></span>
+                </div>
+              </div>
+
+              <div class="detail-row">
+                <i class="fas fa-bus detail-icon bus-icon"></i>
+                <div class="detail-text">
+                  <span>Assigned Vehicle: ${vehicleBadge}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="student-card-actions">
+              <button class="btn btn-outline" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+                <i class="fas fa-bus"></i> Assign
+              </button>
+              ${vehicleAssigned ? `
+              <button class="btn btn-primary" style="background:#10B981; border-color:#10B981;" onclick="openTravelTicketModal('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-ticket-alt"></i> Ticket
+              </button>` : ''}
+              <button class="btn btn-outline" onclick="openStudentEditModal('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn btn-outline" style="color:red; border-color:rgba(255,0,0,0.15);" onclick="deleteStudent('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-trash-alt"></i> Delete
+              </button>
+            </div>
+          `;
+          cardList.appendChild(card);
+        }
       });
     }
 
@@ -2871,5 +3182,29 @@
         });
     }
   </script>
+
+  <!-- BOTTOM NAVIGATION BAR (Mobile View Mockup Style) -->
+  <div class="bottom-nav" id="bottomNavBar">
+    <button class="bottom-nav-item active" onclick="switchTab('tab-directory')">
+      <i class="fas fa-users-cog"></i>
+      <span>Students</span>
+    </button>
+    <button class="bottom-nav-item" onclick="switchTab('tab-overview')">
+      <i class="fas fa-chart-line"></i>
+      <span>Analytics</span>
+    </button>
+    <button class="bottom-nav-item" onclick="switchTab('tab-transport')">
+      <i class="fas fa-bus"></i>
+      <span>Vehicles</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
+      <i class="fas fa-images"></i>
+      <span>Media</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
+      <i class="fas fa-cog"></i>
+      <span>Settings</span>
+    </button>
+  </div>
 </body>
 </html>

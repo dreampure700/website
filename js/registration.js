@@ -313,11 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
       }
 
-      // Save to localStorage
-      const registrationData = { regId, name, phone, timestamp: new Date().toISOString() };
-      localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(registrationData));
+      // Save temporary local copy first
+      const tempRegistrationData = { regId, name, phone, timestamp: new Date().toISOString() };
+      localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(tempRegistrationData));
 
-      // Prep pass layout details safely
+      // Prep pass layout details safely (using temp ID initially)
       const elRegId = document.getElementById('passRegId');
       const elName = document.getElementById('passName');
       const elPhone = document.getElementById('passPhone');
@@ -343,18 +343,35 @@ document.addEventListener('DOMContentLoaded', () => {
           zone: zone
         }).toString();
 
-        // Use Image beacon to bypass CORS blocks
-        const beacon = new Image();
         const backupTimeout = setTimeout(() => {
           showTicketView();
-        }, 2000);
+        }, 3000);
 
-        beacon.onload = beacon.onerror = () => {
-          clearTimeout(backupTimeout);
-          showTicketView();
-        };
+        fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`)
+          .then(res => res.json())
+          .then(res => {
+            clearTimeout(backupTimeout);
+            if (res.result === "success" && res.regId) {
+              const finalRegId = res.regId;
+              
+              // Save final official ID details in localStorage
+              const finalData = { regId: finalRegId, name, phone, timestamp: new Date().toISOString() };
+              localStorage.setItem('teenspace_reg_' + finalRegId, JSON.stringify(finalData));
+              
+              // Clean up temporary local storage record
+              localStorage.removeItem('teenspace_reg_' + regId);
 
-        beacon.src = `${GOOGLE_SCRIPT_URL}?${queryParams}`;
+              // Update the pass layout DOM with final sequential ID
+              if (elRegId) elRegId.textContent = finalRegId;
+              generatePassQR(finalRegId, name);
+            }
+            showTicketView();
+          })
+          .catch(err => {
+            console.warn('Network sync warning (falling back to temporary ID):', err);
+            clearTimeout(backupTimeout);
+            showTicketView();
+          });
       } else {
         showTicketView();
       }
