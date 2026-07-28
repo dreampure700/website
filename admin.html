@@ -677,12 +677,13 @@
       <div id="tab-overview" class="dashboard-section active">
         <!-- Zone Progress Card -->
         <div class="table-container" id="zoneOverviewCard">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bullseye text-magenta"></i> Zone-Wise Registration Target Progress</h3>
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bullseye text-magenta"></i> Zone & Unit Registration Target Progress Dashboard</h3>
           <div style="overflow-x: auto;">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Zone Name</th>
+                  <th>Zone / Unit Name</th>
+                  <th>Type</th>
                   <th>Registered</th>
                   <th>Target</th>
                   <th>Completion Progress</th>
@@ -696,24 +697,6 @@
           </div>
         </div>
 
-        <!-- Unit Breakdown Card -->
-        <div class="table-container">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-building text-cyan"></i> Unit-Wise Counts</h3>
-          <div style="overflow-x: auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Unit Name</th>
-                  <th>Zone</th>
-                  <th>Registered Delegates</th>
-                </tr>
-              </thead>
-              <tbody id="unitStatsBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
@@ -1420,11 +1403,8 @@
         return new Date(r.Timestamp).toDateString() === todayStr;
       }).length;
 
-      // 3. Render Zone Target Progress
-      renderZoneTargets(filteredRegs);
-
-      // 4. Render Unit Counts
-      renderUnitCounts(filteredRegs);
+      // 3. Render Unified Zone & Unit Targets
+      renderZoneAndUnitTargets();
 
       // 5. Render Panchayath & Wards Breakdown
       if (sessionUser.role !== 'Unit') {
@@ -1438,61 +1418,16 @@
       renderDirectory(filteredRegs);
     }
 
-    // Render Zone Targets & Progress Bars
-    function renderZoneTargets(filteredRegs) {
+    // Render Unified Zone & Unit Target Progress Report
+    function renderZoneAndUnitTargets() {
       const tbody = document.getElementById('zoneTargetBody');
+      if (!tbody) return;
       tbody.innerHTML = '';
 
-      // Find unique zones in mapping
-      let activeZones = [...new Set(mapping.map(m => m.Zone))].filter(Boolean);
-      if (sessionUser.role === 'Zone') activeZones = [sessionUser.target];
-
-      activeZones.forEach(zone => {
-        const actualCount = registrations.filter(r => (r["Organization Zone"] || r.zone) === zone).length;
-        
-        // Find target
-        const targetObj = targets.find(t => t.Zone === zone);
-        const targetVal = targetObj ? parseInt(targetObj.Target) : 100; // default target fallback
-
-        const percentage = Math.min(Math.round((actualCount / targetVal) * 100), 100);
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td data-label="Zone"><strong>${zone}</strong></td>
-          <td data-label="Actual"><strong>${actualCount}</strong></td>
-          <td data-label="Target">${targetVal}</td>
-          <td data-label="Progress">
-            <div style="display:flex; align-items:center; gap:1rem;">
-              <div class="progress-track" style="flex-grow:1;">
-                <div class="progress-fill" style="width: ${percentage}%;"></div>
-              </div>
-              <span style="font-weight:700; min-width:45px; text-align:right;">${percentage}%</span>
-            </div>
-          </td>
-          <td data-label="Actions">
-            ${sessionUser.role === 'District' 
-              ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${targetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
-              : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`
-            }
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    // Render Unit list counts
-    function renderUnitCounts(filteredRegs) {
-      const tbody = document.getElementById('unitStatsBody');
-      tbody.innerHTML = '';
-
-      let activeUnits = [...new Set(mapping.map(m => m.Unit))].filter(Boolean);
       let activeZones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
-
       if (sessionUser.role === 'Zone') {
-        activeUnits = [...new Set(mapping.filter(m => m.Zone === sessionUser.target).map(m => m.Unit))];
         activeZones = [sessionUser.target];
       } else if (sessionUser.role === 'Unit') {
-        activeUnits = [sessionUser.target];
         let userZone = '';
         for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
           if (uList.includes(sessionUser.target)) {
@@ -1503,46 +1438,109 @@
         activeZones = userZone ? [userZone] : [];
       }
 
-      activeUnits.forEach(unit => {
-        const actualCount = registrations.filter(r => {
-          const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase();
-          return u === unit.trim().toLowerCase();
+      activeZones.forEach(zone => {
+        // Calculate Zone actual count
+        const zoneActual = registrations.filter(r => {
+          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
+          return z === zone.trim().toLowerCase() || z === (zone.trim() + ' zone').toLowerCase();
         }).length;
         
-        let zone = 'N/A';
-        for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
-          if (uList.includes(unit)) {
-            zone = z;
-            break;
-          }
+        // Find Zone target
+        const zoneTargetObj = targets.find(t => t.Zone && (t.Zone.trim().toLowerCase() === zone.trim().toLowerCase() || t.Zone.trim().toLowerCase() === (zone.trim() + ' zone').toLowerCase()));
+        const zoneTargetVal = zoneTargetObj ? parseInt(zoneTargetObj.Target) : 100;
+        const zonePercentage = Math.min(Math.round((zoneActual / zoneTargetVal) * 100), 100);
+
+        // Render Zone Row
+        const zoneRow = document.createElement('tr');
+        zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)'; // light primary tint
+        zoneRow.style.borderLeft = '4px solid var(--magenta)';
+        
+        // Check if current user can edit zone target (only District Admins)
+        const canEditZone = (sessionUser.role === 'District');
+        const zoneActionHtml = canEditZone
+          ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${zoneTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
+          : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
+
+        zoneRow.innerHTML = `
+          <td data-label="Zone / Unit"><strong>Zone: ${zone}</strong></td>
+          <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
+          <td data-label="Registered"><strong>${zoneActual}</strong></td>
+          <td data-label="Target">${zoneTargetVal}</td>
+          <td data-label="Progress">
+            <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
+              <div class="progress-track" style="flex-grow:1; height:6px;">
+                <div class="progress-fill" style="width: ${zonePercentage}%;"></div>
+              </div>
+              <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${zonePercentage}%</span>
+            </div>
+          </td>
+          <td data-label="Actions">${zoneActionHtml}</td>
+        `;
+        tbody.appendChild(zoneRow);
+
+        // Loop through units under this zone
+        let units = ORGANIZATIONAL_MAP[zone] || [];
+        if (sessionUser.role === 'Unit') {
+          units = [sessionUser.target];
         }
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td data-label="Unit"><strong>${unit}</strong></td>
-          <td data-label="Zone">${zone}</td>
-          <td data-label="Registered"><span class="badge-reg">${actualCount} delegates</span></td>
-        `;
-        tbody.appendChild(row);
-      });
+        units.forEach(unit => {
+          const unitActual = registrations.filter(r => {
+            const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase();
+            return u === unit.trim().toLowerCase();
+          }).length;
 
-      // Render unassigned unit row for each active zone if there are any
-      activeZones.forEach(zone => {
-        const unassignedCount = registrations.filter(r => {
-          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
-          const u = (r["Organization Unit"] || r.unit || '').trim();
-          return z === zone.trim().toLowerCase() && (!u || u === '' || u.toLowerCase() === 'n/a');
-        }).length;
+          // Find Unit target
+          const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unit.trim().toLowerCase());
+          const unitTargetVal = unitTargetObj ? parseInt(unitTargetObj.Target) : 50; // default unit target is 50
+          const unitPercentage = Math.min(Math.round((unitActual / unitTargetVal) * 100), 100);
 
-        if (unassignedCount > 0) {
-          const row = document.createElement('tr');
-          row.style.background = 'rgba(230, 0, 103, 0.04)';
-          row.innerHTML = `
-            <td data-label="Unit"><strong style="color:var(--text-muted); font-style:italic;">[Unassigned / No Unit]</strong></td>
-            <td data-label="Zone">${zone}</td>
-            <td data-label="Registered"><span class="badge-reg" style="background:#64748B; color:white;">${unassignedCount} delegates</span></td>
+          // Check if current user can edit unit target (District OR Zone Admin of parent zone)
+          const canEditUnit = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && sessionUser.target === zone);
+          const unitActionHtml = canEditUnit
+            ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; border-color:rgba(0,168,232,0.3); color:var(--cyan);" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
+            : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
+
+          const unitRow = document.createElement('tr');
+          unitRow.innerHTML = `
+            <td data-label="Zone / Unit"><span style="padding-left: 1.5rem; color: #475569;"><i class="fas fa-chevron-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
+            <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
+            <td data-label="Registered">${unitActual}</td>
+            <td data-label="Target">${unitTargetVal}</td>
+            <td data-label="Progress">
+              <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
+                <div class="progress-track" style="flex-grow:1; height:5px; background:#E2E8F0;">
+                  <div class="progress-fill" style="width: ${unitPercentage}%; background:var(--grad-primary);"></div>
+                </div>
+                <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${unitPercentage}%</span>
+              </div>
+            </td>
+            <td data-label="Actions">${unitActionHtml}</td>
           `;
-          tbody.appendChild(row);
+          tbody.appendChild(unitRow);
+        });
+
+        // Render Unassigned Unit row for this zone
+        if (sessionUser.role !== 'Unit') {
+          const unassignedCount = registrations.filter(r => {
+            const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
+            const u = (r["Organization Unit"] || r.unit || '').trim();
+            const belongsToZone = z === zone.trim().toLowerCase() || z === (zone.trim() + ' zone').toLowerCase();
+            return belongsToZone && (!u || u === '' || u.toLowerCase() === 'n/a');
+          }).length;
+
+          if (unassignedCount > 0) {
+            const unassignedRow = document.createElement('tr');
+            unassignedRow.innerHTML = `
+              <td data-label="Zone / Unit"><span style="padding-left: 1.5rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
+              <td data-label="Type"><span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.7rem; font-weight:700;">N/A</span></td>
+              <td data-label="Registered">${unassignedCount}</td>
+              <td data-label="Target">-</td>
+              <td data-label="Progress">-</td>
+              <td data-label="Actions"><span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">N/A</span></td>
+            `;
+            tbody.appendChild(unassignedRow);
+          }
         }
       });
     }
