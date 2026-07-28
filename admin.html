@@ -767,6 +767,39 @@
             <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-bus text-cyan"></i> Vehicles and Seats Capacity Tracker</h3>
             <button class="btn btn-primary btn-sm" onclick="openVehicleModal()"><i class="fas fa-plus"></i> Add Vehicle</button>
           </div>
+
+          <!-- Vehicle Summary Cards -->
+          <div class="stats-grid" style="margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1.1rem; background: rgba(0, 168, 232, 0.08); color: var(--cyan);"><i class="fas fa-bus"></i></div>
+              <div>
+                <div class="stat-val" id="statsTotalVehicles" style="font-size: 1.4rem;">0</div>
+                <div class="stat-label" style="font-size: 0.65rem;">Total Vehicles</div>
+              </div>
+            </div>
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1.1rem; background: rgba(230, 0, 103, 0.08); color: var(--magenta);"><i class="fas fa-couch"></i></div>
+              <div>
+                <div class="stat-val" id="statsTotalCapacity" style="font-size: 1.4rem;">0</div>
+                <div class="stat-label" style="font-size: 0.65rem;">Total Capacity</div>
+              </div>
+            </div>
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1.1rem; background: rgba(34, 197, 94, 0.08); color: #22C55E;"><i class="fas fa-user-check"></i></div>
+              <div>
+                <div class="stat-val" id="statsTotalSeatsFilled" style="font-size: 1.4rem;">0</div>
+                <div class="stat-label" style="font-size: 0.65rem;">Seats Filled</div>
+              </div>
+            </div>
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="width: 40px; height: 40px; font-size: 1.1rem; background: rgba(245, 158, 11, 0.08); color: #F59E0B;"><i class="fas fa-chair"></i></div>
+              <div>
+                <div class="stat-val" id="statsAvailableSeats" style="font-size: 1.4rem;">0</div>
+                <div class="stat-label" style="font-size: 0.65rem;">Available Seats</div>
+              </div>
+            </div>
+          </div>
+
           <div style="overflow-x: auto;">
             <table class="data-table">
               <thead>
@@ -1554,6 +1587,18 @@
       } else if (sessionUser.role === 'Unit') {
         activeVehicles = vehicles.filter(v => v.Unit === sessionUser.target);
       }
+
+      // Calculate dynamic vehicle capacity stats based on filtered activeVehicles
+      const totalVehicles = activeVehicles.length;
+      const totalCapacity = activeVehicles.reduce((sum, v) => sum + (parseInt(v.Capacity) || 50), 0);
+      const totalFilled = registrations.filter(r => activeVehicles.some(v => v["Vehicle ID"] === r["Assigned Vehicle"])).length;
+      const availableSeats = totalCapacity - totalFilled;
+
+      // Update summary cards in the UI
+      document.getElementById('statsTotalVehicles').textContent = totalVehicles;
+      document.getElementById('statsTotalCapacity').textContent = totalCapacity;
+      document.getElementById('statsTotalSeatsFilled').textContent = totalFilled;
+      document.getElementById('statsAvailableSeats').textContent = availableSeats;
 
       activeVehicles.forEach(vehicle => {
         // Count how many registrations have been assigned this vehicle ID or name
