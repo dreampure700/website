@@ -237,6 +237,16 @@
       display: block;
     }
 
+    .mobile-only {
+      display: none !important;
+    }
+    .mobile-only-flex {
+      display: none !important;
+    }
+    .desktop-only {
+      display: block !important;
+    }
+
     /* Bottom Navigation & Mobile Student Card Styles */
     .bottom-nav {
       display: none;
@@ -247,6 +257,15 @@
 
     /* Mobile View Responsive Optimization */
     @media (max-width: 768px) {
+      .mobile-only {
+        display: block !important;
+      }
+      .mobile-only-flex {
+        display: flex !important;
+      }
+      .desktop-only {
+        display: none !important;
+      }
       body {
         padding-bottom: 75px !important; /* Space for bottom nav bar */
       }
@@ -685,7 +704,8 @@
         <!-- Zone Progress Card -->
         <div class="table-container" id="zoneOverviewCard">
           <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bullseye text-magenta"></i> Zone & Unit Registration Target Progress Dashboard</h3>
-          <div style="overflow-x: auto;">
+          <!-- Desktop Table (Only visible on larger screens) -->
+          <div style="overflow-x: auto;" class="desktop-only">
             <table class="data-table">
               <thead>
                 <tr>
@@ -701,6 +721,11 @@
                 <!-- Populated dynamically -->
               </tbody>
             </table>
+          </div>
+
+          <!-- Mobile Accordion Cards (Only visible on mobile/PWA screens) -->
+          <div id="zoneTargetCardsMobile" class="mobile-only" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Populated dynamically -->
           </div>
         </div>
 
@@ -1700,8 +1725,10 @@
     // Render Unified Zone & Unit Target Progress Report
     function renderZoneAndUnitTargets() {
       const tbody = document.getElementById('zoneTargetBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
+      const mobileContainer = document.getElementById('zoneTargetCardsMobile');
+      
+      if (tbody) tbody.innerHTML = '';
+      if (mobileContainer) mobileContainer.innerHTML = '';
 
       let activeZones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       if (sessionUser.role === 'Zone') {
@@ -1731,38 +1758,90 @@
         const zoneTargetVal = zoneTargetObj ? parseInt(zoneTargetObj.Target) : 100;
         const zonePercentage = Math.min(Math.round((zoneActual / zoneTargetVal) * 100), 100);
 
-        // Render Zone Row
-        const zoneRow = document.createElement('tr');
-        zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)'; // light primary tint
-        zoneRow.style.borderLeft = '4px solid var(--magenta)';
-        zoneRow.style.cursor = 'pointer';
-        zoneRow.onclick = (e) => {
-          if (e.target.closest('button') || e.target.closest('.btn')) return;
-          toggleZoneUnits(zoneId);
-        };
-        
         // Check if current user can edit zone target (only District Admins)
         const canEditZone = (sessionUser.role === 'District');
         const zoneActionHtml = canEditZone
           ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${zoneTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
           : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
 
-        zoneRow.innerHTML = `
-          <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s;"></i> Zone: ${zone}</strong></td>
-          <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
-          <td data-label="Registered"><strong>${zoneActual}</strong></td>
-          <td data-label="Target">${zoneTargetVal}</td>
-          <td data-label="Progress">
-            <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
-              <div class="progress-track" style="flex-grow:1; height:6px;">
-                <div class="progress-fill" style="width: ${zonePercentage}%;"></div>
+        // 1. Render Desktop Zone Row
+        if (tbody) {
+          const zoneRow = document.createElement('tr');
+          zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)'; // light primary tint
+          zoneRow.style.borderLeft = '4px solid var(--magenta)';
+          zoneRow.style.cursor = 'pointer';
+          zoneRow.onclick = (e) => {
+            if (e.target.closest('button') || e.target.closest('.btn')) return;
+            toggleZoneUnits(zoneId);
+          };
+
+          zoneRow.innerHTML = `
+            <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s;"></i> Zone: ${zone}</strong></td>
+            <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
+            <td data-label="Registered"><strong>${zoneActual}</strong></td>
+            <td data-label="Target">${zoneTargetVal}</td>
+            <td data-label="Progress">
+              <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
+                <div class="progress-track" style="flex-grow:1; height:6px;">
+                  <div class="progress-fill" style="width: ${zonePercentage}%;"></div>
+                </div>
+                <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${zonePercentage}%</span>
               </div>
-              <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${zonePercentage}%</span>
+            </td>
+            <td data-label="Actions">${zoneActionHtml}</td>
+          `;
+          tbody.appendChild(zoneRow);
+        }
+
+        // 2. Render Mobile Zone Card
+        if (mobileContainer) {
+          const zoneCard = document.createElement('div');
+          zoneCard.className = 'card';
+          zoneCard.style.padding = '1rem';
+          zoneCard.style.borderLeft = '4px solid var(--magenta)';
+          zoneCard.style.cursor = 'pointer';
+          zoneCard.style.background = '#FFFFFF';
+          zoneCard.style.borderRadius = '12px';
+          zoneCard.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+          zoneCard.style.marginBottom = '0.5rem';
+          
+          zoneCard.onclick = (e) => {
+            if (e.target.closest('button') || e.target.closest('.btn')) return;
+            toggleMobileZoneUnits(zoneId);
+          };
+
+          const zoneActionHtmlMobile = canEditZone
+            ? `<button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.7rem; margin-top:0.25rem;" onclick="promptEditTarget('${zone}', ${zoneTargetVal})"><i class="fas fa-edit"></i> Target</button>`
+            : '';
+
+          zoneCard.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem;">
+                <i class="fas fa-chevron-right" id="marrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s; font-size:0.75rem;"></i>
+                Zone: ${zone}
+              </strong>
+              <span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.65rem; font-weight:700;">ZONE</span>
             </div>
-          </td>
-          <td data-label="Actions">${zoneActionHtml}</td>
-        `;
-        tbody.appendChild(zoneRow);
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:#475569; margin-bottom:0.4rem;">
+              <span>Registered: <strong>${zoneActual} / ${zoneTargetVal}</strong></span>
+              <strong>${zonePercentage}%</strong>
+            </div>
+
+            <div class="progress-track" style="height:6px; background:#F1F5F9; border-radius:3px;">
+              <div class="progress-fill" style="width: ${zonePercentage}%; height:100%; border-radius:3px; background:var(--grad-primary);"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.25rem;">
+              ${zoneActionHtmlMobile}
+            </div>
+
+            <!-- Subunits list container (Collapsed by default) -->
+            <div id="munits-${zoneId}" style="display:none; margin-top:0.75rem; border-top:1px dashed #E2E8F0; padding-top:0.5rem; flex-direction:column; gap:0.5rem;">
+            </div>
+          `;
+          mobileContainer.appendChild(zoneCard);
+        }
 
         // Loop through units under this zone
         let units = ORGANIZATIONAL_MAP[zone] || [];
@@ -1787,25 +1866,61 @@
             ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; border-color:rgba(0,168,232,0.3); color:var(--cyan);" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
 
-          const unitRow = document.createElement('tr');
-          unitRow.className = `unit-row-for-${zoneId}`;
-          unitRow.style.display = 'none'; // collapsed by default
-          unitRow.innerHTML = `
-            <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #475569;"><i class="fas fa-arrow-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
-            <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
-            <td data-label="Registered">${unitActual}</td>
-            <td data-label="Target">${unitTargetVal}</td>
-            <td data-label="Progress">
-              <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
-                <div class="progress-track" style="flex-grow:1; height:5px; background:#E2E8F0;">
-                  <div class="progress-fill" style="width: ${unitPercentage}%; background:var(--grad-primary);"></div>
+          // 1. Desktop Unit Row
+          if (tbody) {
+            const unitRow = document.createElement('tr');
+            unitRow.className = `unit-row-for-${zoneId}`;
+            unitRow.style.display = 'none'; // collapsed by default
+            unitRow.innerHTML = `
+              <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #475569;"><i class="fas fa-arrow-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
+              <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
+              <td data-label="Registered">${unitActual}</td>
+              <td data-label="Target">${unitTargetVal}</td>
+              <td data-label="Progress">
+                <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
+                  <div class="progress-track" style="flex-grow:1; height:5px; background:#E2E8F0;">
+                    <div class="progress-fill" style="width: ${unitPercentage}%; background:var(--grad-primary);"></div>
+                  </div>
+                  <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${unitPercentage}%</span>
                 </div>
-                <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${unitPercentage}%</span>
+              </td>
+              <td data-label="Actions">${unitActionHtml}</td>
+            `;
+            tbody.appendChild(unitRow);
+          }
+
+          // 2. Mobile Unit item inside card
+          const mUnitsContainer = document.getElementById(`munits-${zoneId}`);
+          if (mUnitsContainer) {
+            const unitActionHtmlMobile = canEditUnit
+              ? `<button class="btn btn-outline" style="padding:0.2rem 0.4rem; font-size:0.65rem;" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i></button>`
+              : '';
+
+            const unitItem = document.createElement('div');
+            unitItem.style.background = '#F8FAFC';
+            unitItem.style.padding = '0.6rem 0.8rem';
+            unitItem.style.borderRadius = '8px';
+            unitItem.style.border = '1px solid #E2E8F0';
+            unitItem.innerHTML = `
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                <span style="font-size:0.8rem; font-weight:700; color:#334155;">${unit}</span>
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                  <span class="badge" style="background:rgba(0,168,232,0.06); color:var(--cyan); font-size:0.6rem; font-weight:700; padding:0.1rem 0.3rem;">UNIT</span>
+                  ${unitActionHtmlMobile}
+                </div>
               </div>
-            </td>
-            <td data-label="Actions">${unitActionHtml}</td>
-          `;
-          tbody.appendChild(unitRow);
+              
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748B; margin-bottom:0.25rem;">
+                <span>Count: <strong>${unitActual} / ${unitTargetVal}</strong></span>
+                <strong>${unitPercentage}%</strong>
+              </div>
+
+              <div class="progress-track" style="height:4px; background:#E2E8F0; border-radius:2px;">
+                <div class="progress-fill" style="width: ${unitPercentage}%; height:100%; border-radius:2px; background:var(--grad-primary);"></div>
+              </div>
+            `;
+            mUnitsContainer.appendChild(unitItem);
+          }
         });
 
         // Render Unassigned Unit row for this zone
@@ -1818,18 +1933,39 @@
           }).length;
 
           if (unassignedCount > 0) {
-            const unassignedRow = document.createElement('tr');
-            unassignedRow.className = `unit-row-for-${zoneId}`;
-            unassignedRow.style.display = 'none'; // collapsed by default
-            unassignedRow.innerHTML = `
-              <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
-              <td data-label="Type"><span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.7rem; font-weight:700;">N/A</span></td>
-              <td data-label="Registered">${unassignedCount}</td>
-              <td data-label="Target">-</td>
-              <td data-label="Progress">-</td>
-              <td data-label="Actions"><span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">N/A</span></td>
-            `;
-            tbody.appendChild(unassignedRow);
+            // 1. Desktop Unassigned Row
+            if (tbody) {
+              const unassignedRow = document.createElement('tr');
+              unassignedRow.className = `unit-row-for-${zoneId}`;
+              unassignedRow.style.display = 'none'; // collapsed by default
+              unassignedRow.innerHTML = `
+                <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
+                <td data-label="Type"><span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.7rem; font-weight:700;">N/A</span></td>
+                <td data-label="Registered">${unassignedCount}</td>
+                <td data-label="Target">-</td>
+                <td data-label="Progress">-</td>
+                <td data-label="Actions"><span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">N/A</span></td>
+              `;
+              tbody.appendChild(unassignedRow);
+            }
+
+            // 2. Mobile Unassigned Item
+            const mUnitsContainer = document.getElementById(`munits-${zoneId}`);
+            if (mUnitsContainer) {
+              const unassignedItem = document.createElement('div');
+              unassignedItem.style.background = '#F8FAFC';
+              unassignedItem.style.padding = '0.6rem 0.8rem';
+              unassignedItem.style.borderRadius = '8px';
+              unassignedItem.style.border = '1px dashed #CBD5E1';
+              unassignedItem.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.25rem;">
+                  <span style="font-size:0.8rem; font-weight:700; color:#64748B; font-style:italic;">[Unassigned]</span>
+                  <span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.6rem; font-weight:700; padding:0.1rem 0.3rem;">N/A</span>
+                </div>
+                <div style="font-size:0.75rem; color:#64748B;">Registered: <strong>${unassignedCount}</strong></div>
+              `;
+              mUnitsContainer.appendChild(unassignedItem);
+            }
           }
         }
       });
@@ -1845,6 +1981,23 @@
       rows.forEach(r => {
         r.style.display = isCollapsed ? '' : 'none';
       });
+      
+      if (arrow) {
+        if (isCollapsed) {
+          arrow.style.transform = 'rotate(90deg)';
+        } else {
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      }
+    }
+
+    function toggleMobileZoneUnits(zoneId) {
+      const container = document.getElementById(`munits-${zoneId}`);
+      const arrow = document.getElementById(`marrow-${zoneId}`);
+      if (!container) return;
+      
+      const isCollapsed = container.style.display === 'none';
+      container.style.display = isCollapsed ? 'flex' : 'none';
       
       if (arrow) {
         if (isCollapsed) {
