@@ -16,8 +16,8 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Supabase JS client SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase JS client SDK (Explicit UMD Bundle) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   
   <style>
     body {
@@ -1310,7 +1310,7 @@
   <script>
     const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
-    if (!window.supabaseClient) {
+    if (!window.supabaseClient && window.supabase) {
       window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
     var supabase = window.supabaseClient;
