@@ -1,7 +1,10 @@
-// TEENSPACE 2026 - REGISTRATION & GOOGLE SHEETS INTEGRATION
-
-// Paste your Google Web App URL here after deploying (e.g. https://script.google.com/macros/s/.../exec)
+// TEENSPACE 2026 - REGISTRATION & DATABASE INTEGRATION
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5pC5We1rbWxn_eQLzH3RqsZ_w_9DhIIkIP9fjgelcTrnjyti7EyeRssslCRMqwcSW/exec";
+
+// Initialize Supabase Client
+const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Master Mapping Storage
 let masterMapping = [];
@@ -209,32 +212,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const panchayathSelect = document.getElementById('studentPanchayath');
     if (!panchayathSelect) return;
 
-    if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-      panchayathSelect.innerHTML = '<option value="">Google URL not configured</option>';
+    if (!supabase) {
+      panchayathSelect.innerHTML = '<option value="">Database connection error</option>';
       return;
     }
 
-    fetch(`${GOOGLE_SCRIPT_URL}?action=get_mapping`)
-      .then(response => response.json())
-      .then(data => {
-        masterMapping = data.mapping || [];
-        masterSchools = data.schools || [];
+    Promise.all([
+      supabase.from('mapping').select('*'),
+      supabase.from('registrations').select('school')
+    ]).then(([mapRes, regRes]) => {
+      masterMapping = (mapRes.data || []).map(m => ({
+        Panchayath: m.panchayath,
+        Ward: m.ward,
+        Unit: m.unit,
+        Zone: m.zone
+      }));
 
-        // Dynamic Autocomplete for Schools
-        const schoolList = document.getElementById('schoolList');
-        if (schoolList && masterSchools.length > 0) {
-          schoolList.innerHTML = '';
-          masterSchools.forEach(school => {
-            const option = document.createElement('option');
-            option.value = school;
-            schoolList.appendChild(option);
-          });
-        }
+      const rawSchools = (regRes.data || []).map(r => r.school).filter(Boolean);
+      masterSchools = [...new Set(rawSchools)].sort();
 
-        // Populate Panchayaths Dropdown
-        const panchayaths = [...new Set(masterMapping.map(m => m.Panchayath))].sort();
-        panchayathSelect.innerHTML = '<option value="">Select Panchayath</option>';
-        panchayaths.forEach(p => {
+      // Dynamic Autocomplete for Schools
+      const schoolList = document.getElementById('schoolList');
+      if (schoolList && masterSchools.length > 0) {
+        schoolList.innerHTML = '';
+        masterSchools.forEach(school => {
+          const option = document.createElement('option');
+          option.value = school;
+          schoolList.appendChild(option);
+        });
+      }
+
+      // Populate Panchayaths Dropdown
+      const panchayaths = [...new Set(masterMapping.map(m => m.Panchayath))].sort();
+      panchayathSelect.innerHTML = '<option value="">Select Panchayath</option>';
+      panchayaths.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p;
           opt.textContent = p;
@@ -278,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Handle Form Submit
   if (regForm) {
-    regForm.addEventListener('submit', (e) => {
+    regForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const name = document.getElementById('studentName').value.trim();
@@ -295,9 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Generate unique delegate ID
-      const regId = 'TS26-' + Math.floor(10000 + Math.random() * 90000);
-
       // Perform background mapping to retrieve Unit and Zone
       let unit = "N/A";
       let zone = "N/A";
@@ -313,66 +321,87 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
       }
 
-      // Save temporary local copy first
-      const tempRegistrationData = { regId, name, phone, timestamp: new Date().toISOString() };
-      localStorage.setItem('teenspace_reg_' + regId, JSON.stringify(tempRegistrationData));
+      // Helper for zone prefixes
+      function getZonePrefix(zoneName) {
+        const prefixes = {
+          'Chavakkad': 'CKD',
+          'Pavaratty': 'PVT',
+          'Kunnamkulam': 'KNM',
+          'Guruvayoor': 'GVR',
+          'Thrissur': 'TSR',
+          'Thrissur City': 'TSR',
+          'Kodungallur': 'KDR',
+          'Kaipamangalam': 'KPM'
+        };
+        return prefixes[zoneName] || 'REG';
+      }
 
       // Prep pass layout details safely (using temp ID initially)
       const elRegId = document.getElementById('passRegId');
       const elName = document.getElementById('passName');
       const elPhone = document.getElementById('passPhone');
 
-      if (elRegId) elRegId.textContent = regId;
-      if (elName) elName.textContent = name;
-      if (elPhone) elPhone.textContent = phone;
-      generatePassQR(regId, name);
-
-      // Send to Google Sheets if Web App URL is configured
-      if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-        const queryParams = new URLSearchParams({
-          regId: regId,
-          name: name,
-          phone: phone,
-          parentPhone: parentMobile,
-          studentClass: studentClass,
-          school: school,
-          place: place,
-          panchayath: panchayath,
-          ward: ward,
-          unit: unit,
-          zone: zone
-        }).toString();
-
-        const backupTimeout = setTimeout(() => {
-          showTicketView();
-        }, 3000);
-
-        fetch(`${GOOGLE_SCRIPT_URL}?${queryParams}`)
-          .then(res => res.json())
-          .then(res => {
-            clearTimeout(backupTimeout);
-            if (res.result === "success" && res.regId) {
-              const finalRegId = res.regId;
-              
-              // Save final official ID details in localStorage
-              const finalData = { regId: finalRegId, name, phone, timestamp: new Date().toISOString() };
-              localStorage.setItem('teenspace_reg_' + finalRegId, JSON.stringify(finalData));
-              
-              // Clean up temporary local storage record
-              localStorage.removeItem('teenspace_reg_' + regId);
-
-              // Update the pass layout DOM with final sequential ID
-              if (elRegId) elRegId.textContent = finalRegId;
-              generatePassQR(finalRegId, name);
+      try {
+        // Calculate next sequential registration ID starting from 101
+        const prefix = getZonePrefix(zone);
+        let maxNum = 100;
+        
+        const { data: allRegs, error: fetchError } = await supabase.from('registrations').select('reg_id');
+        if (fetchError) throw fetchError;
+        
+        if (allRegs) {
+          allRegs.forEach(r => {
+            const idVal = r.reg_id || '';
+            if (idVal.startsWith(prefix)) {
+              const num = parseInt(idVal.substring(prefix.length), 10);
+              if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+              }
             }
-            showTicketView();
-          })
-          .catch(err => {
-            console.warn('Network sync warning (falling back to temporary ID):', err);
-            clearTimeout(backupTimeout);
-            showTicketView();
           });
-      } else {
+        }
+        const finalRegId = `${prefix}${maxNum + 1}`;
+
+        if (elRegId) elRegId.textContent = finalRegId;
+        if (elName) elName.textContent = name;
+        if (elPhone) elPhone.textContent = phone;
+        generatePassQR(finalRegId, name);
+
+        // Save in localStorage
+        const regData = { regId: finalRegId, name, phone, timestamp: new Date().toISOString() };
+        localStorage.setItem('teenspace_reg_' + finalRegId, JSON.stringify(regData));
+
+        // Insert into Supabase registrations table
+        const { error: insertError } = await supabase
+          .from('registrations')
+          .insert([{
+            reg_id: finalRegId,
+            name: name,
+            phone: phone,
+            parent_phone: parentMobile || null,
+            student_class: studentClass,
+            school: school,
+            place: place,
+            panchayath: panchayath,
+            ward: ward,
+            unit: unit,
+            zone: zone
+          }]);
+          
+        if (insertError) throw insertError;
+        
+        showTicketView();
+      } catch (err) {
+        console.error('Registration failed: ', err);
+        // Fallback to random temporary ID in case database is down so student still gets their ticket screen
+        const tempRegId = 'TS26-' + Math.floor(10000 + Math.random() * 90000);
+        if (elRegId) elRegId.textContent = tempRegId;
+        if (elName) elName.textContent = name;
+        if (elPhone) elPhone.textContent = phone;
+        generatePassQR(tempRegId, name);
+
+        const tempRegistrationData = { regId: tempRegId, name, phone, timestamp: new Date().toISOString() };
+        localStorage.setItem('teenspace_reg_' + tempRegId, JSON.stringify(tempRegistrationData));
         showTicketView();
       }
     });
