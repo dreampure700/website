@@ -1855,10 +1855,12 @@
             return u === unit.trim().toLowerCase();
           }).length;
 
-          // Find Unit target
+          // Find Unit target (default to zone target equally divided among its units)
           const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unit.trim().toLowerCase());
-          const unitTargetVal = unitTargetObj ? parseInt(unitTargetObj.Target) : 50; // default unit target is 50
-          const unitPercentage = Math.min(Math.round((unitActual / unitTargetVal) * 100), 100);
+          const parentZoneUnits = ORGANIZATIONAL_MAP[zone] || [];
+          const defaultUnitTarget = parentZoneUnits.length > 0 ? Math.floor(zoneTargetVal / parentZoneUnits.length) : 0;
+          const unitTargetVal = unitTargetObj ? parseInt(unitTargetObj.Target) : defaultUnitTarget;
+          const unitPercentage = unitTargetVal > 0 ? Math.min(Math.round((unitActual / unitTargetVal) * 100), 100) : 0;
 
           // Check if current user can edit unit target (District OR Zone Admin of parent zone)
           const canEditUnit = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && sessionUser.target === zone);
@@ -3735,12 +3737,22 @@
     // ========================================================
     // DIRECT TARGET EDITING FROM DASHBOARD
     // ========================================================
-    function promptEditTarget(zone, currentVal) {
+    function getUnitTargetValue(unitName, parentZoneName, parentZoneTargetVal) {
+      const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unitName.trim().toLowerCase());
+      if (unitTargetObj) {
+        return parseInt(unitTargetObj.Target);
+      }
+      const parentZoneUnits = ORGANIZATIONAL_MAP[parentZoneName] || [];
+      const defaultUnitTarget = parentZoneUnits.length > 0 ? Math.floor(parentZoneTargetVal / parentZoneUnits.length) : 0;
+      return defaultUnitTarget;
+    }
+
+    function promptEditTarget(targetName, currentVal) {
       const isDistrict = sessionUser && sessionUser.role === 'District';
       let isAllowedZoneAdmin = false;
       if (sessionUser && sessionUser.role === 'Zone') {
         const myZoneUnits = ORGANIZATIONAL_MAP[sessionUser.target] || [];
-        if (myZoneUnits.includes(zone)) {
+        if (myZoneUnits.includes(targetName)) {
           isAllowedZoneAdmin = true;
         }
       }
@@ -3749,25 +3761,98 @@
         alert('Access Denied: You do not have permission to edit this target.');
         return;
       }
-      const newValStr = prompt(`Enter new registration target count for ${zone}:`, currentVal);
+
+      // Check if target is a Unit or a Zone
+      let isUnit = false;
+      let parentZone = '';
+      for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+        if (uList.includes(targetName)) {
+          isUnit = true;
+          parentZone = z;
+          break;
+        }
+      }
+
+      const newValStr = prompt(`Enter new registration target count for ${targetName}:`, currentVal);
       if (newValStr === null) return;
       
       const newVal = parseInt(newValStr);
-      if (isNaN(newVal) || newVal <= 0) {
-        alert('Please enter a valid positive integer.');
+      if (isNaN(newVal) || newVal < 0) {
+        alert('Please enter a valid non-negative integer.');
         return;
       }
 
+      if (isUnit) {
+        // Find parent zone target
+        const parentZoneObj = targets.find(t => t.Zone && (t.Zone.trim().toLowerCase() === parentZone.trim().toLowerCase() || t.Zone.trim().toLowerCase() === (parentZone.trim() + ' zone').toLowerCase()));
+        const parentZoneTargetVal = parentZoneObj ? parseInt(parentZoneObj.Target) : 100;
+
+        // Sum targets of other units under the same zone
+        const parentZoneUnits = ORGANIZATIONAL_MAP[parentZone] || [];
+        let sumOtherUnits = 0;
+        parentZoneUnits.forEach(u => {
+          if (u.trim().toLowerCase() === targetName.trim().toLowerCase()) return;
+          sumOtherUnits += getUnitTargetValue(u, parentZone, parentZoneTargetVal);
+        });
+
+        // Enforce sum target limit rule
+        if (newVal + sumOtherUnits > parentZoneTargetVal) {
+          alert(`Cannot set Unit target. The sum of all Unit targets under Zone ${parentZone} (${newVal + sumOtherUnits}) would exceed the Zone's target limit (${parentZoneTargetVal}). Please reduce other unit targets first.`);
+          return;
+        }
+      } else {
+        // It is a Zone. Check that Zone target is not less than sum of explicitly set Unit targets
+        const zoneUnits = ORGANIZATIONAL_MAP[targetName] || [];
+        let sumUnitTargets = 0;
+        zoneUnits.forEach(u => {
+          const uObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === u.trim().toLowerCase());
+          sumUnitTargets += uObj ? parseInt(uObj.Target) : 0;
+        });
+
+        if (newVal < sumUnitTargets) {
+          alert(`Cannot set Zone target. The sum of currently set Unit targets under this Zone is ${sumUnitTargets}, which exceeds ${newVal}. Please reduce unit targets first.`);
+          return;
+        }
+      }
+
+      // Check if target entry already exists in DB to decide update vs insert (Upsert logic)
       supabase
         .from('targets')
-        .update({ target: newVal })
-        .eq('zone', zone)
-        .then(({ error }) => {
-          if (!error) {
-            alert(`Target for ${zone} successfully set to ${newVal}!`);
-            loadData();
+        .select('*')
+        .eq('zone', targetName)
+        .then(({ data, error }) => {
+          if (error) {
+            alert('Error verifying target: ' + error.message);
+            return;
+          }
+
+          if (data && data.length > 0) {
+            // Update
+            supabase
+              .from('targets')
+              .update({ target: newVal })
+              .eq('zone', targetName)
+              .then(({ error: updateErr }) => {
+                if (updateErr) {
+                  alert('Error updating target: ' + updateErr.message);
+                } else {
+                  alert(`Target for ${targetName} successfully updated to ${newVal}!`);
+                  loadData();
+                }
+              });
           } else {
-            alert('Error setting target: ' + error.message);
+            // Insert
+            supabase
+              .from('targets')
+              .insert([{ zone: targetName, target: newVal }])
+              .then(({ error: insertErr }) => {
+                if (insertErr) {
+                  alert('Error saving target: ' + insertErr.message);
+                } else {
+                  alert(`Target for ${targetName} successfully saved as ${newVal}!`);
+                  loadData();
+                }
+              });
           }
         });
     }
