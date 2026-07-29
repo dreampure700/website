@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEENSPACE 2026 | Volunteer Registration</title>
+  <meta name="description" content="Official volunteer registration portal for TEENSPACE 2026 Student Summit.">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/TEENSPACE LOGO.png?v=1.3">
+  
+  <!-- Supabase JS client SDK (Explicit UMD Bundle) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <style>
+    .volunteer-container {
+      max-width: 600px;
+      margin: 4rem auto;
+      padding: 2.5rem;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+    }
+    
+    body {
+      background-image: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+      min-height: 100vh;
+    }
+
+    /* Ticket / Pass styles */
+    .ticket-card {
+      background: #FFFFFF;
+      border: 2px dashed #E2E8F0;
+      border-radius: 20px;
+      padding: 2rem;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    
+    .ticket-header {
+      border-bottom: 2px dashed #E2E8F0;
+      padding-bottom: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ticket-circle-left, .ticket-circle-right {
+      width: 24px;
+      height: 24px;
+      background: #F1F5F9;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+    .ticket-circle-left { left: -13px; border-right: 2px dashed #E2E8F0; }
+    .ticket-circle-right { right: -13px; border-left: 2px dashed #E2E8F0; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="container navbar-container">
+      <a href="index.html" class="brand-logo">
+        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
+        <span>t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace</span>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="highlights.html" class="nav-link">Highlights</a></li>
+        <li><a href="schedule.html" class="nav-link">Schedule</a></li>
+        <li><a href="media.html" class="nav-link">Media</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="index.html" class="btn btn-outline" style="height: 42px; padding: 0 1.2rem; display: inline-flex; align-items: center;"><i class="fas fa-home" style="margin-right:0.4rem;"></i> Home</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="volunteer-container" id="formContainer">
+      <form id="volunteerRegForm">
+        <div style="text-align:center; margin-bottom: 2rem;">
+          <span class="section-tag"><i class="fas fa-hands-helping"></i> Human Resources</span>
+          <h2 style="font-family:var(--font-heading); font-size:2rem; margin-top: 0.5rem;">Volunteer Registration</h2>
+          <p style="color:var(--text-muted); font-size:0.95rem; margin-top: 0.25rem;">Join the TEENSPACE 2026 Organizing Committee</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="volName"><i class="fas fa-user text-magenta"></i> Full Name *</label>
+          <input type="text" id="volName" class="form-input" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="volPhone"><i class="fas fa-phone text-cyan"></i> Mobile Number *</label>
+          <input type="tel" id="volPhone" class="form-input" placeholder="10-digit mobile number" required pattern="[0-9]{10}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="volPlace"><i class="fas fa-map-marker-alt text-magenta"></i> Place *</label>
+          <input type="text" id="volPlace" class="form-input" placeholder="Enter your home place / area" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="volPanchayath"><i class="fas fa-city text-cyan"></i> Panchayath / Municipality *</label>
+            <select id="volPanchayath" class="form-select" required onchange="handlePanchayathChange()">
+              <option value="">Select Panchayath</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="volWard"><i class="fas fa-location-arrow text-magenta"></i> Ward *</label>
+            <select id="volWard" class="form-select" required>
+              <option value="">Select Ward</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="volRole"><i class="fas fa-tasks text-cyan"></i> Preferred Department / Role *</label>
+          <select id="volRole" class="form-select" required>
+            <option value="General Volunteer">General Volunteer</option>
+            <option value="Bus Coordinator">Bus Coordinator</option>
+            <option value="Food & Reception">Food & Reception</option>
+            <option value="Security & Venue">Security & Venue</option>
+            <option value="Media & Promotion">Media & Promotion</option>
+          </select>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem; margin-top: 1rem;">
+          <i class="fas fa-check-circle"></i> Register as Volunteer
+        </button>
+      </form>
+    </div>
+
+    <!-- SUCCESS PASS VIEW (Hidden by default) -->
+    <div class="volunteer-container" id="successContainer" style="display:none; max-width: 500px;">
+      <div style="text-align:center; margin-bottom: 1.5rem;">
+        <i class="fas fa-check-circle text-success" style="font-size: 3.5rem; color:#22C55E;"></i>
+        <h2 style="font-family:var(--font-heading); font-size:1.8rem; margin-top:0.75rem;">Registration Complete!</h2>
+        <p style="color:var(--text-muted); font-size:0.9rem;">Thank you for volunteering for Teenspace 2026.</p>
+      </div>
+
+      <div class="ticket-card" id="ticketPrintArea">
+        <div class="ticket-circle-left"></div>
+        <div class="ticket-circle-right"></div>
+        
+        <div class="ticket-header">
+          <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" style="height:50px; margin-bottom:0.5rem;">
+          <h4 style="font-family:var(--font-heading); font-size:1.2rem; margin:0;">TEENSPACE 2026</h4>
+          <span style="font-size:0.7rem; letter-spacing:2px; font-weight:700; color:var(--magenta);">ORGANIZING COMMITTEE PASS</span>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-size: 0.75rem; color:#64748B; text-transform:uppercase; letter-spacing:1px;">Volunteer ID</div>
+          <div style="font-family:var(--font-heading); font-size: 1.75rem; color:var(--cyan); font-weight:700;" id="passVolId">VOL101</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; text-align:left; font-size:0.85rem; border-top:1px dashed #E2E8F0; padding-top:1.25rem;">
+          <div>
+            <span style="color:#64748B; display:block; font-size:0.7rem;">NAME</span>
+            <strong id="passVolName" style="color:#0F172A;">Loading...</strong>
+          </div>
+          <div>
+            <span style="color:#64748B; display:block; font-size:0.7rem;">ROLE</span>
+            <strong id="passVolRole" style="color:#0F172A;">Loading...</strong>
+          </div>
+          <div>
+            <span style="color:#64748B; display:block; font-size:0.7rem;">ZONE</span>
+            <strong id="passVolZone" style="color:#0F172A;">Loading...</strong>
+          </div>
+          <div>
+            <span style="color:#64748B; display:block; font-size:0.7rem;">MOBILE</span>
+            <strong id="passVolPhone" style="color:#0F172A;">Loading...</strong>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-outline" onclick="window.print()" style="width:100%; margin-top:1.5rem; padding:0.8rem;">
+        <i class="fas fa-print"></i> Print / Save Pass
+      </button>
+      <a href="index.html" class="btn btn-primary" style="width:100%; margin-top:0.75rem; padding:0.8rem; display:inline-block; text-align:center;">
+        Return to Home
+      </a>
+    </div>
+  </div>
+
+  <!-- Javascript -->
+  <script src="js/volunteer_reg.js?v=1.5"></script>
+
+</body>
+</html>

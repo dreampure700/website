@@ -646,6 +646,7 @@
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Management</button>
+          <button class="tab-link" id="tabVolunteersLink" onclick="switchTab('tab-volunteers')"><i class="fas fa-hands-helping"></i> Volunteers</button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
           <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
@@ -1051,6 +1052,100 @@
         </div>
       </div>
 
+      <!-- ================= SECTION 5: VOLUNTEER MANAGEMENT ================= -->
+      <div id="tab-volunteers" class="dashboard-section" style="display: none;">
+        <!-- Volunteer Stats Row -->
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(230,0,103,0.08); color:var(--magenta);"><i class="fas fa-hands-helping"></i></div>
+            <div>
+              <div class="stat-val" id="totalVols">0</div>
+              <div class="stat-label">Total Volunteers</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(34,197,94,0.08); color:#22C55E;"><i class="fas fa-bus"></i></div>
+            <div>
+              <div class="stat-val" id="assignedVols">0</div>
+              <div class="stat-label">Assigned to Bus</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(245,158,11,0.08); color:#F59E0B;"><i class="fas fa-user-clock"></i></div>
+            <div>
+              <div class="stat-val" id="unassignedVols">0</div>
+              <div class="stat-label">Unassigned</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Directory & Actions Panel -->
+        <div class="table-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-users-cog text-cyan"></i> Volunteer Registry Directory</h3>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin:0.25rem 0 0 0;">Manage organizing committee members and bus coordinators.</p>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-outline" onclick="openVolunteerAddModal()"><i class="fas fa-plus"></i> Add Volunteer</button>
+              <button class="btn btn-primary" onclick="exportVolunteers()"><i class="fas fa-file-excel"></i> Export TSV</button>
+            </div>
+          </div>
+
+          <!-- Advanced Filters -->
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:1rem; margin-bottom:1.5rem;">
+            <div class="filter-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem;">
+              <div class="form-group" style="margin:0;">
+                <input type="text" id="volSearchQuery" class="form-input" placeholder="Search by Name/Phone/ID..." oninput="filterVolunteers()">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <select id="volFilterZone" class="form-select" onchange="filterVolunteers()">
+                  <option value="">All Zones</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <select id="volFilterRole" class="form-select" onchange="filterVolunteers()">
+                  <option value="">All Roles</option>
+                  <option value="General Volunteer">General Volunteer</option>
+                  <option value="Bus Coordinator">Bus Coordinator</option>
+                  <option value="Food & Reception">Food & Reception</option>
+                  <option value="Security & Venue">Security & Venue</option>
+                  <option value="Media & Promotion">Media & Promotion</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <select id="volFilterVehicle" class="form-select" onchange="filterVolunteers()">
+                  <option value="">All Vehicle States</option>
+                  <option value="assigned">Assigned to Bus</option>
+                  <option value="unassigned">Unassigned</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table list -->
+          <div style="overflow-x: auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Vol ID</th>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Role / Dept</th>
+                  <th>Area / Unit</th>
+                  <th>Zone</th>
+                  <th>Assigned Vehicle</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="volunteersTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -1122,21 +1217,43 @@
         </div>
       </div>
 
-      <div style="overflow-x: auto; margin-bottom: 1.5rem;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <!-- Section 1: Students / Delegates -->
+      <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--magenta); margin: 1.5rem 0 0.5rem 0;"><i class="fas fa-user-graduate"></i> Student Delegates</h4>
+      <div style="overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid var(--border-light); border-radius: 10px; max-height: 250px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
-            <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
-              <th style="padding: 0.75rem 0.5rem; width: 60px;">ORDER</th>
-              <th style="padding: 0.75rem 0.5rem;">REG ID</th>
-              <th style="padding: 0.75rem 0.5rem;">NAME</th>
-              <th style="padding: 0.75rem 0.5rem;">CLASS</th>
-              <th style="padding: 0.75rem 0.5rem;">MOBILE</th>
-              <th style="padding: 0.75rem 0.5rem;">ZONE / UNIT</th>
-              <th style="padding: 0.75rem 0.5rem;">BOARDING STATUS</th>
-              <th style="padding: 0.75rem 0.5rem; text-align: right;">ACTION</th>
+            <tr style="border-bottom: 2px solid var(--border-light); background: #F8FAFC; color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
+              <th style="padding: 0.5rem; width: 50px;">ORDER</th>
+              <th style="padding: 0.5rem; width: 90px;">REG ID</th>
+              <th style="padding: 0.5rem;">NAME</th>
+              <th style="padding: 0.5rem; width: 60px;">CLASS</th>
+              <th style="padding: 0.5rem;">MOBILE</th>
+              <th style="padding: 0.5rem;">ZONE / UNIT</th>
+              <th style="padding: 0.5rem; width: 90px;">STATUS</th>
+              <th style="padding: 0.5rem; text-align: right; width: 90px;">ACTION</th>
             </tr>
           </thead>
           <tbody id="passengerTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Section 2: Volunteers -->
+      <h4 style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--cyan); margin: 1.5rem 0 0.5rem 0;"><i class="fas fa-hands-helping"></i> Route Volunteers & Coordinators</h4>
+      <div style="overflow-x: auto; margin-bottom: 1.5rem; border: 1px solid var(--border-light); border-radius: 10px; max-height: 200px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-light); background: #F8FAFC; color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
+              <th style="padding: 0.5rem; width: 90px;">VOL ID</th>
+              <th style="padding: 0.5rem;">NAME</th>
+              <th style="padding: 0.5rem;">ROLE</th>
+              <th style="padding: 0.5rem;">MOBILE</th>
+              <th style="padding: 0.5rem;">ZONE / UNIT</th>
+              <th style="padding: 0.5rem; text-align: right; width: 90px;">ACTION</th>
+            </tr>
+          </thead>
+          <tbody id="passengerVolunteersTableBody">
             <!-- Populated dynamically -->
           </tbody>
         </table>
@@ -1316,6 +1433,89 @@
     </div>
   </div>
 
+  <!-- VOLUNTEER CRUD MODAL -->
+  <div class="modal-overlay" id="volunteerModal">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="closeVolunteerModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;" id="volunteerModalTitle"><i class="fas fa-hands-helping text-magenta"></i> Add Volunteer</h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter volunteer profile details below.</p>
+
+      <form id="volunteerForm">
+        <input type="hidden" id="volunteerMode" value="add">
+        <input type="hidden" id="volunteerIdInput">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="volNameInput">Volunteer Name *</label>
+            <input type="text" id="volNameInput" class="form-input" required>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="volPhoneInput">Mobile Number *</label>
+            <input type="tel" id="volPhoneInput" class="form-input" required pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="volPlaceInput">Place *</label>
+            <input type="text" id="volPlaceInput" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="volPanchayathInput">Panchayath / Municipality *</label>
+            <select id="volPanchayathInput" class="form-select" required onchange="handleAdminVolPanchayathChange()">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="volWardInput">Ward *</label>
+            <select id="volWardInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="volZoneInput">Zone *</label>
+            <select id="volZoneInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="volUnitInput">Unit *</label>
+            <select id="volUnitInput" class="form-select" required>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="volRoleInput">Department / Role *</label>
+            <select id="volRoleInput" class="form-select" required>
+              <option value="General Volunteer">General Volunteer</option>
+              <option value="Bus Coordinator">Bus Coordinator</option>
+              <option value="Food & Reception">Food & Reception</option>
+              <option value="Security & Venue">Security & Venue</option>
+              <option value="Media & Promotion">Media & Promotion</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="volVehicleInput">Assigned Vehicle (Optional)</label>
+            <select id="volVehicleInput" class="form-select">
+              <option value="">No Vehicle Assigned</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" id="volunteerSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 0.9rem;">
+          <i class="fas fa-check"></i> Save Volunteer Profile
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- MAPPING CRUD MODAL -->
   <div class="modal-overlay" id="mappingModal">
     <div class="modal-content" style="max-width: 480px; padding: 2rem;">
@@ -1382,6 +1582,7 @@
     let targets = [];
     let vehicles = [];
     let media = [];
+    let volunteers = [];
 
     // Exact Wisdom Students Thrissur District Zone & Unit Mapping
     const ORGANIZATIONAL_MAP = {
@@ -1665,6 +1866,29 @@
           pickedUp: d.picked_up ? "true" : "false"
         }));
 
+        // 7. Fetch Volunteers
+        try {
+          const { data: volData, error: volErr } = await supabase.from('volunteers').select('*');
+          if (volErr) throw volErr;
+          volunteers = (volData || []).map(d => ({
+            id: d.id,
+            timestamp: d.timestamp,
+            volunteer_id: d.volunteer_id,
+            name: d.name,
+            phone: d.phone,
+            place: d.place || "",
+            panchayath: d.panchayath || "",
+            ward: d.ward || "",
+            unit: d.unit || "",
+            zone: d.zone || "",
+            assigned_vehicle: d.assigned_vehicle || "",
+            role: d.role || ""
+          }));
+        } catch (err) {
+          console.warn("Could not load volunteers (does the volunteers table exist yet?):", err);
+          volunteers = [];
+        }
+
         spinner.style.display = 'none';
 
         if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
@@ -1720,6 +1944,9 @@
 
       // 7. Render Registrations directory
       renderDirectory(filteredRegs);
+
+      // 8. Render Volunteers Directory
+      renderVolunteers();
     }
 
     // Render Unified Zone & Unit Target Progress Report
@@ -2052,7 +2279,8 @@
       // Calculate dynamic vehicle capacity stats based on filtered activeVehicles
       const totalVehicles = activeVehicles.length;
       const totalCapacity = activeVehicles.reduce((sum, v) => sum + (parseInt(v.Capacity) || 50), 0);
-      const totalFilled = registrations.filter(r => activeVehicles.some(v => v["Vehicle ID"] === r["Assigned Vehicle"])).length;
+      const totalFilled = registrations.filter(r => activeVehicles.some(v => v["Vehicle ID"] === r["Assigned Vehicle"])).length +
+                          volunteers.filter(v => activeVehicles.some(veh => veh["Vehicle ID"] === v.assigned_vehicle)).length;
       const availableSeats = totalCapacity - totalFilled;
 
       // Update summary cards in the UI
@@ -2062,8 +2290,9 @@
       document.getElementById('statsAvailableSeats').textContent = availableSeats;
 
       activeVehicles.forEach(vehicle => {
-        // Count how many registrations have been assigned this vehicle ID or name
-        const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length;
+        // Count how many registrations have been assigned this vehicle ID or name, plus volunteers
+        const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length +
+                       volunteers.filter(v => v.assigned_vehicle === vehicle["Vehicle ID"]).length;
         const capacity = parseInt(vehicle.Capacity) || 50;
         const percentage = Math.min(Math.round((filled / capacity) * 100), 100);
 
@@ -2844,18 +3073,21 @@
       document.getElementById('passengerVehicleName').textContent = `${vehicle["Vehicle ID"]} - ${vehicle["Vehicle Name"]}`;
       
       const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const vehicleVolunteers = volunteers.filter(v => v.assigned_vehicle === vehicleId);
+      const totalSeatsFilled = passengers.length + vehicleVolunteers.length;
       const capacity = parseInt(vehicle.Capacity) || 50;
       
-      // Sort by pickup order
+      // Sort students by pickup order
       passengers.sort((a, b) => {
         const oA = parseInt(a["Pickup Order"] || a.pickupOrder) || 999999;
         const oB = parseInt(b["Pickup Order"] || b.pickupOrder) || 999999;
         return oA - oB;
       });
 
-      document.getElementById('passengerSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
+      document.getElementById('passengerSeatRatio').textContent = `${totalSeatsFilled} / ${capacity} seats filled (${passengers.length} Students, ${vehicleVolunteers.length} Volunteers)`;
       document.getElementById('passengerModalSubtitle').textContent = `Manage passengers for this bus route.`;
 
+      // 1. Populate Students Table
       const tbody = document.getElementById('passengerTableBody');
       tbody.innerHTML = '';
 
@@ -2873,7 +3105,6 @@
           const row = document.createElement('tr');
           row.style.borderBottom = '1px solid var(--border-light)';
           
-          // Reordering buttons visible only to District Admin or parent Zone Admin
           const canReorder = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && vehicle.Zone === sessionUser.target);
           const orderControls = canReorder 
             ? `<div style="display:inline-flex; gap:0.2rem;">
@@ -2888,22 +3119,22 @@
             : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-clock"></i> Waiting</span>`;
 
           row.innerHTML = `
-            <td data-label="Order" style="padding:0.75rem 0.5rem; font-weight:700; color:var(--cyan);">#${index + 1}</td>
-            <td data-label="Reg ID" style="padding:0.75rem 0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
-            <td data-label="Name" style="padding:0.75rem 0.5rem;"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
-            <td data-label="Class" style="padding:0.75rem 0.5rem;">${item.Class || 'N/A'}</td>
-            <td data-label="Mobile" style="padding:0.75rem 0.5rem;">
+            <td data-label="Order" style="padding:0.5rem; font-weight:700; color:var(--cyan);">#${index + 1}</td>
+            <td data-label="Reg ID" style="padding:0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
+            <td data-label="Name" style="padding:0.5rem;"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
+            <td data-label="Class" style="padding:0.5rem;">${item.Class || 'N/A'}</td>
+            <td data-label="Mobile" style="padding:0.5rem;">
               <div style="display:inline-flex; align-items:center; gap:0.4rem;">
                 <span>${item["Student Mobile Number"] || item.phone || 'N/A'}</span>
                 ${(item["Student Mobile Number"] || item.phone) ? `
-                  <a href="tel:${item["Student Mobile Number"] || item.phone}" style="color:#2563EB; font-size:0.75rem; margin-left:0.25rem;"><i class="fas fa-phone-alt"></i></a>
-                  <a href="https://wa.me/91${item["Student Mobile Number"] || item.phone}" target="_blank" style="color:#22C55E; font-size:0.85rem; margin-left:0.15rem;"><i class="fab fa-whatsapp"></i></a>
+                  <a href="tel:${item["Student Mobile Number"] || item.phone}" style="color:#2563EB; font-size:0.75rem;"><i class="fas fa-phone-alt"></i></a>
+                  <a href="https://wa.me/91${item["Student Mobile Number"] || item.phone}" target="_blank" style="color:#22C55E; font-size:0.85rem;"><i class="fab fa-whatsapp"></i></a>
                 ` : ''}
               </div>
             </td>
-            <td data-label="Zone / Unit" style="padding:0.75rem 0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
-            <td data-label="Status" style="padding:0.75rem 0.5rem;">${boardingStatusHtml}</td>
-            <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
+            <td data-label="Zone / Unit" style="padding:0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
+            <td data-label="Status" style="padding:0.5rem;">${boardingStatusHtml}</td>
+            <td data-label="Action" style="padding:0.5rem; text-align:right;">
               <div style="display:inline-flex; align-items:center; gap:0.5rem;">
                 ${orderControls}
                 <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')">
@@ -2916,13 +3147,62 @@
         });
       }
 
+      // 2. Populate Volunteers Table
+      const vtbody = document.getElementById('passengerVolunteersTableBody');
+      if (vtbody) {
+        vtbody.innerHTML = '';
+        if (vehicleVolunteers.length === 0) {
+          vtbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="text-align:center; padding:1.5rem; color:var(--text-muted);">
+                No volunteers assigned to this vehicle yet.
+              </td>
+            </tr>
+          `;
+        } else {
+          vehicleVolunteers.forEach(v => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = '1px solid var(--border-light)';
+            
+            row.innerHTML = `
+              <td data-label="Vol ID" style="padding:0.5rem;"><span class="badge-reg" style="background:rgba(0,168,232,0.06); color:var(--cyan); border-color:rgba(0,168,232,0.15);">${v.volunteer_id}</span></td>
+              <td data-label="Name" style="padding:0.5rem;"><strong>${v.name}</strong></td>
+              <td data-label="Role" style="padding:0.5rem;"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-weight:700; font-size:0.65rem;">${v.role}</span></td>
+              <td data-label="Mobile" style="padding:0.5rem;">
+                <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+                  <span>${v.phone}</span>
+                  <a href="tel:${v.phone}" style="color:#2563EB; font-size:0.75rem;"><i class="fas fa-phone-alt"></i></a>
+                  <a href="https://wa.me/91${v.phone}" target="_blank" style="color:#22C55E; font-size:0.85rem;"><i class="fab fa-whatsapp"></i></a>
+                </div>
+              </td>
+              <td data-label="Zone / Unit" style="padding:0.5rem;">${v.zone} / ${v.unit}</td>
+              <td data-label="Action" style="padding:0.5rem; text-align:right;">
+                <button class="btn btn-outline" style="padding:0.2rem 0.35rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignVolunteer(${v.id}, '${vehicleId}')">
+                  <i class="fas fa-user-minus"></i> Remove
+                </button>
+              </td>
+            `;
+            vtbody.appendChild(row);
+          });
+        }
+      }
+
       // Bind WhatsApp Share Event for Passenger List
       document.getElementById('shareWhatsAppPassengerListBtn').onclick = () => {
         let text = `*PASSENGER LIST - ${vehicle["Vehicle ID"]}*%0A` +
           `*Vehicle:* ${vehicle["Vehicle Name"]}%0A` +
           `*Zone/Unit:* ${vehicle.Zone} ${vehicle.Unit ? '/ ' + vehicle.Unit : ''}%0A` +
-          `*Filled:* ${passengers.length} / ${capacity} seats%0A%0A`;
+          `*Filled:* ${totalSeatsFilled} / ${capacity} seats (${passengers.length} Students, ${vehicleVolunteers.length} Vols)%0A%0A`;
         
+        if (vehicleVolunteers.length > 0) {
+          text += `*ROUTE VOLUNTEERS:*%0A`;
+          vehicleVolunteers.forEach((v, index) => {
+            text += `- *${v.name}* (${v.volunteer_id}) - ${v.phone} [${v.role}]%0A`;
+          });
+          text += `%0A`;
+        }
+
+        text += `*STUDENT DELEGATES:*%0A`;
         passengers.forEach((item, index) => {
           const rawName = item["Student Name"] || item.name || 'N/A';
           const regIdVal = item["Registration ID"] || item.regId || 'N/A';
@@ -4157,8 +4437,336 @@
         console.error("Migration error:", err);
         alert("Migration failed: " + err.message);
         btn.disabled = false;
+        alert("Data migration completed successfully! All records are now stored in Supabase.");
+        location.reload();
+      } catch (err) {
+        console.error("Migration error:", err);
+        alert("Migration failed: " + err.message);
+        btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-database"></i> Migrate Sheets to Supabase';
       }
+    }
+
+    // ==========================================
+    // VOLUNTEER MANAGEMENT LOGIC
+    // ==========================================
+    function filterVolunteers() {
+      renderVolunteers();
+    }
+
+    function renderVolunteers() {
+      const tbody = document.getElementById('volunteersTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      // 1. Role Scope Isolation
+      let list = volunteers;
+      if (sessionUser.role === 'Zone') {
+        list = volunteers.filter(v => v.zone.trim().toLowerCase() === sessionUser.target.trim().toLowerCase() || v.zone.trim().toLowerCase() === (sessionUser.target.trim() + ' zone').toLowerCase());
+      } else if (sessionUser.role === 'Unit') {
+        list = volunteers.filter(v => v.unit.trim().toLowerCase() === sessionUser.target.trim().toLowerCase());
+      }
+
+      // 2. Filters & Search Query
+      const query = document.getElementById('volSearchQuery').value.toLowerCase().trim();
+      const zoneFilter = document.getElementById('volFilterZone').value;
+      const roleFilter = document.getElementById('volFilterRole').value;
+      const vehicleFilter = document.getElementById('volFilterVehicle').value;
+
+      if (query) {
+        list = list.filter(v => 
+          v.volunteer_id.toLowerCase().includes(query) || 
+          v.name.toLowerCase().includes(query) || 
+          v.phone.includes(query) || 
+          v.place.toLowerCase().includes(query)
+        );
+      }
+      if (zoneFilter) {
+        list = list.filter(v => v.zone === zoneFilter);
+      }
+      if (roleFilter) {
+        list = list.filter(v => v.role === roleFilter);
+      }
+      if (vehicleFilter) {
+        if (vehicleFilter === 'assigned') {
+          list = list.filter(v => v.assigned_vehicle && v.assigned_vehicle !== '');
+        } else {
+          list = list.filter(v => !v.assigned_vehicle || v.assigned_vehicle === '');
+        }
+      }
+
+      // Update counters
+      const totalCount = list.length;
+      const assignedCount = list.filter(v => v.assigned_vehicle && v.assigned_vehicle !== '').length;
+      const unassignedCount = totalCount - assignedCount;
+
+      const totalVolsEl = document.getElementById('totalVols');
+      const assignedVolsEl = document.getElementById('assignedVols');
+      const unassignedVolsEl = document.getElementById('unassignedVols');
+
+      if (totalVolsEl) totalVolsEl.textContent = totalCount;
+      if (assignedVolsEl) assignedVolsEl.textContent = assignedCount;
+      if (unassignedVolsEl) unassignedVolsEl.textContent = unassignedCount;
+
+      // Populate zone filter options dynamically if not loaded yet
+      const zoneSelect = document.getElementById('volFilterZone');
+      if (zoneSelect && zoneSelect.options.length <= 1) {
+        const uniqueZones = [...new Set(volunteers.map(v => v.zone).filter(Boolean))].sort();
+        uniqueZones.forEach(z => {
+          zoneSelect.appendChild(new Option(z, z));
+        });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align:center; padding:3rem; color:var(--text-muted);">
+              <i class="fas fa-hands-helping" style="font-size:2.5rem; margin-bottom:0.75rem; display:block; color:rgba(0,0,0,0.08);"></i>
+              No volunteers found matching search criteria.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      list.forEach(v => {
+        const row = document.createElement('tr');
+        
+        const vehicleBadge = v.assigned_vehicle 
+          ? `<span class="badge" style="background:rgba(34,197,94,0.08); color:#16A34A; font-weight:700;"><i class="fas fa-bus"></i> ${v.assigned_vehicle}</span>`
+          : `<span class="badge" style="background:#F1F5F9; color:#64748B;"><i class="fas fa-chair"></i> Unassigned</span>`;
+
+        row.innerHTML = `
+          <td data-label="Vol ID"><span class="badge-reg" style="background:rgba(0,168,232,0.06); color:var(--cyan); border-color:rgba(0,168,232,0.15);">${v.volunteer_id}</span></td>
+          <td data-label="Name"><strong>${v.name}</strong></td>
+          <td data-label="Contact">
+            <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+              <span>${v.phone}</span>
+              <a href="tel:${v.phone}" style="color:#2563EB; font-size:0.75rem;"><i class="fas fa-phone-alt"></i></a>
+              <a href="https://wa.me/91${v.phone}" target="_blank" style="color:#22C55E; font-size:0.85rem;"><i class="fab fa-whatsapp"></i></a>
+            </div>
+          </td>
+          <td data-label="Role"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-weight:700;">${v.role}</span></td>
+          <td data-label="Area / Unit">${v.place} ${v.unit ? '/ ' + v.unit : ''}</td>
+          <td data-label="Zone">${v.zone}</td>
+          <td data-label="Vehicle">${vehicleBadge}</td>
+          <td data-label="Actions">
+            <button class="btn btn-outline" style="padding:0.25rem 0.45rem; font-size:0.7rem;" onclick="openVolunteerEditModal(${v.id})"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-outline" style="padding:0.25rem 0.45rem; font-size:0.7rem; color:red; border-color:rgba(255,0,0,0.12); margin-left:0.2rem;" onclick="deleteVolunteer(${v.id})"><i class="fas fa-trash-alt"></i> Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function openVolunteerAddModal() {
+      document.getElementById('volunteerModalTitle').innerHTML = '<i class="fas fa-hands-helping text-magenta"></i> Add Volunteer';
+      document.getElementById('volunteerMode').value = 'add';
+      document.getElementById('volunteerForm').reset();
+      
+      populateVolSelectDropdowns();
+      
+      document.getElementById('volunteerModal').style.display = 'flex';
+    }
+
+    function openVolunteerEditModal(id) {
+      const vol = volunteers.find(v => v.id === id);
+      if (!vol) return;
+
+      document.getElementById('volunteerModalTitle').innerHTML = '<i class="fas fa-edit text-magenta"></i> Edit Volunteer';
+      document.getElementById('volunteerMode').value = 'edit';
+      document.getElementById('volunteerIdInput').value = vol.id;
+      
+      populateVolSelectDropdowns(vol);
+
+      document.getElementById('volNameInput').value = vol.name;
+      document.getElementById('volPhoneInput').value = vol.phone;
+      document.getElementById('volPlaceInput').value = vol.place;
+      document.getElementById('volRoleInput').value = vol.role;
+      document.getElementById('volVehicleInput').value = vol.assigned_vehicle || '';
+
+      document.getElementById('volunteerModal').style.display = 'flex';
+    }
+
+    function closeVolunteerModal() {
+      document.getElementById('volunteerModal').style.display = 'none';
+    }
+
+    function populateVolSelectDropdowns(activeVol = null) {
+      // 1. Populate Vehicles
+      const vehicleSelect = document.getElementById('volVehicleInput');
+      vehicleSelect.innerHTML = '<option value="">No Vehicle Assigned</option>';
+      vehicles.forEach(v => {
+        vehicleSelect.appendChild(new Option(`${v["Vehicle ID"]} - ${v["Vehicle Name"]}`, v["Vehicle ID"]));
+      });
+
+      // 2. Populate Panchayaths
+      const panchayathSelect = document.getElementById('volPanchayathInput');
+      panchayathSelect.innerHTML = '<option value="">Select Panchayath</option>';
+      const uniquePanchayaths = [...new Set(mapping.map(m => m.Panchayath).filter(Boolean))].sort();
+      uniquePanchayaths.forEach(p => {
+        panchayathSelect.appendChild(new Option(p, p));
+      });
+
+      // 3. Populate Zones
+      const zoneSelect = document.getElementById('volZoneInput');
+      zoneSelect.innerHTML = '<option value="">Select Zone</option>';
+      const uniqueZones = [...new Set(mapping.map(m => m.Zone).filter(Boolean))].sort();
+      uniqueZones.forEach(z => {
+        zoneSelect.appendChild(new Option(z, z));
+      });
+
+      // 4. Populate Units
+      const unitSelect = document.getElementById('volUnitInput');
+      unitSelect.innerHTML = '<option value="">Select Unit</option>';
+      const uniqueUnits = [...new Set(mapping.map(m => m.Unit).filter(Boolean))].sort();
+      uniqueUnits.forEach(u => {
+        unitSelect.appendChild(new Option(u, u));
+      });
+
+      if (activeVol) {
+        panchayathSelect.value = activeVol.panchayath;
+        handleAdminVolPanchayathChange(activeVol.ward);
+        zoneSelect.value = activeVol.zone;
+        unitSelect.value = activeVol.unit;
+      } else {
+        const wardSelect = document.getElementById('volWardInput');
+        wardSelect.innerHTML = '<option value="">Select Ward</option>';
+      }
+    }
+
+    function handleAdminVolPanchayathChange(selectedWard = '') {
+      const panchayathVal = document.getElementById('volPanchayathInput').value;
+      const wardSelect = document.getElementById('volWardInput');
+      wardSelect.innerHTML = '<option value="">Select Ward</option>';
+
+      if (!panchayathVal) return;
+
+      const filteredWards = mapping
+        .filter(m => m.Panchayath === panchayathVal)
+        .map(m => m.Ward)
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+      filteredWards.forEach(w => {
+        wardSelect.appendChild(new Option(w, w));
+      });
+
+      if (selectedWard) {
+        wardSelect.value = selectedWard;
+      }
+
+      // Add auto-detection listener on ward selection to auto-fill unit & zone
+      wardSelect.onchange = () => {
+        const selectedWardVal = wardSelect.value;
+        const matched = mapping.find(m => m.Panchayath === panchayathVal && m.Ward === selectedWardVal);
+        if (matched) {
+          document.getElementById('volZoneInput').value = matched.Zone;
+          document.getElementById('volUnitInput').value = matched.Unit;
+        }
+      };
+    }
+
+    // Submit Action Volunteer Form
+    document.getElementById('volunteerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('volunteerSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      const mode = document.getElementById('volunteerMode').value;
+      const volId = document.getElementById('volunteerIdInput').value;
+
+      const name = document.getElementById('volNameInput').value.trim();
+      const phone = document.getElementById('volPhoneInput').value.trim();
+      const place = document.getElementById('volPlaceInput').value.trim();
+      const panchayath = document.getElementById('volPanchayathInput').value;
+      const ward = document.getElementById('volWardInput').value;
+      const zone = document.getElementById('volZoneInput').value;
+      const unit = document.getElementById('volUnitInput').value;
+      const role = document.getElementById('volRoleInput').value;
+      const vehicle = document.getElementById('volVehicleInput').value;
+
+      try {
+        if (mode === 'add') {
+          // Generate sequential volunteer ID starting from VOL101
+          let nextNum = 101;
+          if (volunteers.length > 0) {
+            const numericIds = volunteers.map(v => {
+              const match = (v.volunteer_id || '').match(/VOL(\d+)/i);
+              return match ? parseInt(match[1]) : null;
+            }).filter(n => n !== null);
+            if (numericIds.length > 0) {
+              nextNum = Math.max(...numericIds) + 1;
+            }
+          }
+          const volunteer_id = `VOL${nextNum}`;
+
+          const { error } = await supabase.from('volunteers').insert([{
+            volunteer_id, name, phone, place, panchayath, ward, zone, unit, role, assigned_vehicle: vehicle
+          }]);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('volunteers').update({
+            name, phone, place, panchayath, ward, zone, unit, role, assigned_vehicle: vehicle
+          }).eq('id', volId);
+          if (error) throw error;
+        }
+
+        closeVolunteerModal();
+        await loadData();
+      } catch (err) {
+        console.error("Error saving volunteer profile:", err);
+        alert("Error saving volunteer profile: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Volunteer Profile';
+      }
+    });
+
+    async function deleteVolunteer(id) {
+      if (!confirm("Are you sure you want to delete this volunteer?")) return;
+      try {
+        const { error } = await supabase.from('volunteers').delete().eq('id', id);
+        if (error) throw error;
+        await loadData();
+      } catch (err) {
+        console.error("Error deleting volunteer:", err);
+        alert("Error deleting volunteer: " + err.message);
+      }
+    }
+
+    async function unassignVolunteer(volId, vehicleId) {
+      if (!confirm("Are you sure you want to unassign this volunteer from this vehicle?")) return;
+      try {
+        const { error } = await supabase
+          .from('volunteers')
+          .update({ assigned_vehicle: '' })
+          .eq('id', volId);
+          
+        if (error) throw error;
+        
+        await loadData();
+        openPassengerListModal(vehicleId); // reload passenger modal
+      } catch (err) {
+        console.error("Error unassigning volunteer:", err);
+        alert("Error unassigning volunteer: " + err.message);
+      }
+    }
+
+    function exportVolunteers() {
+      let tsv = 'Volunteer ID\tName\tPhone\tRole\tPlace\tPanchayath\tWard\tUnit\tZone\tAssigned Vehicle\n';
+      volunteers.forEach(v => {
+        tsv += `${v.volunteer_id}\t${v.name}\t${v.phone}\t${v.role}\t${v.place}\t${v.panchayath}\t${v.ward}\t${v.unit}\t${v.zone}\t${v.assigned_vehicle || ''}\n`;
+      });
+      
+      const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", `TSV_Teenspace_Volunteers_${new Date().toISOString().split('T')[0]}.tsv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 
@@ -4179,6 +4787,10 @@
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
       <i class="fas fa-images"></i>
       <span>Media</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabVolunteersLink" onclick="switchTab('tab-volunteers')">
+      <i class="fas fa-hands-helping"></i>
+      <span>Volunteer</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
