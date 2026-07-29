@@ -796,7 +796,7 @@
             <div>
               <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Panchayath & Ward Mappings</h3>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
-                Map specific local bodies (Panchayaths and Wards) to organizational Zones and Units.
+                Currently managing <strong id="settingsTotalPanchayaths" style="color:var(--magenta)">0</strong> unique Panchayaths and <strong id="settingsTotalWards" style="color:var(--cyan)">0</strong> active Wards.
               </p>
             </div>
             <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping Option</button>
@@ -3624,12 +3624,21 @@
         activeMapping = mapping.filter(m => m.Unit === sessionUser.target);
       }
 
+      // Calculate total Panchayaths and Wards in activeMapping
+      const uniquePanchayaths = [...new Set(activeMapping.map(m => (m.Panchayath || '').trim()))].filter(Boolean).length;
+      const uniqueWards = [...new Set(activeMapping.map(m => ((m.Panchayath || '').trim() + "_" + (m.Ward || '').trim())))].filter(Boolean).length;
+      
+      const elPanchayaths = document.getElementById('settingsTotalPanchayaths');
+      const elWards = document.getElementById('settingsTotalWards');
+      if (elPanchayaths) elPanchayaths.textContent = uniquePanchayaths;
+      if (elWards) elWards.textContent = uniqueWards;
+
       if (activeMapping.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No mapping entries found for your zone/unit.</td></tr>';
         return;
       }
 
-      const sorted = [...mapping].sort((a,b) => {
+      const sorted = [...activeMapping].sort((a,b) => {
         const pComp = (a.Panchayath || '').localeCompare(b.Panchayath || '');
         if (pComp !== 0) return pComp;
         return (a.Ward || '').localeCompare(b.Ward || '');
