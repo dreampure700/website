@@ -3126,6 +3126,11 @@
       
       sorted.forEach(item => {
         const row = document.createElement('tr');
+        const titleEscaped = (item.Title || '').replace(/"/g, '&quot;');
+        const urlEscaped = (item.URL || '').replace(/"/g, '&quot;');
+        const typeEscaped = (item.Type || '').replace(/"/g, '&quot;');
+        const descEscaped = (item.Description || '').replace(/"/g, '&quot;');
+
         row.innerHTML = `
           <td data-label="Posted At" style="font-size:0.8rem; white-space:nowrap;">${item.Timestamp ? new Date(item.Timestamp).toLocaleString() : 'N/A'}</td>
           <td data-label="Type"><span class="badge" style="font-size:0.75rem;">${item.Type}</span></td>
@@ -3133,8 +3138,16 @@
           <td data-label="URL Link"><a href="${item.URL || '#'}" target="_blank" style="color:var(--cyan); max-width:200px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.URL || ''}</a></td>
           <td data-label="Description" style="font-size:0.85rem; max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.Description || ''}</td>
           <td data-label="Actions">
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-right:0.25rem;" onclick="startMediaEdit('${item.Title.replace(/'/g, "\\'")}', '${item.URL.replace(/'/g, "\\'")}', '${item.Type}', '${item.Description.replace(/'/g, "\\'")}')"><i class="fas fa-edit"></i> Edit</button>
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="deleteMedia('${item.Title.replace(/'/g, "\\'")}', '${item.URL.replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Delete</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-right:0.25rem;" 
+              data-title="${titleEscaped}" 
+              data-url="${urlEscaped}" 
+              data-type="${typeEscaped}" 
+              data-description="${descEscaped}" 
+              onclick="startMediaEdit(this)"><i class="fas fa-edit"></i> Edit</button>
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15);" 
+              data-title="${titleEscaped}" 
+              data-url="${urlEscaped}" 
+              onclick="deleteMedia(this)"><i class="fas fa-trash-alt"></i> Delete</button>
           </td>
         `;
         tbody.appendChild(row);
@@ -3194,7 +3207,12 @@
       });
     });
 
-    function startMediaEdit(title, url, type, desc) {
+    function startMediaEdit(btn) {
+      const title = btn.dataset.title || '';
+      const url = btn.dataset.url || '';
+      const type = btn.dataset.type || 'Photo';
+      const desc = btn.dataset.description || '';
+
       document.getElementById('mediaMode').value = 'edit';
       document.getElementById('mediaOrigTitle').value = title;
       document.getElementById('mediaOrigUrl').value = url;
@@ -3202,7 +3220,7 @@
       document.getElementById('mediaType').value = type;
       document.getElementById('mediaTitle').value = title;
       document.getElementById('mediaUrl').value = url;
-      document.getElementById('mediaDesc').value = desc || '';
+      document.getElementById('mediaDesc').value = desc;
 
       document.getElementById('mediaFormTitle').innerHTML = '<i class="fas fa-edit text-magenta"></i> Edit Media Update';
       document.getElementById('mediaSubmitBtn').innerHTML = '<i class="fas fa-check"></i> Update Media Details';
@@ -4087,7 +4105,10 @@
     // ========================================================
     // MEDIA CMS POST DELETION
     // ========================================================
-    function deleteMedia(title, url) {
+    function deleteMedia(btn) {
+      const title = btn.dataset.title || '';
+      const url = btn.dataset.url || '';
+
       if (!confirm(`Are you sure you want to delete the media update titled "${title}"?`)) {
         return;
       }
