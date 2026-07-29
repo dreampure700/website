@@ -1310,7 +1310,10 @@
   <script>
     const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!window.supabaseClient) {
+      window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    var supabase = window.supabaseClient;
 
     let sessionUser = null;
     let registrations = [];

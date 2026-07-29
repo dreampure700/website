@@ -4,7 +4,10 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5pC5We1rbWx
 // Initialize Supabase Client
 const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+if (!window.supabaseClient && window.supabase) {
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+var supabase = window.supabaseClient;
 
 // Master Mapping Storage
 let masterMapping = [];
