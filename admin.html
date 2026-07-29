@@ -1360,7 +1360,7 @@
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
 
       // 🔐 Check district_admin master fallback directly (failsafe)
-      if (u.toLowerCase() === "district_admin" && (p === "admin123" || p === "teenspace2026")) {
+      if ((u.toLowerCase() === "district_admin" || u.toLowerCase() === "admin") && (p === "admin123" || p === "teenspace2026")) {
         sessionUser = { username: u.toLowerCase(), role: "District", target: "" };
         sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
         initDashboard();
