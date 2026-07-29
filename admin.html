@@ -623,7 +623,7 @@
       
       <nav class="tab-nav" id="dashboardTabs" style="display: none;">
         <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
-        <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')"><i class="fas fa-city"></i> Panchayath & Wards</button>
+        <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')"><i class="fas fa-cog"></i> Settings</button>
         <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Transportation</button>
         <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate Directory</button>
         <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Manager</button>
@@ -730,44 +730,76 @@
       </div>
 
       <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
+      <!-- ================= SECTION 2: SYSTEM SETTINGS & MAPPINGS ================= -->
       <div id="tab-panchayath" class="dashboard-section">
-        <div class="table-container">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-city text-magenta"></i> Panchayath & Ward Registered Counts</h3>
-          <div style="overflow-x: auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Panchayath / Municipality</th>
-                  <th>Ward</th>
-                  <th>Registered Count</th>
-                </tr>
-              </thead>
-              <tbody id="panchayathStatsBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="table-container" style="margin-top: 2rem;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-            <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Master Panchayath-Ward-Unit-Zone Mapping</h3>
-            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-              <!-- District Admin Only: Mapping Visibility Toggle Switch -->
-              <div id="mappingVisibilityToggleContainer" style="display:none; align-items:center; gap:0.5rem; background:#F8FAFC; padding:0.4rem 0.8rem; border-radius:30px; border:1px solid #E2E8F0;">
-                <label style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; margin:0;">
-                  <input type="checkbox" id="toggleMappingVisibility" onchange="handleMappingVisibilityToggle(this.checked)" style="width:16px; height:16px; accent-color:var(--cyan); cursor:pointer;">
-                  <span>Show to Zone & Unit Admins</span>
+        <!-- Settings Header Option Panel Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+          
+          <!-- Card 1: System Configurations -->
+          <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-sliders-h text-magenta"></i> System Controls
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                Configure dynamic visibility rules and backend system integrations for active zones.
+              </p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+              <!-- Mapping Visibility Toggle Switch -->
+              <div id="mappingVisibilityToggleContainer" style="display:none; align-items:center; gap:0.75rem; background:#F8FAFC; padding:0.75rem 1rem; border-radius:12px; border:1px solid #E2E8F0;">
+                <label style="display:inline-flex; align-items:center; gap:0.75rem; font-size:0.85rem; font-weight:700; color:#475569; cursor:pointer; margin:0; width:100%;">
+                  <input type="checkbox" id="toggleMappingVisibility" onchange="handleMappingVisibilityToggle(this.checked)" style="width:18px; height:18px; accent-color:var(--cyan); cursor:pointer;">
+                  <span>Show Wards to Zone & Unit Admins</span>
                 </label>
               </div>
               
-              <!-- District Admin Only: One-Click Supabase Data Migrator -->
-              <div id="supabaseMigratorContainer" style="display:none; align-items:center;">
-                <button class="btn btn-sm" id="runMigrationBtn" style="background:#EF4444; color:white; border:none; box-shadow:0 3px 8px rgba(239,68,68,0.25);" onclick="runGoogleSheetsToSupabaseMigration()"><i class="fas fa-database"></i> Migrate Sheets to Supabase</button>
+              <!-- One-Click Supabase Data Migrator -->
+              <div id="supabaseMigratorContainer" style="display:none; align-items:center; width: 100%;">
+                <button class="btn btn-sm" id="runMigrationBtn" style="background:#EF4444; color:white; border:none; box-shadow:0 3px 8px rgba(239,68,68,0.25); width: 100%; padding: 0.75rem; font-weight: 700; border-radius: 12px;" onclick="runGoogleSheetsToSupabaseMigration()">
+                  <i class="fas fa-database"></i> Force Copy Google Sheets to Supabase
+                </button>
               </div>
-
-              <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping</button>
             </div>
+          </div>
+          
+          <!-- Card 2: Panchayath & Ward Registrations Summary -->
+          <div class="card" style="padding: 1.5rem; max-height: 250px; display: flex; flex-direction: column;">
+            <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fas fa-city text-cyan"></i> Registration Summary by Area
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+              Delegate registrations distributed across local bodies.
+            </p>
+            <div style="overflow-y: auto; flex-grow: 1; border: 1px solid rgba(0,0,0,0.05); border-radius: 8px;">
+              <table class="data-table" style="margin: 0; width: 100%;">
+                <thead>
+                  <tr style="background: #F8FAFC;">
+                    <th style="padding: 0.5rem;">Panchayath</th>
+                    <th style="padding: 0.5rem;">Ward</th>
+                    <th style="padding: 0.5rem; text-align: right;">Count</th>
+                  </tr>
+                </thead>
+                <tbody id="panchayathStatsBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+        </div>
+
+        <!-- Section 3: Master Directory Mapping -->
+        <div class="table-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Panchayath & Ward Mappings</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                Map specific local bodies (Panchayaths and Wards) to organizational Zones and Units.
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping Option</button>
           </div>
           <div style="overflow-x: auto;">
             <table class="data-table">
