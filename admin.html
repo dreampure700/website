@@ -3807,7 +3807,7 @@
 
       try {
         console.log("Fetching from Sheets...");
-        const mapRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_mapping`);
+        const mapRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_mapping&migration=true`);
         const mapData = await mapRes.json();
 
         const regsRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_data`);
@@ -3875,12 +3875,24 @@
           if (error) throw error;
         }
 
-        // Seed default accounts
-        const defaultAccounts = [
-          { username: 'district_admin', password: 'admin123', role: 'District', target: '' },
-          { username: 'chavakkad_admin', password: 'zone123', role: 'Zone', target: 'Chavakkad' }
-        ];
-        await supabase.from('accounts').insert(defaultAccounts);
+        // Seed accounts from Google Sheets
+        if (mapData.accounts && mapData.accounts.length > 0) {
+          const formattedAccounts = mapData.accounts.map(a => ({
+            username: a.Username,
+            password: a.Password,
+            role: a.Role,
+            target: a.Target || null
+          }));
+          const { error } = await supabase.from('accounts').insert(formattedAccounts);
+          if (error) throw error;
+        } else {
+          // Seed defaults fallback
+          const defaultAccounts = [
+            { username: 'district_admin', password: 'admin123', role: 'District', target: '' },
+            { username: 'chavakkad_admin', password: 'zone123', role: 'Zone', target: 'Chavakkad' }
+          ];
+          await supabase.from('accounts').insert(defaultAccounts);
+        }
 
         // Batch upload registrations in chunks of 100
         if (regsData && regsData.length > 0) {
