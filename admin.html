@@ -621,12 +621,16 @@
         </div>
       </div>
       
-      <nav class="tab-nav" id="dashboardTabs" style="display: none;">
-        <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
-        <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')"><i class="fas fa-cog"></i> Settings</button>
-        <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Transportation</button>
-        <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate Directory</button>
-        <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Manager</button>
+      <nav class="tab-nav" id="dashboardTabs" style="display: none; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
+          <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
+          <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
+          <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-hands-helping"></i> Volunteer Management</button>
+        </div>
+        <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
+          <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
+        </button>
       </nav>
     </div>
   </header>
@@ -957,7 +961,7 @@
       <div id="tab-media" class="dashboard-section" style="display: none;">
         <div class="card" style="padding: 2rem;">
           <h2 id="mediaFormTitle" style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
-            <i class="fas fa-photo-video text-magenta"></i> Add Media Update
+            <i class="fas fa-hands-helping text-magenta"></i> Add Volunteer Update
           </h2>
           <form id="addMediaForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <input type="hidden" id="mediaMode" value="add">
@@ -991,7 +995,7 @@
 
             <div style="grid-column: 1 / -1; display: flex; gap: 1rem;">
               <button type="submit" id="mediaSubmitBtn" class="btn btn-primary" style="flex-grow: 1; padding: 0.9rem;">
-                <i class="fas fa-upload"></i> Publish Media Update
+                <i class="fas fa-upload"></i> Publish Volunteer Update
               </button>
               <button type="button" id="mediaCancelBtn" class="btn btn-outline" style="display: none; padding: 0.9rem;" onclick="cancelMediaEdit()">
                 Cancel Edit
@@ -1001,7 +1005,7 @@
         </div>
 
         <div class="card" style="padding: 2rem; margin-top: 2rem;">
-          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1rem;"><i class="fas fa-list text-cyan"></i> Published Media Updates</h3>
+          <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1rem;"><i class="fas fa-list text-cyan"></i> Published Volunteer Updates</h3>
           <div class="table-responsive">
             <table class="table">
               <thead>
@@ -3976,21 +3980,21 @@
 
   <!-- BOTTOM NAVIGATION BAR (Mobile View Mockup Style) -->
   <div class="bottom-nav" id="bottomNavBar">
-    <button class="bottom-nav-item active" onclick="switchTab('tab-directory')">
-      <i class="fas fa-users-cog"></i>
-      <span>Students</span>
-    </button>
-    <button class="bottom-nav-item" onclick="switchTab('tab-overview')">
+    <button class="bottom-nav-item active" id="bottomTabOverviewLink" onclick="switchTab('tab-overview')">
       <i class="fas fa-chart-line"></i>
-      <span>Analytics</span>
+      <span>Dashboard</span>
     </button>
-    <button class="bottom-nav-item" onclick="switchTab('tab-transport')">
+    <button class="bottom-nav-item" id="bottomTabDirectoryLink" onclick="switchTab('tab-directory')">
+      <i class="fas fa-users-cog"></i>
+      <span>Delegate</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabTransportLink" onclick="switchTab('tab-transport')">
       <i class="fas fa-bus"></i>
-      <span>Vehicles</span>
+      <span>Vehicle</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
-      <i class="fas fa-images"></i>
-      <span>Media</span>
+      <i class="fas fa-hands-helping"></i>
+      <span>Volunteer</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
