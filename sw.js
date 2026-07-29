@@ -2,7 +2,6 @@ const CACHE_NAME = 'teenspace-cache-v1';
 const ASSETS = [
   '/',
   '/index.html',
-  '/highlights.html',
   '/schedule.html',
   '/media.html',
   '/css/main.css',
