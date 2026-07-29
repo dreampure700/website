@@ -2,8 +2,8 @@
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5pC5We1rbWxn_eQLzH3RqsZ_w_9DhIIkIP9fjgelcTrnjyti7EyeRssslCRMqwcSW/exec";
 
 // Initialize Supabase Client
-const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
+var SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
+var SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
 if (!window.supabaseClient && window.supabase) {
   window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
