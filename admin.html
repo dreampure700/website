@@ -722,7 +722,16 @@
         <div class="table-container" style="margin-top: 2rem;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
             <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Master Panchayath-Ward-Unit-Zone Mapping</h3>
-            <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping</button>
+            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+              <!-- District Admin Only: Mapping Visibility Toggle Switch -->
+              <div id="mappingVisibilityToggleContainer" style="display:none; align-items:center; gap:0.5rem; background:#F8FAFC; padding:0.4rem 0.8rem; border-radius:30px; border:1px solid #E2E8F0;">
+                <label style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.8rem; font-weight:700; color:#475569; cursor:pointer; margin:0;">
+                  <input type="checkbox" id="toggleMappingVisibility" onchange="handleMappingVisibilityToggle(this.checked)" style="width:16px; height:16px; accent-color:var(--cyan); cursor:pointer;">
+                  <span>Show to Zone & Unit Admins</span>
+                </label>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping</button>
+            </div>
           </div>
           <div style="overflow-x: auto;">
             <table class="data-table">
@@ -1317,13 +1326,6 @@
       document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
       document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
 
-      // Hide Panchayath / Settings links if role is Unit
-      if (sessionUser.role === 'Unit') {
-        document.getElementById('tabPanchayathLink').style.display = 'none';
-        const bottomSettings = document.getElementById('bottomTabPanchayathLink');
-        if (bottomSettings) bottomSettings.style.display = 'none';
-      }
-
       loadData();
     }
 
@@ -1357,6 +1359,40 @@
           targets = mapData.targets || [];
           vehicles = mapData.vehicles || [];
           media = mapData.media || [];
+
+          // Dynamic Mapping visibility toggle rule
+          const isMappingDisabled = targets.some(t => t.Zone === 'CONFIG_MAPPING_DISABLED' && t.Target === 'true');
+          
+          if (sessionUser && sessionUser.role === 'District') {
+            document.getElementById('tabPanchayathLink').style.display = '';
+            const bottomSettings = document.getElementById('bottomTabPanchayathLink');
+            if (bottomSettings) bottomSettings.style.display = '';
+            
+            const toggleContainer = document.getElementById('mappingVisibilityToggleContainer');
+            if (toggleContainer) toggleContainer.style.display = 'flex';
+            
+            const visibilityToggle = document.getElementById('toggleMappingVisibility');
+            if (visibilityToggle) {
+              visibilityToggle.checked = !isMappingDisabled;
+            }
+          } else if (sessionUser) {
+            // Zone or Unit Admin
+            if (isMappingDisabled || sessionUser.role === 'Unit') {
+              document.getElementById('tabPanchayathLink').style.display = 'none';
+              const bottomSettings = document.getElementById('bottomTabPanchayathLink');
+              if (bottomSettings) bottomSettings.style.display = 'none';
+              
+              // Redirect if currently on disabled mapping tab
+              const activeSec = document.querySelector('.dashboard-section.active');
+              if (activeSec && activeSec.id === 'tab-panchayath') {
+                switchTab('tab-overview');
+              }
+            } else {
+              document.getElementById('tabPanchayathLink').style.display = '';
+              const bottomSettings = document.getElementById('bottomTabPanchayathLink');
+              if (bottomSettings) bottomSettings.style.display = '';
+            }
+          }
 
           // Populate Filters
           populateFilterOptions();
@@ -2922,8 +2958,17 @@
     // DIRECT TARGET EDITING FROM DASHBOARD
     // ========================================================
     function promptEditTarget(zone, currentVal) {
-      if (!sessionUser || sessionUser.role !== 'District') {
-        alert('Access Denied: Only District Admins can edit targets.');
+      const isDistrict = sessionUser && sessionUser.role === 'District';
+      let isAllowedZoneAdmin = false;
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const myZoneUnits = ORGANIZATIONAL_MAP[sessionUser.target] || [];
+        if (myZoneUnits.includes(zone)) {
+          isAllowedZoneAdmin = true;
+        }
+      }
+
+      if (!isDistrict && !isAllowedZoneAdmin) {
+        alert('Access Denied: You do not have permission to edit this target.');
         return;
       }
       const newValStr = prompt(`Enter new registration target count for ${zone}:`, currentVal);
@@ -2947,6 +2992,32 @@
         })
         .catch(err => {
           console.error(err);
+          alert('Network error. Try again.');
+        });
+    }
+
+    function handleMappingVisibilityToggle(isEnabled) {
+      if (!sessionUser || sessionUser.role !== 'District') return;
+      
+      const submitToggle = document.getElementById('toggleMappingVisibility');
+      if (submitToggle) submitToggle.disabled = true;
+      
+      const isVal = isEnabled ? 'false' : 'true'; // if isEnabled is true, CONFIG_MAPPING_DISABLED is 'false' (visible)
+      
+      fetch(`${GOOGLE_SCRIPT_URL}?action=edit_target&zone=CONFIG_MAPPING_DISABLED&target=${isVal}`)
+        .then(res => res.json())
+        .then(res => {
+          if (submitToggle) submitToggle.disabled = false;
+          if (res.result === 'success') {
+            alert(isEnabled ? 'Panchayath/Mapping option enabled for Zone and Unit admins.' : 'Panchayath/Mapping option disabled for Zone and Unit admins.');
+            loadData();
+          } else {
+            alert('Error updating mapping visibility: ' + res.message);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          if (submitToggle) submitToggle.disabled = false;
           alert('Network error. Try again.');
         });
     }
