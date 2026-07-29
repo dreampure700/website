@@ -626,7 +626,7 @@
           <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
-          <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-hands-helping"></i> Volunteer Management</button>
+          <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Management</button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
           <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
@@ -961,7 +961,7 @@
       <div id="tab-media" class="dashboard-section" style="display: none;">
         <div class="card" style="padding: 2rem;">
           <h2 id="mediaFormTitle" style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-main);">
-            <i class="fas fa-hands-helping text-magenta"></i> Add Volunteer Update
+            <i class="fas fa-photo-video text-magenta"></i> Add Media Item
           </h2>
           <form id="addMediaForm" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
             <input type="hidden" id="mediaMode" value="add">
@@ -978,24 +978,24 @@
             </div>
             
             <div class="form-group">
-              <label class="form-label" for="mediaTitle">Title</label>
+              <label class="form-label" for="mediaTitle">Main Bold Text (Title)</label>
               <input type="text" id="mediaTitle" class="form-input" placeholder="e.g. TEENSPACE 2026 Promo Poster" required>
             </div>
 
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label" for="mediaUrl">URL Link</label>
+              <label class="form-label" for="mediaUrl">Media Link / URL</label>
               <input type="url" id="mediaUrl" class="form-input" placeholder="e.g. https://www.instagram.com/reel/..." required>
               <small style="color:var(--text-muted); font-size:0.8rem; margin-top:0.25rem; display:block;">Pasting Instagram Reel/Post links or YouTube links will automatically generate embeds on the Media page!</small>
             </div>
 
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label" for="mediaDesc">Short Description</label>
+              <label class="form-label" for="mediaDesc">Small Description</label>
               <textarea id="mediaDesc" class="form-input" style="height: 80px; resize: none;" placeholder="Provide brief context for the gallery item..."></textarea>
             </div>
 
             <div style="grid-column: 1 / -1; display: flex; gap: 1rem;">
               <button type="submit" id="mediaSubmitBtn" class="btn btn-primary" style="flex-grow: 1; padding: 0.9rem;">
-                <i class="fas fa-upload"></i> Publish Volunteer Update
+                <i class="fas fa-upload"></i> Publish Media Update
               </button>
               <button type="button" id="mediaCancelBtn" class="btn btn-outline" style="display: none; padding: 0.9rem;" onclick="cancelMediaEdit()">
                 Cancel Edit
@@ -1718,6 +1718,8 @@
       }
 
       activeZones.forEach(zone => {
+        const zoneId = zone.toLowerCase().replace(/[^a-z0-9]/g, '');
+
         // Calculate Zone actual count
         const zoneActual = registrations.filter(r => {
           const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
@@ -1733,6 +1735,11 @@
         const zoneRow = document.createElement('tr');
         zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)'; // light primary tint
         zoneRow.style.borderLeft = '4px solid var(--magenta)';
+        zoneRow.style.cursor = 'pointer';
+        zoneRow.onclick = (e) => {
+          if (e.target.closest('button') || e.target.closest('.btn')) return;
+          toggleZoneUnits(zoneId);
+        };
         
         // Check if current user can edit zone target (only District Admins)
         const canEditZone = (sessionUser.role === 'District');
@@ -1741,7 +1748,7 @@
           : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
 
         zoneRow.innerHTML = `
-          <td data-label="Zone / Unit"><strong>Zone: ${zone}</strong></td>
+          <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s;"></i> Zone: ${zone}</strong></td>
           <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
           <td data-label="Registered"><strong>${zoneActual}</strong></td>
           <td data-label="Target">${zoneTargetVal}</td>
@@ -1781,8 +1788,10 @@
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
 
           const unitRow = document.createElement('tr');
+          unitRow.className = `unit-row-for-${zoneId}`;
+          unitRow.style.display = 'none'; // collapsed by default
           unitRow.innerHTML = `
-            <td data-label="Zone / Unit"><span style="padding-left: 1.5rem; color: #475569;"><i class="fas fa-chevron-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
+            <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #475569;"><i class="fas fa-arrow-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
             <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
             <td data-label="Registered">${unitActual}</td>
             <td data-label="Target">${unitTargetVal}</td>
@@ -1810,8 +1819,10 @@
 
           if (unassignedCount > 0) {
             const unassignedRow = document.createElement('tr');
+            unassignedRow.className = `unit-row-for-${zoneId}`;
+            unassignedRow.style.display = 'none'; // collapsed by default
             unassignedRow.innerHTML = `
-              <td data-label="Zone / Unit"><span style="padding-left: 1.5rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
+              <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
               <td data-label="Type"><span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.7rem; font-weight:700;">N/A</span></td>
               <td data-label="Registered">${unassignedCount}</td>
               <td data-label="Target">-</td>
@@ -1822,6 +1833,26 @@
           }
         }
       });
+    }
+
+    function toggleZoneUnits(zoneId) {
+      const rows = document.querySelectorAll(`.unit-row-for-${zoneId}`);
+      const arrow = document.getElementById(`arrow-${zoneId}`);
+      if (rows.length === 0) return;
+      
+      const isCollapsed = rows[0].style.display === 'none';
+      
+      rows.forEach(r => {
+        r.style.display = isCollapsed ? '' : 'none';
+      });
+      
+      if (arrow) {
+        if (isCollapsed) {
+          arrow.style.transform = 'rotate(90deg)';
+        } else {
+          arrow.style.transform = 'rotate(0deg)';
+        }
+      }
     }
 
     // Render Panchayath & Ward Counts
@@ -3993,8 +4024,8 @@
       <span>Vehicle</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
-      <i class="fas fa-hands-helping"></i>
-      <span>Volunteer</span>
+      <i class="fas fa-images"></i>
+      <span>Media</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
