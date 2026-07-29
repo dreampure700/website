@@ -95,11 +95,41 @@
     grid-template-columns: 1fr;
   }
 
-  /* Iframe heights optimized for mobile aspect ratios */
-  iframe[src*="instagram.com/reel"], 
-  iframe[src*="youtube.com/embed"],
+  /* Iframe heights optimized for mobile aspect ratios (excluding the hero countdown background video) */
+  iframe[src*="instagram.com/reel"]:not(.hero-video-iframe), 
+  iframe[src*="youtube.com/embed"]:not(.hero-video-iframe),
   .feature-card div[style*="height: 400px"],
   .feature-card div[style*="height: 480px"] {
     height: 320px !important;
+  }
+
+  /* Spacing optimizations for a tighter mobile layout */
+  .section {
+    padding: 3.5rem 0 !important;
+  }
+
+  .hero {
+    padding-top: 6.5rem !important;
+    padding-bottom: 3.5rem !important;
+  }
+
+  .hero-grid {
+    gap: 1.5rem !important;
+  }
+
+  .visual-card-glass {
+    padding: 1.5rem !important;
+  }
+
+  .hero-banner-image-wrap {
+    margin-top: 1rem !important;
+  }
+  
+  .container {
+    padding: 0 1.25rem !important;
+  }
+
+  .features-grid {
+    gap: 1.5rem !important;
   }
 }
