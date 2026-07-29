@@ -1056,11 +1056,13 @@
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
           <thead>
             <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
+              <th style="padding: 0.75rem 0.5rem; width: 60px;">ORDER</th>
               <th style="padding: 0.75rem 0.5rem;">REG ID</th>
               <th style="padding: 0.75rem 0.5rem;">NAME</th>
               <th style="padding: 0.75rem 0.5rem;">CLASS</th>
               <th style="padding: 0.75rem 0.5rem;">MOBILE</th>
               <th style="padding: 0.75rem 0.5rem;">ZONE / UNIT</th>
+              <th style="padding: 0.75rem 0.5rem;">BOARDING STATUS</th>
               <th style="padding: 0.75rem 0.5rem; text-align: right;">ACTION</th>
             </tr>
           </thead>
@@ -1944,6 +1946,15 @@
         const card = document.createElement('div');
         card.className = 'student-mobile-card';
         
+        const isPickedUp = item["Picked Up"] === 'true' || item.pickedUp === 'true';
+        if (isPickedUp) {
+          card.style.border = '1.5px solid #22C55E';
+          card.style.background = '#F0FDF4';
+        } else {
+          card.style.border = '1px solid var(--border-light)';
+          card.style.background = 'white';
+        }
+
         const studentPhone = item["Student Mobile Number"] || item.phone || '';
         const parentPhone = item["Parent Mobile Number"] || '';
         
@@ -2001,10 +2012,47 @@
                 <span>Class / School: <strong>${item.Class || 'N/A'} (${item.School || 'N/A'})</strong></span>
               </div>
             </div>
+
+            <!-- Picked Up Toggle Button -->
+            <div style="border-top: 1px dashed rgba(0,0,0,0.06); padding-top:0.75rem; margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.8rem; font-weight:600; color:${isPickedUp ? '#15803D' : '#64748B'};">
+                <i class="${isPickedUp ? 'fas fa-check-circle' : 'far fa-circle'}"></i> 
+                ${isPickedUp ? 'Picked Up / Boarded' : 'Awaiting Pick-up'}
+              </span>
+              <button class="btn" style="padding:0.35rem 0.65rem; font-size:0.75rem; border-radius:6px; font-weight:600; cursor:pointer; transition:all 0.2s; ${isPickedUp ? 'background:#DCFCE7; color:#15803D; border:1px solid rgba(21,128,61,0.15);' : 'background:var(--grad-primary); color:white; border:none; box-shadow:0 3px 8px rgba(230,0,103,0.15);'}" onclick="toggleStudentPickup('${item["Registration ID"] || item.regId}', ${isPickedUp})">
+                ${isPickedUp ? '<i class="fas fa-undo"></i> Undo' : '<i class="fas fa-check"></i> Pick Up'}
+              </button>
+            </div>
           </div>
         `;
         listContainer.appendChild(card);
       });
+    }
+
+    function toggleStudentPickup(regId, isPickedUp) {
+      const newStatus = isPickedUp ? 'false' : 'true';
+      
+      // Update local state immediately for instant feedback
+      const mainReg = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (mainReg) {
+        mainReg["Picked Up"] = newStatus;
+        mainReg.pickedUp = newStatus;
+      }
+      
+      // Re-render immediately
+      renderCoordinatorDashboard();
+      
+      // Call API
+      fetch(`${GOOGLE_SCRIPT_URL}?action=toggle_pickup&regId=${encodeURIComponent(regId)}&status=${encodeURIComponent(newStatus)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result !== 'success') {
+            console.error('Failed to toggle pickup status on sheet: ', res.message);
+          }
+        })
+        .catch(err => {
+          console.error('Error toggling pickup status: ', err);
+        });
     }
 
     // Populate advanced search/filters options
@@ -2478,7 +2526,7 @@
       if (passengers.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);">
+            <td colspan="8" style="text-align:center; padding:2rem; color:var(--text-muted);">
               <i class="fas fa-bus" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:rgba(0,0,0,0.1);"></i>
               No students assigned to this vehicle yet.
             </td>
@@ -2498,6 +2546,11 @@
                </div>`
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Fixed</span>`;
 
+          const isPickedUp = item["Picked Up"] === 'true' || item.pickedUp === 'true';
+          const boardingStatusHtml = isPickedUp
+            ? `<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-check-circle"></i> Boarded</span>`
+            : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-clock"></i> Waiting</span>`;
+
           row.innerHTML = `
             <td data-label="Order" style="padding:0.75rem 0.5rem; font-weight:700; color:var(--cyan);">#${index + 1}</td>
             <td data-label="Reg ID" style="padding:0.75rem 0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
@@ -2513,6 +2566,7 @@
               </div>
             </td>
             <td data-label="Zone / Unit" style="padding:0.75rem 0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
+            <td data-label="Status" style="padding:0.75rem 0.5rem;">${boardingStatusHtml}</td>
             <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
               <div style="display:inline-flex; align-items:center; gap:0.5rem;">
                 ${orderControls}
