@@ -699,6 +699,33 @@
 
       </div>
 
+      <!-- ================= SECTION 6: COORDINATOR DASHBOARD ================= -->
+      <div id="tab-coordinator" class="dashboard-section">
+        <div class="table-container">
+          <div style="background:var(--grad-primary); color:white; padding:1.5rem; border-radius:15px; margin-bottom:1.5rem; box-shadow:0 8px 20px rgba(230,0,103,0.15);">
+            <h3 style="font-family: var(--font-heading); font-size:1.3rem; margin:0 0 0.5rem 0; font-weight:700;"><i class="fas fa-bus"></i> Route Coordinator Dashboard</h3>
+            <p style="margin:0 0 1rem 0; opacity:0.9; font-size:0.85rem;">Welcome to the transport coordination portal. Below is your assigned route passenger manifesto in pick-up sequence.</p>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(255,255,255,0.2); padding-top:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div>
+                <div style="font-size:0.7rem; opacity:0.8;">ASSIGNED VEHICLE</div>
+                <div style="font-weight:700; font-size:1.1rem;" id="coordVehicleName">Loading...</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.7rem; opacity:0.8;">SEATS COMPLETED</div>
+                <div style="font-weight:700; font-size:1.1rem;" id="coordSeatRatio">0 / 0 seats</div>
+              </div>
+            </div>
+          </div>
+
+          <h4 style="font-family: var(--font-heading); font-size:1rem; margin-bottom:1rem; color:var(--text-main);"><i class="fas fa-list-ol"></i> Pick-up Order & Passengers List</h4>
+          
+          <div id="coordinatorStudentList" class="mobile-card-list">
+            <!-- Populated dynamically with mobile-optimised cards -->
+          </div>
+        </div>
+      </div>
+
       <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
       <div id="tab-panchayath" class="dashboard-section">
         <div class="table-container">
@@ -1089,6 +1116,36 @@
             <!-- Filled dynamically -->
           </select>
         </div>
+
+        <!-- Bus Coordinator Credentials -->
+        <div style="border-top: 1px dashed var(--border-light); margin-top:1.5rem; padding-top:1rem;">
+          <h4 style="font-family: var(--font-heading); font-size: 0.9rem; margin-bottom: 0.75rem; color:var(--text-main);"><i class="fas fa-user-shield text-cyan"></i> Bus Coordinator Credentials</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="vehicleCoordUser" style="font-size:0.75rem;">Username</label>
+              <input type="text" id="vehicleCoordUser" class="form-input" placeholder="coord_username" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="vehicleCoordPass" style="font-size:0.75rem;">Password</label>
+              <input type="text" id="vehicleCoordPass" class="form-input" placeholder="coord_password" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Assistant Bus Coordinator Credentials -->
+        <div style="border-top: 1px dashed var(--border-light); margin-top:1rem; padding-top:1rem; margin-bottom:1.5rem;">
+          <h4 style="font-family: var(--font-heading); font-size: 0.9rem; margin-bottom: 0.75rem; color:var(--text-main);"><i class="fas fa-user-friends text-magenta"></i> Asst. Bus Coordinator</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="vehicleAsstUser" style="font-size:0.75rem;">Username</label>
+              <input type="text" id="vehicleAsstUser" class="form-input" placeholder="asst_username" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="vehicleAsstPass" style="font-size:0.75rem;">Password</label>
+              <input type="text" id="vehicleAsstPass" class="form-input" placeholder="asst_password" style="padding:0.4rem 0.6rem; font-size:0.8rem;">
+            </div>
+          </div>
+        </div>
         
         <button type="submit" id="vehicleSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
           <i class="fas fa-check"></i> Save Vehicle
@@ -1322,15 +1379,34 @@
     // Initialize Dashboard after Auth
     function initDashboard() {
       document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('dashboardTabs').style.display = 'flex';
-      document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
-      document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
+      
+      const isCoordinator = sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator');
+      
+      if (isCoordinator) {
+        document.getElementById('dashboardTabs').style.display = 'none';
+        const bottomNav = document.getElementById('bottomNavBar');
+        if (bottomNav) bottomNav.style.display = 'none';
+        
+        document.getElementById('headerRole').textContent = sessionUser.role;
+        document.getElementById('welcomeUser').textContent = `Welcome, Coordinator (${sessionUser.target})`;
+      } else {
+        document.getElementById('dashboardTabs').style.display = 'flex';
+        const bottomNav = document.getElementById('bottomNavBar');
+        if (bottomNav) bottomNav.style.display = 'flex';
+        
+        document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
+        document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
+      }
 
       loadData();
     }
 
     // Switch Dashboard Tabs
     function switchTab(tabId) {
+      if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
+        return; // Coordinators are restricted to their dedicated view only
+      }
+      
       document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
       document.querySelectorAll('.dashboard-section').forEach(sec => sec.classList.remove('active'));
       
@@ -1410,7 +1486,19 @@
         .then(regs => {
           registrations = regs;
           spinner.style.display = 'none';
-          renderDashboard();
+          
+          if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
+            document.querySelectorAll('.dashboard-section').forEach(sec => sec.classList.remove('active'));
+            const coordSec = document.getElementById('tab-coordinator');
+            if (coordSec) coordSec.classList.add('active');
+            
+            renderCoordinatorDashboard();
+          } else {
+            const coordSec = document.getElementById('tab-coordinator');
+            if (coordSec) coordSec.classList.remove('active');
+            
+            renderDashboard();
+          }
         })
         .catch(err => {
           console.error(err);
@@ -1815,6 +1903,107 @@
           `;
           cardList.appendChild(card);
         }
+      });
+    }
+
+    // Render Coordinator Student Cards in Pick-up Order Sequence
+    function renderCoordinatorDashboard() {
+      if (!sessionUser) return;
+      const vehicleId = sessionUser.target;
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      
+      const vName = vehicle ? `${vehicle["Vehicle ID"]} - ${vehicle["Vehicle Name"]}` : vehicleId;
+      document.getElementById('coordVehicleName').textContent = vName;
+
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const capacity = vehicle ? (parseInt(vehicle.Capacity) || 50) : 50;
+      document.getElementById('coordSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
+
+      // Sort passengers by pickup order
+      passengers.sort((a, b) => {
+        const oA = parseInt(a["Pickup Order"] || a.pickupOrder) || 999999;
+        const oB = parseInt(b["Pickup Order"] || b.pickupOrder) || 999999;
+        return oA - oB;
+      });
+
+      const listContainer = document.getElementById('coordinatorStudentList');
+      if (!listContainer) return;
+      listContainer.innerHTML = '';
+
+      if (passengers.length === 0) {
+        listContainer.innerHTML = `
+          <div style="text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+            <i class="fas fa-bus-alt fa-3x" style="margin-bottom:1rem; color:#CBD5E1;"></i>
+            <p>No passengers are currently assigned to this vehicle route.</p>
+          </div>
+        `;
+        return;
+      }
+
+      passengers.forEach((item, index) => {
+        const card = document.createElement('div');
+        card.className = 'student-mobile-card';
+        
+        const studentPhone = item["Student Mobile Number"] || item.phone || '';
+        const parentPhone = item["Parent Mobile Number"] || '';
+        
+        card.innerHTML = `
+          <div class="student-card-header">
+            <div class="pickup-badge" style="background:var(--grad-primary); color:white; font-weight:700; width:35px; height:35px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.95rem; margin-right:0.75rem; flex-shrink:0;">
+              #${index + 1}
+            </div>
+            <div class="student-card-name-id" style="flex-grow:1;">
+              <div class="student-name" style="font-size:1.05rem; font-weight:700; color:var(--text-main);">${item["Student Name"] || item.name || 'N/A'}</div>
+              <div class="student-id" style="font-size:0.75rem; color:var(--text-dim);">ID: ${item["Registration ID"] || item.regId || 'N/A'}</div>
+            </div>
+            <div class="student-card-ward">
+              <div class="ward-circle-badge" title="Ward Number" style="background:rgba(34,197,94,0.08); color:#22C55E; font-weight:700; width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem;">${item.Ward || '00'}</div>
+            </div>
+          </div>
+          
+          <div class="student-card-details" style="border-top: 1px dashed rgba(0,0,0,0.05); padding-top:0.75rem; margin-top:0.5rem; display:flex; flex-direction:column; gap:0.4rem; font-size:0.85rem;">
+            <div class="detail-row" style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fas fa-phone-alt detail-icon phone-icon-student" style="color:var(--cyan); width:16px;"></i>
+              <div class="detail-text" style="flex-grow:1; display:flex; justify-content:space-between; align-items:center;">
+                <span>Student Mobile: <strong>${studentPhone || 'N/A'}</strong></span>
+                ${studentPhone ? `
+                  <span class="quick-contact-actions" style="display:inline-flex; gap:0.5rem;">
+                    <a href="tel:${studentPhone}" title="Call" style="color:#2563EB; font-size:0.9rem;"><i class="fas fa-phone-alt"></i></a>
+                    <a href="https://wa.me/91${studentPhone}" target="_blank" title="WhatsApp" style="color:#22C55E; font-size:1rem;"><i class="fab fa-whatsapp"></i></a>
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+            
+            <div class="detail-row" style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fas fa-phone detail-icon phone-icon-parent" style="color:var(--cyan); width:16px; transform: scaleX(-1);"></i>
+              <div class="detail-text" style="flex-grow:1; display:flex; justify-content:space-between; align-items:center;">
+                <span>Parent Mobile: <strong>${parentPhone || 'N/A'}</strong></span>
+                ${parentPhone ? `
+                  <span class="quick-contact-actions" style="display:inline-flex; gap:0.5rem;">
+                    <a href="tel:${parentPhone}" title="Call" style="color:#2563EB; font-size:0.9rem;"><i class="fas fa-phone-alt"></i></a>
+                    <a href="https://wa.me/91${parentPhone}" target="_blank" title="WhatsApp" style="color:#22C55E; font-size:1rem;"><i class="fab fa-whatsapp"></i></a>
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+            
+            <div class="detail-row" style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fas fa-map-marker-alt detail-icon map-icon" style="color:red; width:16px;"></i>
+              <div class="detail-text">
+                <span>Location: <strong>${item.Place || 'N/A'}, ${item.Panchayath || 'N/A'}</strong></span>
+              </div>
+            </div>
+
+            <div class="detail-row" style="display:flex; align-items:center; gap:0.5rem;">
+              <i class="fas fa-graduation-cap detail-icon" style="color:#7C3AED; width:16px;"></i>
+              <div class="detail-text">
+                <span>Class / School: <strong>${item.Class || 'N/A'} (${item.School || 'N/A'})</strong></span>
+              </div>
+            </div>
+          </div>
+        `;
+        listContainer.appendChild(card);
       });
     }
 
@@ -2273,6 +2462,13 @@
       const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
       const capacity = parseInt(vehicle.Capacity) || 50;
       
+      // Sort by pickup order
+      passengers.sort((a, b) => {
+        const oA = parseInt(a["Pickup Order"] || a.pickupOrder) || 999999;
+        const oB = parseInt(b["Pickup Order"] || b.pickupOrder) || 999999;
+        return oA - oB;
+      });
+
       document.getElementById('passengerSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
       document.getElementById('passengerModalSubtitle').textContent = `Manage passengers for this bus route.`;
 
@@ -2282,26 +2478,48 @@
       if (passengers.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="6" style="text-align:center; padding:2rem; color:var(--text-muted);">
+            <td colspan="7" style="text-align:center; padding:2rem; color:var(--text-muted);">
               <i class="fas fa-bus" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:rgba(0,0,0,0.1);"></i>
               No students assigned to this vehicle yet.
             </td>
           </tr>
         `;
       } else {
-        passengers.forEach(item => {
+        passengers.forEach((item, index) => {
           const row = document.createElement('tr');
           row.style.borderBottom = '1px solid var(--border-light)';
+          
+          // Reordering buttons visible only to District Admin or parent Zone Admin
+          const canReorder = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && vehicle.Zone === sessionUser.target);
+          const orderControls = canReorder 
+            ? `<div style="display:inline-flex; gap:0.2rem;">
+                <button class="btn btn-outline" style="padding:0.25rem 0.35rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="movePassenger('${item["Registration ID"] || item.regId}', 'up', '${vehicleId}')"><i class="fas fa-chevron-up"></i></button>
+                <button class="btn btn-outline" style="padding:0.25rem 0.35rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="movePassenger('${item["Registration ID"] || item.regId}', 'down', '${vehicleId}')"><i class="fas fa-chevron-down"></i></button>
+               </div>`
+            : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Fixed</span>`;
+
           row.innerHTML = `
+            <td data-label="Order" style="padding:0.75rem 0.5rem; font-weight:700; color:var(--cyan);">#${index + 1}</td>
             <td data-label="Reg ID" style="padding:0.75rem 0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
             <td data-label="Name" style="padding:0.75rem 0.5rem;"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
             <td data-label="Class" style="padding:0.75rem 0.5rem;">${item.Class || 'N/A'}</td>
-            <td data-label="Mobile" style="padding:0.75rem 0.5rem;">${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
+            <td data-label="Mobile" style="padding:0.75rem 0.5rem;">
+              <div style="display:inline-flex; align-items:center; gap:0.4rem;">
+                <span>${item["Student Mobile Number"] || item.phone || 'N/A'}</span>
+                ${(item["Student Mobile Number"] || item.phone) ? `
+                  <a href="tel:${item["Student Mobile Number"] || item.phone}" style="color:#2563EB; font-size:0.75rem; margin-left:0.25rem;"><i class="fas fa-phone-alt"></i></a>
+                  <a href="https://wa.me/91${item["Student Mobile Number"] || item.phone}" target="_blank" style="color:#22C55E; font-size:0.85rem; margin-left:0.15rem;"><i class="fab fa-whatsapp"></i></a>
+                ` : ''}
+              </div>
+            </td>
             <td data-label="Zone / Unit" style="padding:0.75rem 0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
             <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
-              <button class="btn btn-outline" style="padding:0.2rem 0.4rem; font-size:0.7rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')">
-                <i class="fas fa-user-minus"></i> Remove
-              </button>
+              <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+                ${orderControls}
+                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')">
+                  <i class="fas fa-user-minus"></i> Remove
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(row);
@@ -2329,6 +2547,62 @@
       };
 
       modal.classList.add('active');
+    }
+
+    function movePassenger(regId, direction, vehicleId) {
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      if (!vehicle) return;
+
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      passengers.sort((a, b) => {
+        const oA = parseInt(a["Pickup Order"] || a.pickupOrder) || 999999;
+        const oB = parseInt(b["Pickup Order"] || b.pickupOrder) || 999999;
+        return oA - oB;
+      });
+
+      const index = passengers.findIndex(r => (r["Registration ID"] || r.regId) === regId);
+      if (index === -1) return;
+
+      if (direction === 'up' && index > 0) {
+        const temp = passengers[index];
+        passengers[index] = passengers[index - 1];
+        passengers[index - 1] = temp;
+      } else if (direction === 'down' && index < passengers.length - 1) {
+        const temp = passengers[index];
+        passengers[index] = passengers[index + 1];
+        passengers[index + 1] = temp;
+      } else {
+        return;
+      }
+
+      // Update pickup orders locally first
+      passengers.forEach((p, idx) => {
+        const orderNum = idx + 1;
+        p["Pickup Order"] = orderNum;
+        p.pickupOrder = orderNum;
+        
+        const mainReg = registrations.find(r => (r["Registration ID"] || r.regId) === (p["Registration ID"] || p.regId));
+        if (mainReg) {
+          mainReg["Pickup Order"] = orderNum;
+          mainReg.pickupOrder = orderNum;
+        }
+      });
+
+      // Update UI immediately
+      openPassengerListModal(vehicleId);
+
+      // Persist on database
+      const newOrderIds = passengers.map(p => p["Registration ID"] || p.regId).join(',');
+      fetch(`${GOOGLE_SCRIPT_URL}?action=reorder_passengers&regIds=${encodeURIComponent(newOrderIds)}`)
+        .then(res => res.json())
+        .then(res => {
+          if (res.result !== 'success') {
+            console.error('Reordering failed on server: ', res.message);
+          }
+        })
+        .catch(err => {
+          console.error('Error reordering passengers: ', err);
+        });
     }
 
     function closePassengerListModal() {
@@ -2566,6 +2840,12 @@
       document.getElementById('vehicleMode').value = 'add';
       document.getElementById('vehicleIdInput').disabled = false;
 
+      // Clear coordinator fields
+      document.getElementById('vehicleCoordUser').value = '';
+      document.getElementById('vehicleCoordPass').value = '';
+      document.getElementById('vehicleAsstUser').value = '';
+      document.getElementById('vehicleAsstPass').value = '';
+
       populateVehicleDropdowns();
       modal.classList.add('active');
     }
@@ -2584,6 +2864,12 @@
 
       document.getElementById('vehicleNameInput').value = vehicle["Vehicle Name"] || '';
       document.getElementById('vehicleCapacityInput').value = vehicle.Capacity || '';
+
+      // Populate coordinator fields
+      document.getElementById('vehicleCoordUser').value = vehicle["Coordinator Username"] || '';
+      document.getElementById('vehicleCoordPass').value = vehicle["Coordinator Password"] || '';
+      document.getElementById('vehicleAsstUser').value = vehicle["Asst Coordinator Username"] || '';
+      document.getElementById('vehicleAsstPass').value = vehicle["Asst Coordinator Password"] || '';
 
       populateVehicleDropdowns();
       
@@ -2651,6 +2937,11 @@
       const name = document.getElementById('vehicleNameInput').value.trim();
       const capacity = document.getElementById('vehicleCapacityInput').value;
       
+      const coordUser = document.getElementById('vehicleCoordUser').value.trim();
+      const coordPass = document.getElementById('vehicleCoordPass').value.trim();
+      const asstUser = document.getElementById('vehicleAsstUser').value.trim();
+      const asstPass = document.getElementById('vehicleAsstPass').value.trim();
+
       // Temporarily enable fields to grab values if they are disabled
       const zoneSelect = document.getElementById('vehicleZoneInput');
       const unitSelect = document.getElementById('vehicleUnitInput');
@@ -2662,7 +2953,16 @@
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
       const action = mode === 'add' ? 'add_vehicle' : 'edit_vehicle';
-      const url = `${GOOGLE_SCRIPT_URL}?action=${action}&vehicleId=${encodeURIComponent(vehicleId)}&name=${encodeURIComponent(name)}&capacity=${encodeURIComponent(capacity)}&zone=${encodeURIComponent(zone)}&unit=${encodeURIComponent(unit)}`;
+      const url = `${GOOGLE_SCRIPT_URL}?action=${action}` +
+        `&vehicleId=${encodeURIComponent(vehicleId)}` +
+        `&name=${encodeURIComponent(name)}` +
+        `&capacity=${encodeURIComponent(capacity)}` +
+        `&zone=${encodeURIComponent(zone)}` +
+        `&unit=${encodeURIComponent(unit)}` +
+        `&coordUser=${encodeURIComponent(coordUser)}` +
+        `&coordPass=${encodeURIComponent(coordPass)}` +
+        `&asstUser=${encodeURIComponent(asstUser)}` +
+        `&asstPass=${encodeURIComponent(asstPass)}`;
 
       fetch(url)
         .then(res => res.json())
