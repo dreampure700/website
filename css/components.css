@@ -28,14 +28,35 @@
   align-items: center;
   gap: 0.65rem;
   text-decoration: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.brand-logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+.brand-logo-main {
   font-family: var(--font-heading);
   font-size: 1.8rem;
   font-weight: 800;
   color: var(--text-main);
   letter-spacing: -0.5px;
-  line-height: 1;
-  user-select: none;
+  line-height: 1.1;
+}
+
+.brand-logo-sub {
+  font-size: 0.55rem;
+  font-weight: 800;
+  color: var(--text-dim);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
   white-space: nowrap;
+  margin-top: 0.15rem;
+  line-height: 1;
 }
 
 .brand-logo-img {
