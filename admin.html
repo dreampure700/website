@@ -670,6 +670,14 @@
             <div class="stat-label">Total Delegates</div>
           </div>
         </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(230,0,103,0.06); color: var(--magenta);"><i class="fas fa-school"></i></div>
+          <div>
+            <div class="stat-val" id="class10Count">0</div>
+            <div class="stat-label">10th Class</div>
+          </div>
+        </div>
         
         <div class="stat-card">
           <div class="stat-icon"><i class="fas fa-chalkboard text-magenta"></i></div>
@@ -931,6 +939,7 @@
               <label class="form-label" style="font-size:0.8rem;">Class</label>
               <select id="filterClass" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
                 <option value="">All Classes</option>
+                <option value="10th">10th</option>
                 <option value="11th">11th</option>
                 <option value="12th">12th</option>
               </select>
@@ -1260,6 +1269,7 @@
           <div class="form-group">
             <label class="form-label" for="studentClassInput">Class *</label>
             <select id="studentClassInput" class="form-select" required>
+              <option value="10th">10th</option>
               <option value="11th">11th</option>
               <option value="12th">12th</option>
             </select>
@@ -1701,8 +1711,10 @@
 
       // 2. Header counters
       document.getElementById('totalCount').textContent = filteredRegs.length;
-      document.getElementById('class11Count').textContent = filteredRegs.filter(r => r.Class === '11th').length;
-      document.getElementById('class12Count').textContent = filteredRegs.filter(r => r.Class === '12th').length;
+      const class10El = document.getElementById('class10Count');
+      if (class10El) class10El.textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '10th').length;
+      document.getElementById('class11Count').textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '11th').length;
+      document.getElementById('class12Count').textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '12th').length;
       
       const todayStr = new Date().toDateString();
       document.getElementById('todayCount').textContent = filteredRegs.filter(r => {
