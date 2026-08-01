@@ -1,6 +1,9 @@
 // TEENSPACE 2026 - MAIN APP INTERACTION LOGIC
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Premium Opening Splash Screen
+  initSplashScreen();
+
   // Mobile Navigation Toggle
   const mobileToggle = document.getElementById('mobileToggle');
   const navLinks = document.getElementById('navLinks');
@@ -103,7 +106,7 @@ function showInstallBanner() {
   
   banner.innerHTML = `
     <div style="display:flex; align-items:center; gap:0.75rem; text-align:left;">
-      <img src="assets/images/teenspace_pwa_logo.png" alt="Teenspace App" style="width:36px; height:36px; border-radius:8px;">
+      <img src="assets/images/teenspace_app_icon_192.png" alt="Teenspace App" style="width:38px; height:38px; border-radius:10px; object-fit:contain;">
       <div>
         <div style="font-weight:700; font-size:0.9rem;">Install TEENSPACE App</div>
         <div style="font-size:0.75rem; color:#94A3B8;">Add to home screen for fast access</div>
@@ -133,4 +136,21 @@ function showInstallBanner() {
   document.getElementById('pwaCloseBtn').addEventListener('click', () => {
     banner.style.display = 'none';
   });
+}
+
+// Premium Opening Splash Screen Handler
+function initSplashScreen() {
+  const splash = document.getElementById('appSplashScreen');
+  if (!splash) return;
+
+  const hasSeenSplash = sessionStorage.getItem('teenspace_splash_shown');
+  const delay = hasSeenSplash ? 350 : 1250;
+
+  setTimeout(() => {
+    splash.classList.add('hide-splash');
+    sessionStorage.setItem('teenspace_splash_shown', 'true');
+    setTimeout(() => {
+      splash.remove();
+    }, 600);
+  }, delay);
 }
