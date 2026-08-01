@@ -1577,10 +1577,15 @@
       spinner.style.display = 'block';
 
       try {
-        // 1. Fetch Mapping
-        const { data: mapData, error: mapErr } = await supabase.from('mapping').select('*');
-        if (mapErr) throw mapErr;
-        mapping = (mapData || []).map(d => ({ Panchayath: d.panchayath, Ward: d.ward, Unit: d.unit, Zone: d.zone }));
+        // 1. Fetch Mapping (Paginated for >1000 rows)
+        const [mRes1, mRes2, mRes3] = await Promise.all([
+          supabase.from('mapping').select('*').range(0, 999),
+          supabase.from('mapping').select('*').range(1000, 1999),
+          supabase.from('mapping').select('*').range(2000, 2999)
+        ]);
+        if (mRes1.error) throw mRes1.error;
+        const mapData = [...(mRes1.data || []), ...(mRes2.data || []), ...(mRes3.data || [])];
+        mapping = mapData.map(d => ({ Panchayath: d.panchayath, Ward: d.ward, Unit: d.unit, Zone: d.zone }));
 
         // 2. Fetch Targets
         const { data: targetData, error: targetErr } = await supabase.from('targets').select('*');
@@ -1663,8 +1668,16 @@
         // Render Master Mapping Table
         renderMasterMapping();
 
-        // 6. Fetch Registrations
-        const { data: regData, error: regErr } = await supabase.from('registrations').select('*');
+        // 6. Fetch Registrations (Paginated for >1000 rows)
+        const [rRes1, rRes2, rRes3, rRes4, rRes5] = await Promise.all([
+          supabase.from('registrations').select('*').range(0, 999),
+          supabase.from('registrations').select('*').range(1000, 1999),
+          supabase.from('registrations').select('*').range(2000, 2999),
+          supabase.from('registrations').select('*').range(3000, 3999),
+          supabase.from('registrations').select('*').range(4000, 4999)
+        ]);
+        if (rRes1.error) throw rRes1.error;
+        const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
         if (regErr) throw regErr;
         
         registrations = (regData || []).map(d => ({
@@ -3598,19 +3611,67 @@
         zoneSelect.addEventListener('change', updateStudentUnits);
       }
 
-      // Add Panchayath change listener to update Wards dropdown
+      // Add Panchayath & Ward change listeners for auto Zone & Unit resolution
+      const wardSelect = document.getElementById('studentWardInput');
       pSelect.onchange = updateStudentModalWards;
+      if (wardSelect) {
+        wardSelect.onchange = autoAssignZoneAndUnitFromWard;
+      }
     }
 
     function updateStudentModalWards() {
       const pVal = document.getElementById('studentPanchayathInput').value;
       const wardSelect = document.getElementById('studentWardInput');
+      const zoneSelect = document.getElementById('studentZoneInput');
+      const unitSelect = document.getElementById('studentUnitInput');
       
       wardSelect.innerHTML = '<option value="">Select Ward</option>';
       if (!pVal) return;
 
-      const wards = [...new Set(mapping.filter(m => m.Panchayath === pVal).map(m => m.Ward))].filter(Boolean).sort();
+      const matchingRows = mapping.filter(m => (m.Panchayath || '').trim().toLowerCase() === pVal.trim().toLowerCase());
+      const wards = [...new Set(matchingRows.map(m => m.Ward))].filter(Boolean).sort();
       wards.forEach(w => wardSelect.appendChild(new Option(w, w)));
+
+      // Auto-assign Zone and Unit if all wards in this Panchayath map to a single Zone/Unit
+      const uniqueZones = [...new Set(matchingRows.map(m => m.Zone))].filter(Boolean);
+      const uniqueUnits = [...new Set(matchingRows.map(m => m.Unit))].filter(Boolean);
+
+      if (uniqueZones.length === 1 && !zoneSelect.disabled) {
+        zoneSelect.value = uniqueZones[0];
+        const zoneUnits = ORGANIZATIONAL_MAP[uniqueZones[0]] || [];
+        unitSelect.innerHTML = '<option value="">Select Unit</option>';
+        zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+        if (uniqueUnits.length === 1 && !unitSelect.disabled) {
+          unitSelect.value = uniqueUnits[0];
+        }
+      }
+    }
+
+    function autoAssignZoneAndUnitFromWard() {
+      const pVal = document.getElementById('studentPanchayathInput').value;
+      const wVal = document.getElementById('studentWardInput').value;
+      const zoneSelect = document.getElementById('studentZoneInput');
+      const unitSelect = document.getElementById('studentUnitInput');
+
+      if (!pVal || !wVal) return;
+
+      const match = mapping.find(m => 
+        (m.Panchayath || '').trim().toLowerCase() === pVal.trim().toLowerCase() && 
+        (m.Ward || '').trim().toLowerCase() === wVal.trim().toLowerCase()
+      );
+
+      if (match) {
+        if (match.Zone && !zoneSelect.disabled) {
+          zoneSelect.value = match.Zone;
+          const zoneUnits = ORGANIZATIONAL_MAP[match.Zone] || [];
+          unitSelect.innerHTML = '<option value="">Select Unit</option>';
+          zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+        }
+        if (match.Unit && !unitSelect.disabled) {
+          unitSelect.value = match.Unit;
+        }
+      }
     }
 
     function populateStudentVehicleDropdown() {

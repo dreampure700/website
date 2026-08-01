@@ -222,10 +222,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     Promise.all([
-      supabase.from('mapping').select('*'),
-      supabase.from('registrations').select('school')
-    ]).then(([mapRes, regRes]) => {
-      masterMapping = (mapRes.data || []).map(m => ({
+      supabase.from('mapping').select('*').range(0, 999),
+      supabase.from('mapping').select('*').range(1000, 1999),
+      supabase.from('registrations').select('school').range(0, 4999)
+    ]).then(([m1, m2, regRes]) => {
+      const allMappingData = [...(m1.data || []), ...(m2.data || [])];
+      masterMapping = allMappingData.map(m => ({
         Panchayath: m.panchayath,
         Ward: m.ward,
         Unit: m.unit,
@@ -313,7 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Perform background mapping to retrieve Unit and Zone
       let unit = "N/A";
       let zone = "N/A";
-      const match = masterMapping.find(m => m.Panchayath === panchayath && m.Ward === ward);
+      const match = masterMapping.find(m => 
+        (m.Panchayath || '').trim().toLowerCase() === (panchayath || '').trim().toLowerCase() && 
+        (m.Ward || '').trim().toLowerCase() === (ward || '').trim().toLowerCase()
+      );
       if (match) {
         unit = match.Unit || "N/A";
         zone = match.Zone || "N/A";
