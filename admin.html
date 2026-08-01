@@ -1678,7 +1678,6 @@
         ]);
         if (rRes1.error) throw rRes1.error;
         const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
-        if (regErr) throw regErr;
         
         registrations = (regData || []).map(d => ({
           Timestamp: d.timestamp,
