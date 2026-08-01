@@ -4,8 +4,8 @@
   "description": "Wisdom Students Thrissur District Student Summit",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#0F172A",
-  "theme_color": "#E60067",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "orientation": "portrait-primary",
   "icons": [
     {

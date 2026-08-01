@@ -138,19 +138,19 @@ function showInstallBanner() {
   });
 }
 
-// Premium Opening Splash Screen Handler
+// Fast Opening & Premium Light Splash Screen Handler
 function initSplashScreen() {
   const splash = document.getElementById('appSplashScreen');
   if (!splash) return;
 
   const hasSeenSplash = sessionStorage.getItem('teenspace_splash_shown');
-  const delay = hasSeenSplash ? 350 : 1250;
+  const delay = hasSeenSplash ? 100 : 700;
 
   setTimeout(() => {
     splash.classList.add('hide-splash');
     sessionStorage.setItem('teenspace_splash_shown', 'true');
     setTimeout(() => {
-      splash.remove();
-    }, 600);
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+    }, 450);
   }, delay);
 }
