@@ -26,6 +26,35 @@ function closeRegisterModal() {
   if (modal) {
     modal.classList.remove('active');
     document.body.style.overflow = '';
+    sessionStorage.setItem('reg_popup_closed', 'true');
+  }
+}
+
+// Auto-open registration popup on site entry & bind close handlers
+function initAutoRegistrationPopup() {
+  const modal = document.getElementById('regModal');
+  if (!modal) return;
+
+  // 1. Close when clicking outside the modal content box (overlay click)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeRegisterModal();
+    }
+  });
+
+  // 2. Close when pressing Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('active')) {
+      closeRegisterModal();
+    }
+  });
+
+  // 3. Auto-popup when entering the site (if not manually dismissed in current session)
+  const isDismissed = sessionStorage.getItem('reg_popup_closed');
+  if (!isDismissed) {
+    setTimeout(() => {
+      openRegisterModal();
+    }, 1200);
   }
 }
 
@@ -112,6 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.9rem;">
           <i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass
+        </button>
+
+        <button type="button" class="btn btn-outline" onclick="closeRegisterModal()" style="width: 100%; margin-top: 0.65rem; padding: 0.65rem; border: 1px solid var(--border-light); color: var(--text-dim); font-size: 0.85rem;">
+          <i class="fas fa-times"></i> Close / Maybe Later
         </button>
       </form>
 
@@ -211,6 +244,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch Organizational Mapping on Load
   loadMappingData();
+
+  // Initialize auto registration popup on site entry & bind close triggers
+  initAutoRegistrationPopup();
 
   function loadMappingData() {
     const panchayathSelect = document.getElementById('studentPanchayath');

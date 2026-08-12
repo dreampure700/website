@@ -72,7 +72,7 @@
 
       <div class="nav-actions">
         <a href="admin.html" class="btn btn-outline" style="border-color: var(--border-light); margin-right: 0.5rem; display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 1rem;"><i class="fas fa-lock text-cyan" style="margin-right: 0.4rem;"></i> Admin</a>
-        <button class="btn btn-primary" onclick="openRegisterModal()"><i class="fas fa-edit"></i> Register</button>
+        <button class="btn btn-primary" onclick="openRegisterModal()"><i class="fas fa-edit"></i> Register Now</button>
       </div>
 
       <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
@@ -305,6 +305,10 @@
 
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.9rem;">
           <i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass
+        </button>
+
+        <button type="button" class="btn btn-outline" onclick="closeRegisterModal()" style="width: 100%; margin-top: 0.65rem; padding: 0.65rem; border: 1px solid var(--border-light); color: var(--text-dim); font-size: 0.85rem;">
+          <i class="fas fa-times"></i> Close / Maybe Later
         </button>
       </form>
 
