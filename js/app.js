@@ -154,3 +154,64 @@ function initSplashScreen() {
     }, 450);
   }, delay);
 }
+
+// Brochure Lightbox Modal Handler
+let currentBrochurePage = 1;
+function openBrochureModal(pageNum) {
+  currentBrochurePage = pageNum || 1;
+  const modal = document.getElementById('brochureModal');
+  if (modal) {
+    switchBrochurePage(currentBrochurePage);
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closeBrochureModal() {
+  const modal = document.getElementById('brochureModal');
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function switchBrochurePage(pageNum) {
+  currentBrochurePage = pageNum;
+  const img = document.getElementById('brochureModalImg');
+  const btn1 = document.getElementById('brochurePrevPageBtn');
+  const btn2 = document.getElementById('brochureNextPageBtn');
+
+  if (img) {
+    img.src = `assets/images/teenspace_brochure_page${pageNum}.png`;
+  }
+  if (btn1 && btn2) {
+    if (pageNum === 1) {
+      btn1.style.background = 'var(--magenta)';
+      btn1.style.borderColor = 'var(--magenta)';
+      btn2.style.background = 'transparent';
+      btn2.style.borderColor = 'rgba(255,255,255,0.3)';
+    } else {
+      btn2.style.background = 'var(--cyan)';
+      btn2.style.borderColor = 'var(--cyan)';
+      btn1.style.background = 'transparent';
+      btn1.style.borderColor = 'rgba(255,255,255,0.3)';
+    }
+  }
+}
+
+// Close Brochure Modal on Outside Overlay Click or Escape Key
+document.addEventListener('DOMContentLoaded', () => {
+  const bModal = document.getElementById('brochureModal');
+  if (bModal) {
+    bModal.addEventListener('click', (e) => {
+      if (e.target === bModal) {
+        closeBrochureModal();
+      }
+    });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeBrochureModal();
+    }
+  });
+});

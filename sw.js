@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teenspace-cache-v3';
+const CACHE_NAME = 'teenspace-cache-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -13,7 +13,10 @@ const ASSETS = [
   '/assets/images/teenspace_app_icon_192.png',
   '/assets/images/teenspace_app_icon_512.png',
   '/assets/images/TEENSPACE LOGO.png',
-  '/assets/images/hero_banner.png'
+  '/assets/images/hero_banner.png',
+  '/assets/images/teenspace_brochure_page1.png',
+  '/assets/images/teenspace_brochure_page2.png',
+  '/assets/docs/TEENSPACE_2026_Brochure.pdf'
 ];
 
 self.addEventListener('install', (e) => {

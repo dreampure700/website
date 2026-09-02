@@ -64,6 +64,7 @@
 
       <ul class="nav-links" id="navLinks">
         <li><a href="index.html" class="nav-link active">Home</a></li>
+        <li><a href="#brochure" class="nav-link"><i class="fas fa-file-pdf text-magenta" style="margin-right:0.2rem;"></i> Brochure</a></li>
         <li><a href="schedule.html" class="nav-link">Schedule</a></li>
         <li><a href="media.html" class="nav-link">Media</a></li>
         <li class="mobile-only"><a href="admin.html" class="nav-link"><i class="fas fa-lock text-cyan"></i> Admin Login</a></li>
@@ -223,7 +224,109 @@
         </div>
       </div>
     </div>
+  <!-- OFFICIAL BROCHURE SECTION -->
+  <section class="section" id="brochure" style="padding: 4.5rem 0; background: #FFFFFF;">
+    <div class="container">
+      <div class="section-header" style="text-align: center; margin-bottom: 2.5rem;">
+        <span class="section-tag cyan-tag"><i class="fas fa-file-pdf"></i> Official Prospectus</span>
+        <h2 class="section-title">TEENSPACE 2026 Brochure</h2>
+        <p class="section-subtitle">View online or download the complete official conference brochure & event prospectus.</p>
+      </div>
+
+      <!-- Action Buttons Top Bar -->
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2.5rem;">
+        <a href="assets/docs/TEENSPACE_2026_Brochure.pdf" download="TEENSPACE_2026_Brochure.pdf" target="_blank" class="btn btn-primary btn-lg" style="box-shadow: 0 10px 25px rgba(230,0,103,0.3);">
+          <i class="fas fa-file-download"></i> Download PDF Brochure
+        </a>
+        <button class="btn btn-outline btn-lg" onclick="openBrochureModal(1)">
+          <i class="fas fa-search-plus"></i> View Full Screen
+        </button>
+      </div>
+
+      <!-- Interactive Brochure 2-Page Visual Showcase Grid -->
+      <div class="hero-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1050px; margin: 0 auto;">
+        
+        <!-- Page 1 Card -->
+        <div class="feature-card" style="padding: 1.25rem; text-align: center; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); transition: transform 0.3s ease, box-shadow 0.3s ease;">
+          <div style="position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 1.25rem; cursor: pointer; background:#F8FAFC;" onclick="openBrochureModal(1)">
+            <img src="assets/images/teenspace_brochure_page1.png" alt="TEENSPACE 2026 Brochure Page 1" style="width: 100%; display: block; border-radius: 14px;">
+            <div style="position: absolute; inset: 0; background: rgba(15,23,42,0.35); opacity: 0; transition: opacity 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1rem; gap: 0.5rem;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+              <i class="fas fa-search-plus" style="font-size: 1.5rem;"></i> Zoom Page 1
+            </div>
+          </div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; margin-bottom: 0.35rem; color: var(--text-main);">
+            Page 1: Poster & Conference Overview
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+            October 18, 2026 | Dream Palace Paroor, Guruvayoor
+          </p>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="openBrochureModal(1)">
+              <i class="fas fa-eye"></i> View Page 1
+            </button>
+            <a href="assets/images/teenspace_brochure_page1.png" download="TEENSPACE_Brochure_Page1.png" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-color: var(--cyan); color: var(--cyan);">
+              <i class="fas fa-file-image"></i> HD Image
+            </a>
+          </div>
+        </div>
+
+        <!-- Page 2 Card -->
+        <div class="feature-card cyan-card" style="padding: 1.25rem; text-align: center; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); transition: transform 0.3s ease, box-shadow 0.3s ease;">
+          <div style="position: relative; border-radius: 14px; overflow: hidden; border: 1px solid var(--border-light); margin-bottom: 1.25rem; cursor: pointer; background:#F8FAFC;" onclick="openBrochureModal(2)">
+            <img src="assets/images/teenspace_brochure_page2.png" alt="TEENSPACE 2026 Brochure Page 2" style="width: 100%; display: block; border-radius: 14px;">
+            <div style="position: absolute; inset: 0; background: rgba(15,23,42,0.35); opacity: 0; transition: opacity 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1rem; gap: 0.5rem;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+              <i class="fas fa-search-plus" style="font-size: 1.5rem;"></i> Zoom Page 2
+            </div>
+          </div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; margin-bottom: 0.35rem; color: var(--text-main);">
+            Page 2: Pre-Programs & Event Details
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+            About Teenspace, Pre-programs, Who Can Join (10th, 11th, 12th)
+          </p>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="openBrochureModal(2)">
+              <i class="fas fa-eye"></i> View Page 2
+            </button>
+            <a href="assets/images/teenspace_brochure_page2.png" download="TEENSPACE_Brochure_Page2.png" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-color: var(--cyan); color: var(--cyan);">
+              <i class="fas fa-file-image"></i> HD Image
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </section>
+
+  <!-- BROCHURE LIGHTBOX MODAL -->
+  <div class="modal-overlay" id="brochureModal" style="z-index: 100000; backdrop-filter: blur(12px);">
+    <div class="modal-content" style="max-width: 960px; padding: 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(255,255,255,0.15); color: white;">
+      <button class="modal-close" onclick="closeBrochureModal()" style="background: rgba(255,255,255,0.2); color: white; border: none; top: 1rem; right: 1rem;"><i class="fas fa-times"></i></button>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.1); flex-wrap: wrap; gap: 0.5rem;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; color: white; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-file-pdf text-magenta"></i> TEENSPACE 2026 Official Brochure
+        </h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-outline" id="brochurePrevPageBtn" onclick="switchBrochurePage(1)" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; color: white;">Page 1</button>
+          <button class="btn btn-outline" id="brochureNextPageBtn" onclick="switchBrochurePage(2)" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; color: white;">Page 2</button>
+        </div>
+      </div>
+
+      <div style="max-height: 72vh; overflow-y: auto; border-radius: 12px; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.1);">
+        <img id="brochureModalImg" src="assets/images/teenspace_brochure_page1.png" alt="Brochure High Res View" style="width: 100%; display: block; border-radius: 12px;">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <a href="assets/docs/TEENSPACE_2026_Brochure.pdf" download="TEENSPACE_2026_Brochure.pdf" target="_blank" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">
+          <i class="fas fa-file-download"></i> Download Full PDF Brochure
+        </a>
+        <button class="btn btn-outline" onclick="closeBrochureModal()" style="border-color: rgba(255,255,255,0.3); color: white;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- REGISTRATION MODAL -->
   <div class="modal-overlay" id="regModal">
