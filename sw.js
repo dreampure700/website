@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teenspace-cache-v4';
+const CACHE_NAME = 'teenspace-cache-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -34,6 +34,7 @@ self.addEventListener('activate', (e) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log("Deleting old cache:", key);
             return caches.delete(key);
           }
         })
@@ -42,13 +43,31 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Fast Opening Stale-While-Revalidate Caching Strategy
+// Network-First for HTML pages, Stale-While-Revalidate for static assets
 self.addEventListener('fetch', (e) => {
-  // Only handle GET requests
   if (e.request.method !== 'GET') return;
-  // Skip Supabase API requests to avoid caching dynamic DB data
   if (e.request.url.includes('supabase.co')) return;
 
+  const url = new URL(e.request.url);
+  const isHtmlPage = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/';
+
+  if (isHtmlPage) {
+    // Network-First: Always fetch fresh HTML from server first
+    e.respondWith(
+      fetch(e.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, responseToCache));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate for static assets
   e.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(e.request);
@@ -59,7 +78,6 @@ self.addEventListener('fetch', (e) => {
         return networkResponse;
       }).catch(() => null);
 
-      // Return cached asset instantly if available, fallback to network
       return cachedResponse || fetchPromise;
     })
   );
