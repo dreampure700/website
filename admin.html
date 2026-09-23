@@ -669,6 +669,7 @@
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Management</button>
+          <button class="tab-link" id="tabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;"><i class="fas fa-user-shield text-cyan"></i> Zone Admins</button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
           <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
@@ -1083,6 +1084,49 @@
         </div>
       </div>
 
+      <!-- ================= SECTION 6: ZONE ADMINS ACCOUNTS MANAGEMENT ================= -->
+      <div id="tab-zone-admins" class="dashboard-section" style="display: none;">
+        <div class="table-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fas fa-user-shield text-cyan"></i> Zone Admin Accounts Management
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
+                District Admin control: Add, edit, or delete usernames and passwords for Zone Coordinators.
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openZoneAdminModal('add')">
+              <i class="fas fa-plus"></i> Add Zone Admin
+            </button>
+          </div>
+
+          <!-- Desktop Table -->
+          <div style="overflow-x: auto;" class="desktop-only">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Zone Name</th>
+                  <th>Login Username</th>
+                  <th>Password</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="zoneAdminsTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Cards -->
+          <div id="zoneAdminsMobileList" class="mobile-only" style="margin-top: 1rem;">
+            <!-- Populated dynamically for mobile devices -->
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -1399,6 +1443,63 @@
     </div>
   </div>
 
+  <!-- ZONE ADMIN ADD/EDIT MODAL -->
+  <div class="modal-overlay" id="zoneAdminModal">
+    <div class="modal-content" style="max-width: 480px; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closeZoneAdminModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;" id="zoneAdminModalTitle">
+        <i class="fas fa-user-shield text-cyan"></i> Add Zone Admin
+      </h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;" id="zoneAdminModalSubtitle">
+        Configure login credentials for Zone Coordinators.
+      </p>
+
+      <form id="zoneAdminForm">
+        <input type="hidden" id="zoneAdminMode" value="add">
+        <input type="hidden" id="origZoneAdminUser" value="">
+        <input type="hidden" id="origZoneAdminRegId" value="">
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label" for="zoneAdminSelectZone">Organization Zone *</label>
+          <select id="zoneAdminSelectZone" class="form-select" required>
+            <option value="CHAVAKKAD">Chavakkad</option>
+            <option value="PAVARATTY">Pavaratty</option>
+            <option value="KUNNAMKULAM">Kunnamkulam</option>
+            <option value="GURUVAYOOR">Guruvayoor</option>
+            <option value="THRISSUR">Thrissur</option>
+            <option value="KODUNGALLUR">Kodungallur</option>
+            <option value="KAIPAMANGALAM">Kaipamangalam</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label" for="zoneAdminUsername">Username *</label>
+          <input type="text" id="zoneAdminUsername" class="form-input" placeholder="e.g. chavakkad_admin" required autocomplete="off">
+          <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:0.25rem;">Login username for this Zone Admin</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label" for="zoneAdminPassword">Password *</label>
+          <div style="position: relative;">
+            <input type="password" id="zoneAdminPassword" class="form-input" placeholder="Enter password" required style="padding-right: 2.75rem;" autocomplete="off">
+            <button type="button" onclick="toggleModalPassVisibility('zoneAdminPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px;">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+          <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:0.25rem;">Password for this Zone Admin</small>
+        </div>
+
+        <div style="display:flex; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeZoneAdminModal()">Cancel</button>
+          <button type="submit" id="zoneAdminSubmitBtn" class="btn btn-primary" style="flex:2;">
+            <i class="fas fa-check"></i> Save Zone Admin
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/registration.js?v=1.5"></script>
   <script>
@@ -1462,7 +1563,45 @@
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
       errorMsg.style.display = 'none';
 
-      // 1. Determine Role & Target from Username
+      // 1. Check Custom Zone Admins created by District Admin in database
+      try {
+        const { data: sysAcc } = await supabase
+          .from('registrations')
+          .select('*')
+          .eq('reg_id', 'SYS_ACC_' + u);
+
+        if (sysAcc && sysAcc.length > 0) {
+          const acc = sysAcc[0];
+          if ((acc.phone || '').trim() === p) {
+            sessionUser = { username: acc.name || rawU.trim(), role: "Zone", target: (acc.zone || '').toUpperCase() };
+            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+            initDashboard();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Notice checking custom zone admins:", err);
+      }
+
+      // 2. Check accounts table if available
+      try {
+        const { data: accounts } = await supabase
+          .from('accounts')
+          .select('*')
+          .ilike('username', u)
+          .eq('password', p);
+
+        if (accounts && accounts.length > 0) {
+          sessionUser = { username: accounts[0].username, role: accounts[0].role || "District", target: accounts[0].target || "" };
+          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+          initDashboard();
+          return;
+        }
+      } catch (err) {
+        console.warn("DB lookup notice:", err);
+      }
+
+      // 3. Check standard Zone Admin fallbacks
       let role = "District";
       let target = "";
 
@@ -1476,22 +1615,6 @@
           target = z;
           break;
         }
-      }
-
-      // Check if username/password matches specific database record or vehicle coordinator if present
-      try {
-        const { data: accounts } = await supabase
-          .from('accounts')
-          .select('*')
-          .ilike('username', u)
-          .eq('password', p);
-
-        if (accounts && accounts.length > 0) {
-          role = accounts[0].role || role;
-          target = accounts[0].target || target;
-        }
-      } catch (err) {
-        console.warn("DB lookup notice:", err);
       }
 
       // Complete login immediately
@@ -1526,6 +1649,12 @@
         
         document.getElementById('headerRole').textContent = sessionUser.role + " Admin";
         document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
+
+        const isDistrict = sessionUser.role === 'District';
+        const zoneAdminsTab = document.getElementById('tabZoneAdminsLink');
+        if (zoneAdminsTab) zoneAdminsTab.style.display = isDistrict ? 'inline-flex' : 'none';
+        const bottomZoneAdmins = document.getElementById('bottomTabZoneAdminsLink');
+        if (bottomZoneAdmins) bottomZoneAdmins.style.display = isDistrict ? 'flex' : 'none';
       }
 
       loadData();
@@ -1535,6 +1664,11 @@
     function switchTab(tabId) {
       if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
         return; // Coordinators are restricted to their dedicated view only
+      }
+
+      if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District') {
+        alert('Access Denied: Only District Admin can manage Zone Admin accounts.');
+        return;
       }
       
       document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
@@ -1660,7 +1794,11 @@
         if (rRes1.error) throw rRes1.error;
         const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
         
-        registrations = (regData || []).map(d => ({
+        // Separate custom Zone Admin accounts from student delegate registrations
+        const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
+        const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_ACC_'));
+
+        registrations = studentRegData.map(d => ({
           Timestamp: d.timestamp,
           "Registration ID": d.reg_id,
           regId: d.reg_id,
@@ -1685,6 +1823,9 @@
           "Picked Up": d.picked_up ? "true" : "false",
           pickedUp: d.picked_up ? "true" : "false"
         }));
+
+        // Populate Zone Admins Management
+        populateZoneAdminsFromDb(sysAccs);
 
         spinner.style.display = 'none';
 
@@ -4337,6 +4478,299 @@
         btn.innerHTML = '<i class="fas fa-database"></i> Migrate Sheets to Supabase';
       }
     }
+
+    // ========================================================
+    // ZONE ADMINS MANAGEMENT (DISTRICT ADMIN CRUD)
+    // ========================================================
+    let zoneAdminsList = [];
+
+    const DEFAULT_ZONE_ACCOUNTS = [
+      { zone: 'CHAVAKKAD', username: 'chavakkad_admin', password: 'zone123', reg_id: 'SYS_ACC_chavakkad_admin', isDefault: true },
+      { zone: 'PAVARATTY', username: 'pavaratty_admin', password: 'zone123', reg_id: 'SYS_ACC_pavaratty_admin', isDefault: true },
+      { zone: 'KUNNAMKULAM', username: 'kunnamkulam_admin', password: 'zone123', reg_id: 'SYS_ACC_kunnamkulam_admin', isDefault: true },
+      { zone: 'GURUVAYOOR', username: 'guruvayoor_admin', password: 'zone123', reg_id: 'SYS_ACC_guruvayoor_admin', isDefault: true },
+      { zone: 'THRISSUR', username: 'thrissur_admin', password: 'zone123', reg_id: 'SYS_ACC_thrissur_admin', isDefault: true },
+      { zone: 'KODUNGALLUR', username: 'kodungallur_admin', password: 'zone123', reg_id: 'SYS_ACC_kodungallur_admin', isDefault: true },
+      { zone: 'KAIPAMANGALAM', username: 'kaipamangalam_admin', password: 'zone123', reg_id: 'SYS_ACC_kaipamangalam_admin', isDefault: true }
+    ];
+
+    function populateZoneAdminsFromDb(sysAccs) {
+      const customList = (sysAccs || []).map(a => ({
+        zone: (a.zone || '').toUpperCase(),
+        username: a.name || a.reg_id.replace('SYS_ACC_', ''),
+        password: a.phone || '',
+        reg_id: a.reg_id,
+        isDefault: false
+      }));
+
+      zoneAdminsList = [...customList];
+      // Merge defaults for any zones that haven't been customized yet
+      DEFAULT_ZONE_ACCOUNTS.forEach(def => {
+        if (!zoneAdminsList.some(z => z.zone === def.zone || z.username.toLowerCase() === def.username.toLowerCase())) {
+          zoneAdminsList.push({ ...def });
+        }
+      });
+
+      renderZoneAdminsTable();
+    }
+
+    function renderZoneAdminsTable() {
+      const tbody = document.getElementById('zoneAdminsTableBody');
+      const mobileList = document.getElementById('zoneAdminsMobileList');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      if (mobileList) mobileList.innerHTML = '';
+
+      if (zoneAdminsList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:2rem;">No Zone Admin accounts configured.</td></tr>';
+        return;
+      }
+
+      zoneAdminsList.forEach((acc, idx) => {
+        const tr = document.createElement('tr');
+        const isCustom = !acc.isDefault;
+        const statusBadge = isCustom 
+          ? '<span class="badge-reg" style="background:rgba(34,197,94,0.1); color:#15803d; border:1px solid rgba(34,197,94,0.3); font-weight:600;"><i class="fas fa-check-circle"></i> Custom</span>'
+          : '<span class="badge-reg" style="background:rgba(100,116,139,0.1); color:#64748b; font-weight:500;">Default</span>';
+
+        const safePass = (acc.password || '').replace(/'/g, "\\'");
+
+        tr.innerHTML = `
+          <td><strong>${acc.zone}</strong></td>
+          <td><span style="font-family:monospace; font-weight:700; color:var(--cyan); font-size:0.95rem;">${acc.username}</span></td>
+          <td>
+            <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+              <span id="passSpan_${idx}" style="font-family:monospace; letter-spacing:1px;">••••••••</span>
+              <button type="button" class="btn btn-outline" style="padding:0.2rem 0.4rem; font-size:0.75rem;" onclick="togglePassDisplay('${idx}', '${safePass}', this)" title="Show/Hide Password">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </td>
+          <td><span class="badge-reg badge-vehicle">Zone Admin</span></td>
+          <td>${statusBadge}</td>
+          <td style="text-align:right;">
+            <button class="btn btn-outline btn-sm" style="padding:0.3rem 0.6rem; font-size:0.8rem; margin-right:0.3rem;" onclick="openZoneAdminModal('edit', ${idx})">
+              <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-outline btn-sm" style="padding:0.3rem 0.6rem; font-size:0.8rem; color:#EF4444; border-color:rgba(239,68,68,0.3);" onclick="deleteZoneAdmin(${idx})">
+              <i class="fas fa-trash-alt"></i> Delete
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        // Mobile card view
+        if (mobileList) {
+          const card = document.createElement('div');
+          card.className = 'student-mobile-card';
+          card.style.borderLeft = '4px solid var(--cyan)';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+              <strong style="font-size:1.05rem; color:var(--text-main);">${acc.zone}</strong>
+              ${statusBadge}
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem; margin-bottom:0.75rem;">
+              <div>
+                <span style="color:var(--text-muted); font-size:0.75rem; display:block;">USERNAME</span>
+                <span style="font-weight:700; color:var(--cyan); font-family:monospace;">${acc.username}</span>
+              </div>
+              <div>
+                <span style="color:var(--text-muted); font-size:0.75rem; display:block;">PASSWORD</span>
+                <div style="display:flex; align-items:center; gap:0.3rem;">
+                  <span id="passSpanMob_${idx}" style="font-family:monospace;">••••••••</span>
+                  <button type="button" class="btn btn-outline" style="padding:0.15rem 0.35rem; font-size:0.7rem;" onclick="togglePassDisplayMob('${idx}', '${safePass}', this)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+              <button class="btn btn-outline btn-sm" style="padding:0.4rem 0.8rem; font-size:0.8rem;" onclick="openZoneAdminModal('edit', ${idx})">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+              <button class="btn btn-outline btn-sm" style="padding:0.4rem 0.8rem; font-size:0.8rem; color:#EF4444; border-color:rgba(239,68,68,0.3);" onclick="deleteZoneAdmin(${idx})">
+                <i class="fas fa-trash-alt"></i> Delete
+              </button>
+            </div>
+          `;
+          mobileList.appendChild(card);
+        }
+      });
+    }
+
+    function togglePassDisplay(idx, realPass, btn) {
+      const span = document.getElementById(`passSpan_${idx}`);
+      if (!span) return;
+      if (span.textContent === '••••••••') {
+        span.textContent = realPass;
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        span.textContent = '••••••••';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    }
+
+    function togglePassDisplayMob(idx, realPass, btn) {
+      const span = document.getElementById(`passSpanMob_${idx}`);
+      if (!span) return;
+      if (span.textContent === '••••••••') {
+        span.textContent = realPass;
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        span.textContent = '••••••••';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    }
+
+    function toggleModalPassVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="fas fa-eye"></i>';
+      }
+    }
+
+    function openZoneAdminModal(mode, idx) {
+      const modal = document.getElementById('zoneAdminModal');
+      const form = document.getElementById('zoneAdminForm');
+      form.reset();
+
+      const title = document.getElementById('zoneAdminModalTitle');
+      const modeInput = document.getElementById('zoneAdminMode');
+      const zoneSelect = document.getElementById('zoneAdminSelectZone');
+      const userField = document.getElementById('zoneAdminUsername');
+      const passField = document.getElementById('zoneAdminPassword');
+      const origUserField = document.getElementById('origZoneAdminUser');
+      const origRegIdField = document.getElementById('origZoneAdminRegId');
+
+      if (mode === 'edit' && typeof idx === 'number' && zoneAdminsList[idx]) {
+        const item = zoneAdminsList[idx];
+        title.innerHTML = '<i class="fas fa-user-edit text-cyan"></i> Edit Zone Admin';
+        modeInput.value = 'edit';
+        zoneSelect.value = item.zone;
+        userField.value = item.username;
+        passField.value = item.password;
+        origUserField.value = item.username;
+        origRegIdField.value = item.reg_id;
+      } else {
+        title.innerHTML = '<i class="fas fa-user-plus text-cyan"></i> Add Zone Admin';
+        modeInput.value = 'add';
+        zoneSelect.value = 'CHAVAKKAD';
+        userField.value = '';
+        passField.value = '';
+        origUserField.value = '';
+        origRegIdField.value = '';
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeZoneAdminModal() {
+      const modal = document.getElementById('zoneAdminModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    document.getElementById('zoneAdminForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const mode = document.getElementById('zoneAdminMode').value;
+      const zone = document.getElementById('zoneAdminSelectZone').value.trim().toUpperCase();
+      const user = document.getElementById('zoneAdminUsername').value.trim();
+      const pass = document.getElementById('zoneAdminPassword').value.trim();
+      const origRegId = document.getElementById('origZoneAdminRegId').value;
+      const submitBtn = document.getElementById('zoneAdminSubmitBtn');
+
+      if (!zone || !user || !pass) {
+        alert('Please fill in Zone, Username, and Password.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      const targetRegId = 'SYS_ACC_' + user.toLowerCase();
+
+      try {
+        // If editing and username changed, remove old record
+        if (mode === 'edit' && origRegId && origRegId !== targetRegId) {
+          await supabase.from('registrations').delete().eq('reg_id', origRegId);
+          try { await supabase.from('accounts').delete().ilike('username', origRegId.replace('SYS_ACC_', '')); } catch(e) {}
+        }
+
+        // Upsert into registrations
+        const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', targetRegId);
+        if (existing && existing.length > 0) {
+          await supabase.from('registrations').update({
+            name: user,
+            phone: pass,
+            zone: zone,
+            unit: 'ZONE_ADMIN',
+            place: 'SYSTEM_CONFIG'
+          }).eq('reg_id', targetRegId);
+        } else {
+          await supabase.from('registrations').insert([{
+            reg_id: targetRegId,
+            name: user,
+            phone: pass,
+            zone: zone,
+            unit: 'ZONE_ADMIN',
+            place: 'SYSTEM_CONFIG',
+            student_class: 'N/A',
+            school: 'N/A',
+            panchayath: 'N/A',
+            ward: 'N/A'
+          }]);
+        }
+
+        // Try syncing to accounts table if allowed
+        try {
+          await supabase.from('accounts').upsert([{
+            username: user,
+            password: pass,
+            role: 'Zone',
+            target: zone
+          }]);
+        } catch(e) {}
+
+        alert(`Zone Admin for ${zone} saved successfully!`);
+        closeZoneAdminModal();
+        await loadData();
+      } catch (err) {
+        console.error("Error saving Zone Admin:", err);
+        alert('Error saving Zone Admin: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Zone Admin';
+      }
+    });
+
+    async function deleteZoneAdmin(idx) {
+      if (typeof idx !== 'number' || !zoneAdminsList[idx]) return;
+      const item = zoneAdminsList[idx];
+
+      if (!confirm(`Are you sure you want to delete Zone Admin account "${item.username}" for ${item.zone}?`)) {
+        return;
+      }
+
+      try {
+        if (item.reg_id) {
+          await supabase.from('registrations').delete().eq('reg_id', item.reg_id);
+        }
+        try {
+          await supabase.from('accounts').delete().ilike('username', item.username);
+        } catch(e) {}
+
+        alert(`Zone Admin "${item.username}" deleted successfully.`);
+        await loadData();
+      } catch (err) {
+        console.error("Error deleting Zone Admin:", err);
+        alert('Error deleting Zone Admin: ' + err.message);
+      }
+    }
   </script>
 
   <!-- BOTTOM NAVIGATION BAR (Mobile View Mockup Style) -->
@@ -4356,6 +4790,10 @@
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
       <i class="fas fa-images"></i>
       <span>Media</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;">
+      <i class="fas fa-user-shield"></i>
+      <span>Zones</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
