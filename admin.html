@@ -268,45 +268,50 @@
       box-shadow: 0 6px 20px rgba(0, 168, 232, 0.07);
     }
     .zone-acc-header {
-      padding: 1.1rem 1.35rem;
-      background: #F8FAFC;
+      padding: 0.85rem 1.25rem;
+      background: #FFFFFF;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       border-bottom: 1px solid transparent;
       cursor: pointer;
       user-select: none;
       transition: background 0.2s ease;
+      flex-wrap: nowrap;
     }
     .zone-acc-header:hover {
-      background: #F1F5F9;
+      background: #F8FAFC;
     }
     .zone-acc-card.expanded .zone-acc-header {
       border-bottom-color: rgba(15, 23, 42, 0.08);
-      background: #EEF2F6;
+      background: #F8FAFC;
     }
     .zone-acc-title-wrap {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.65rem;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .zone-acc-name-badges {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
+      gap: 0.45rem;
+      flex-wrap: nowrap;
+      white-space: nowrap;
     }
     .zone-name-text {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: var(--text-main);
       letter-spacing: -0.2px;
+      white-space: nowrap;
     }
     .zone-acc-arrow {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
       background: rgba(0, 168, 232, 0.1);
       color: var(--cyan);
       display: inline-flex;
@@ -325,28 +330,32 @@
     .zone-acc-meta-wrap {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      flex-wrap: wrap;
+      gap: 0.5rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      flex-wrap: nowrap;
     }
     .zone-acc-cred-pill {
-      background: #FFFFFF;
+      background: #F8FAFC;
       border: 1px solid rgba(15, 23, 42, 0.08);
-      border-radius: 10px;
-      padding: 0.4rem 0.75rem;
+      border-radius: 9px;
+      padding: 0.35rem 0.65rem;
       display: inline-flex;
       align-items: center;
-      gap: 0.45rem;
-      font-size: 0.85rem;
+      gap: 0.4rem;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .cred-label {
       color: var(--text-muted);
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
     .cred-user {
       font-family: monospace;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
     }
     .cred-user.user-cyan {
       color: var(--cyan);
@@ -361,15 +370,16 @@
     .cred-pass {
       font-family: monospace;
       font-weight: 600;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.2px;
+      font-size: 0.85rem;
     }
     .btn-cred-eye {
       background: none;
       border: none;
       color: var(--text-dim);
       cursor: pointer;
-      padding: 0.2rem 0.4rem;
-      font-size: 0.75rem;
+      padding: 0.15rem 0.35rem;
+      font-size: 0.72rem;
       border-radius: 4px;
       display: inline-flex;
       align-items: center;
@@ -382,11 +392,25 @@
     .zone-acc-action-btns {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.35rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      flex-wrap: nowrap;
+    }
+    .zone-acc-action-btns .btn {
+      padding: 0.32rem 0.6rem !important;
+      font-size: 0.8rem !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      white-space: nowrap !important;
+      height: 32px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.3rem !important;
     }
     .zone-acc-body {
       display: none;
-      padding: 1.25rem 1.35rem;
+      padding: 1.15rem 1.25rem;
       background: #FFFFFF;
       animation: fadeInAcc 0.25s ease;
     }
@@ -403,13 +427,14 @@
       background: #F8FAFC;
       border: 1px solid rgba(15, 23, 42, 0.06);
       border-radius: 12px;
-      padding: 0.85rem 1.15rem;
-      margin-bottom: 0.75rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 0.65rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 0.75rem;
       transition: all 0.2s ease;
+      flex-wrap: nowrap;
     }
     .unit-account-card:hover {
       background: #FFFFFF;
@@ -419,39 +444,59 @@
     .unit-acc-title-wrap {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      min-width: 180px;
+      gap: 0.55rem;
+      min-width: 170px;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
     .unit-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--magenta);
       flex-shrink: 0;
     }
     .unit-name-text {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       color: var(--text-main);
       font-weight: 700;
+      white-space: nowrap;
     }
     .unit-zone-tag {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
+      margin-left: 0.35rem;
     }
     .unit-acc-cred-pill {
       background: #FFFFFF;
       border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 8px;
-      padding: 0.35rem 0.65rem;
+      padding: 0.3rem 0.6rem;
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.82rem;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .unit-acc-action-btns {
       display: inline-flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.35rem;
+      flex-shrink: 0;
+      white-space: nowrap;
+      flex-wrap: nowrap;
+    }
+    .unit-acc-action-btns .btn {
+      padding: 0.28rem 0.55rem !important;
+      font-size: 0.78rem !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      white-space: nowrap !important;
+      height: 30px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 0.25rem !important;
     }
     .btn-wa-share {
       background: #25D366 !important;
@@ -477,6 +522,40 @@
     }
     .student-mobile-card-list {
       display: none;
+    }
+
+    /* Medium / Tablet Screen Balanced 2-Row Alignment (769px - 980px) */
+    @media (max-width: 980px) and (min-width: 769px) {
+      .zone-acc-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+      }
+      .zone-acc-title-wrap {
+        justify-content: space-between !important;
+        width: 100% !important;
+      }
+      .zone-acc-meta-wrap {
+        justify-content: space-between !important;
+        width: 100% !important;
+      }
+      .unit-account-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.6rem !important;
+      }
+      .unit-acc-title-wrap {
+        justify-content: space-between !important;
+        width: 100% !important;
+      }
+      .unit-acc-cred-pill {
+        width: 100% !important;
+        justify-content: space-between !important;
+      }
+      .unit-acc-action-btns {
+        justify-content: flex-end !important;
+        width: 100% !important;
+      }
     }
 
     /* Mobile View Responsive Optimization */
