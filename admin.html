@@ -2023,7 +2023,7 @@
       initDashboard();
     }
 
-    // Login Form Submit
+    // Login Form Submit (Strict Authentication - Only verified credentials allowed)
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawU = document.getElementById('adminUser').value || '';
@@ -2043,21 +2043,55 @@
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
       errorMsg.style.display = 'none';
 
-      // 1. Check Custom Zone & Unit Admins created by District Admin in database
+      const showAuthError = () => {
+        errorMsg.textContent = "Invalid username or password. Please check your credentials.";
+        errorMsg.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+      };
+
+      // 1. Check District Admin Credentials
+      const validDistrictUsers = ["district_admin", "admin", "district", "admin@teenspace.in", "admin@teenspacetsr.in", "tsr_admin"];
+      const validDistrictPasses = ["admin123", "teenspace2026"];
+
+      if (validDistrictUsers.includes(u)) {
+        if (validDistrictPasses.includes(p)) {
+          sessionUser = { username: rawU.trim(), role: "District", target: "" };
+          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+          initDashboard();
+          return;
+        } else {
+          showAuthError();
+          return;
+        }
+      }
+
+      // 2. Check Custom Zone & Unit Admins in registrations table
       try {
-        const { data: sysAcc } = await supabase
+        const lookupIds = ['SYS_ACC_' + u];
+        if (u === 'kpm_admin' || u === 'kpm') lookupIds.push('SYS_ACC_kaipamangalam_admin');
+        if (u === 'kaipamangalam_admin') lookupIds.push('SYS_ACC_kpm_admin');
+        if (u === 'thrissur_admin') lookupIds.push('SYS_ACC_thrissur_city_admin');
+        if (u === 'thrissur_city_admin') lookupIds.push('SYS_ACC_thrissur_admin');
+
+        const { data: sysAccList } = await supabase
           .from('registrations')
           .select('*')
-          .eq('reg_id', 'SYS_ACC_' + u);
+          .in('reg_id', lookupIds);
 
-        if (sysAcc && sysAcc.length > 0) {
-          const acc = sysAcc[0];
-          if ((acc.phone || '').trim() === p) {
+        if (sysAccList && sysAccList.length > 0) {
+          const acc = sysAccList[0];
+          const dbPass = (acc.phone || '').trim();
+          if (dbPass === p) {
             const role = acc.student_class === 'Unit' ? 'Unit' : 'Zone';
             const target = role === 'Unit' ? acc.unit : (acc.zone || '').toUpperCase();
             sessionUser = { username: acc.name || rawU.trim(), role: role, target: target };
             sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
             initDashboard();
+            return;
+          } else {
+            // Found account record but password didn't match -> strictly reject!
+            showAuthError();
             return;
           }
         }
@@ -2065,49 +2099,127 @@
         console.warn("Notice checking custom admins:", err);
       }
 
-      // 2. Check accounts table if available
+      // 3. Check Supabase accounts table
       try {
         const { data: accounts } = await supabase
           .from('accounts')
           .select('*')
-          .ilike('username', u)
-          .eq('password', p);
+          .ilike('username', u);
 
         if (accounts && accounts.length > 0) {
           const acc = accounts[0];
-          sessionUser = { 
-            username: acc.username, 
-            role: acc.role || (acc.target ? 'Zone' : 'District'), 
-            target: acc.target || "" 
-          };
-          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-          initDashboard();
-          return;
+          if ((acc.password || '').trim() === p) {
+            sessionUser = { 
+              username: acc.username, 
+              role: acc.role || (acc.target ? 'Zone' : 'District'), 
+              target: acc.target || "" 
+            };
+            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+            initDashboard();
+            return;
+          } else {
+            // Found accounts record but password didn't match -> strictly reject!
+            showAuthError();
+            return;
+          }
         }
       } catch (err) {
         console.warn("DB lookup notice:", err);
       }
 
-      // 3. Check standard Zone Admin fallbacks
-      let role = "District";
-      let target = "";
+      // 4. Check Supabase vehicles table for Bus Coordinators
+      try {
+        const { data: vList } = await supabase.from('vehicles').select('*');
+        if (vList && vList.length > 0) {
+          for (const v of vList) {
+            const cUser = (v.coord_user || '').trim().toLowerCase();
+            const cPass = (v.coord_pass || '').trim();
+            const aUser = (v.asst_user || '').trim().toLowerCase();
+            const aPass = (v.asst_pass || '').trim();
 
-      const zones = [
-        "CHAVAKKAD", "PAVARATTY", "KUNNAMKULAM", "GURUVAYOOR", "THRISSUR", "KODUNGALLUR", "KAIPAMANGALAM"
+            if (cUser && cUser === u) {
+              if (cPass === p) {
+                sessionUser = { username: rawU.trim(), role: "Bus Coordinator", target: v.vehicle_id };
+                sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+                initDashboard();
+                return;
+              } else {
+                showAuthError();
+                return;
+              }
+            }
+            if (aUser && aUser === u) {
+              if (aPass === p) {
+                sessionUser = { username: rawU.trim(), role: "Asst Bus Coordinator", target: v.vehicle_id };
+                sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+                initDashboard();
+                return;
+              } else {
+                showAuthError();
+                return;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Vehicles check notice:", err);
+      }
+
+      // 5. Default Zone & Unit credentials (ONLY for unedited default accounts)
+      const standardZones = [
+        "CHAVAKKAD", "PAVARATTY", "KUNNAMKULAM", "GURUVAYOOR", "THRISSUR CITY", "THRISSUR", "KODUNGALLUR", "KAIPAMANGALAM"
       ];
 
-      for (const z of zones) {
-        if (u.includes(z.toLowerCase())) {
-          role = "Zone";
-          target = z;
+      let matchedZone = null;
+      for (const z of standardZones) {
+        const zClean = z.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        if (u === `${zClean}_admin` || u === z.toLowerCase() || (z === 'KAIPAMANGALAM' && u === 'kpm_admin')) {
+          matchedZone = z;
           break;
         }
       }
 
-      // Complete login immediately
-      sessionUser = { username: rawU.trim(), role: role, target: target };
-      sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-      initDashboard();
+      if (matchedZone) {
+        if (p === 'zone123') {
+          sessionUser = { username: rawU.trim(), role: "Zone", target: matchedZone };
+          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+          initDashboard();
+          return;
+        } else {
+          showAuthError();
+          return;
+        }
+      }
+
+      // Check standard Unit default credentials (<unitname>_admin with unit123)
+      if (u.endsWith('_admin')) {
+        const unitCand = u.replace(/_admin$/, '');
+        let matchedUnit = null;
+        for (const [z, units] of Object.entries(ORGANIZATIONAL_MAP)) {
+          for (const unit of units) {
+            if (unit.toLowerCase().replace(/[^a-z0-9]/g, '') === unitCand.replace(/[^a-z0-9]/g, '')) {
+              matchedUnit = unit;
+              break;
+            }
+          }
+          if (matchedUnit) break;
+        }
+
+        if (matchedUnit) {
+          if (p === 'unit123') {
+            sessionUser = { username: rawU.trim(), role: "Unit", target: matchedUnit };
+            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+            initDashboard();
+            return;
+          } else {
+            showAuthError();
+            return;
+          }
+        }
+      }
+
+      // If credentials do not match ANY valid account
+      showAuthError();
     });
 
     // Logout
