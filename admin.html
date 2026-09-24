@@ -1222,6 +1222,83 @@
           </div>
         </div>
 
+        <!-- ================= WHATSAPP REGISTRATION REPORT IMAGE CARD ================= -->
+        <div class="table-container" id="whatsappReportCard" style="margin-top: 1.5rem; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span style="background: rgba(37,211,102,0.12); color: #16A34A; padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.85rem; font-weight: 700;">
+                  <i class="fab fa-whatsapp"></i> WhatsApp Post Report
+                </span>
+                <span class="badge" style="background: #F1F5F9; color: #475569; font-size: 0.72rem;">Live Image Exporter</span>
+              </div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin: 0; color: #0F172A;">
+                <i class="fas fa-image text-magenta"></i> Registration & Target Report Card (High Visibility)
+              </h3>
+              <p style="margin: 0.35rem 0 0 0; color: #64748B; font-size: 0.82rem;">
+                Live generated infographic card with bold Zone & Unit metrics, completion percentages, and download date/time ready to post in WhatsApp groups.
+              </p>
+            </div>
+
+            <!-- Toolbar / Filters & Action Buttons -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="waReportZoneSelect" style="font-size: 0.8rem; font-weight: 700; color: #475569;"><i class="fas fa-filter text-cyan"></i> Scope:</label>
+                <select id="waReportZoneSelect" class="form-input" style="padding: 0.4rem 0.65rem; font-size: 0.82rem; border-radius: 8px; font-weight: 600; min-width: 170px;" onchange="renderWhatsAppReportPreview()">
+                  <option value="ALL">All Zones & Units (District)</option>
+                  <option value="Chavakkad">Chavakkad Zone</option>
+                  <option value="Pavaratty">Pavaratty Zone</option>
+                  <option value="Kunnamkulam">Kunnamkulam Zone</option>
+                  <option value="Guruvayoor">Guruvayoor Zone</option>
+                  <option value="Thrissur City">Thrissur City Zone</option>
+                  <option value="Kodungallur">Kodungallur Zone</option>
+                  <option value="Kaipamangalam">Kaipamangalam Zone</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary btn-sm" style="background: #25D366; border-color: #25D366; color: #FFFFFF; font-weight: 700; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 8px; padding: 0.45rem 0.85rem;" onclick="shareWhatsAppReport()">
+                <i class="fab fa-whatsapp" style="font-size: 1rem;"></i> <span>Share to WhatsApp</span>
+              </button>
+
+              <button class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 8px; padding: 0.45rem 0.85rem;" onclick="downloadWhatsAppReportImage()">
+                <i class="fas fa-download"></i> <span>Download Image</span>
+              </button>
+
+              <button class="btn btn-outline btn-sm" style="border-radius: 8px; padding: 0.45rem 0.75rem; font-size: 0.8rem;" onclick="copyWhatsAppSummaryText()">
+                <i class="fas fa-copy"></i> <span>Copy Text</span>
+              </button>
+
+              <button class="btn btn-outline btn-sm" style="border-radius: 8px; padding: 0.45rem 0.65rem; font-size: 0.8rem;" title="Refresh Report Image" onclick="renderWhatsAppReportPreview()">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Report Image Preview Stage -->
+          <div style="background: #0F172A; border-radius: 14px; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; color: #94A3B8; font-size: 0.78rem; flex-wrap: wrap; gap: 0.5rem;">
+              <span id="waReportPreviewTimestamp" style="display: flex; align-items: center; gap: 0.4rem; color: #38BDF8; font-weight: 600;">
+                <i class="fas fa-clock"></i> Generated: Just now
+              </span>
+              <span style="background: rgba(255,255,255,0.08); padding: 0.25rem 0.65rem; border-radius: 6px; color: #E2E8F0; font-size: 0.75rem; font-weight: 600;">
+                <i class="fas fa-check-circle text-emerald" style="color:#10B981;"></i> High-Resolution (1080px) WhatsApp Post Ready
+              </span>
+            </div>
+
+            <!-- Scrollable Responsive Container for Image Preview -->
+            <div style="width: 100%; max-width: 860px; max-height: 520px; overflow-y: auto; overflow-x: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 15px 35px rgba(0,0,0,0.4); background: #F8FAFC;">
+              <img id="waReportImagePreview" src="" alt="WhatsApp Registration Report Card" style="width: 100%; height: auto; display: block;" />
+            </div>
+            
+            <div style="margin-top: 0.85rem; font-size: 0.75rem; color: #94A3B8; display: flex; align-items: center; gap: 0.5rem; text-align: center;">
+              <i class="fas fa-info-circle text-cyan"></i> Tip: Click <strong>"Share to WhatsApp"</strong> on mobile to send the image directly to your group, or click <strong>"Download Image"</strong> to save to your photo gallery.
+            </div>
+          </div>
+
+          <!-- Hidden Canvas Worker -->
+          <canvas id="waReportCanvas" style="display: none;"></canvas>
+        </div>
+
       </div>
 
       <!-- ================= SECTION 6: COORDINATOR DASHBOARD ================= -->
@@ -2460,6 +2537,10 @@
           delegateStats.style.display = 'none';
         }
       }
+
+      if (tabId === 'tab-overview' && typeof renderWhatsAppReportPreview === 'function') {
+        renderWhatsAppReportPreview();
+      }
     }
 
     // Load Data
@@ -3112,6 +3193,11 @@
           }
         }
       });
+
+      // Synchronize WhatsApp Report Image Preview
+      if (typeof renderWhatsAppReportPreview === 'function') {
+        renderWhatsAppReportPreview();
+      }
     }
 
     function toggleZoneUnits(zoneId) {
@@ -5345,6 +5431,527 @@
         alert('Error distributing targets: ' + err.message);
       } finally {
         if (spinner) spinner.style.display = 'none';
+      }
+    }
+
+    // =========================================================================
+    // WHATSAPP REGISTRATION REPORT IMAGE & POST GENERATOR SUITE
+    // =========================================================================
+
+    function getFormattedISTDateTime() {
+      const d = new Date();
+      try {
+        const formatted = d.toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        return formatted.replace(/(\d{4}),?/, '$1 •').toUpperCase() + ' IST';
+      } catch (e) {
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString() + ' IST';
+      }
+    }
+
+    function drawCanvasRoundRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle, strokeWidth) {
+      if (!radius) radius = 0;
+      let r = { tl: radius, tr: radius, br: radius, bl: radius };
+      if (typeof radius === 'number') {
+        r = { tl: radius, tr: radius, br: radius, bl: radius };
+      } else if (typeof radius === 'object') {
+        r = Object.assign(r, radius);
+      }
+      ctx.beginPath();
+      ctx.moveTo(x + r.tl, y);
+      ctx.lineTo(x + width - r.tr, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r.tr);
+      ctx.lineTo(x + width, y + height - r.br);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r.br, y + height);
+      ctx.lineTo(x + r.bl, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r.bl);
+      ctx.lineTo(x, y + r.tl);
+      ctx.quadraticCurveTo(x, y, x + r.tl, y);
+      ctx.closePath();
+      if (fillStyle) {
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = strokeWidth || 1;
+        ctx.stroke();
+      }
+    }
+
+    function getZoneActualCount(zone) {
+      const zoneClean = (zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+      return registrations.filter(r => {
+        const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+        return z === zoneClean;
+      }).length;
+    }
+
+    function getUnitActualCount(unit, zone) {
+      const zoneClean = (zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+      const targetClean = (unit || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      return registrations.filter(r => {
+        const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+        if (z !== zoneClean) return false;
+        const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        return u === targetClean || u.includes(targetClean) || targetClean.includes(u);
+      }).length;
+    }
+
+    function getZoneUnassignedCount(zone) {
+      const zoneClean = (zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+      const units = getOrganizationalUnits(zone);
+      return registrations.filter(r => {
+        const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+        if (z !== zoneClean) return false;
+        const u = (r["Organization Unit"] || r.unit || '').trim();
+        if (!u || u === '' || u.toLowerCase() === 'n/a') return true;
+        const uClean = u.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const matchedAny = units.some(unitName => {
+          const targetClean = unitName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return uClean === targetClean || uClean.includes(targetClean) || targetClean.includes(uClean);
+        });
+        return !matchedAny;
+      }).length;
+    }
+
+    function renderWhatsAppReportPreview() {
+      const canvas = document.getElementById('waReportCanvas');
+      const imgPreview = document.getElementById('waReportImagePreview');
+      const timeBadge = document.getElementById('waReportPreviewTimestamp');
+      const zoneSelect = document.getElementById('waReportZoneSelect');
+      if (!canvas || !imgPreview) return;
+
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      let selectedZone = zoneSelect ? zoneSelect.value : 'ALL';
+
+      // Restrict Zone Admins to their respective zone
+      if (isZoneUser && sessionUser.target) {
+        const clean = sessionUser.target.trim().toLowerCase().replace(/ zone$/i, '');
+        const matched = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === clean) || sessionUser.target;
+        selectedZone = matched;
+        if (zoneSelect) {
+          zoneSelect.value = matched;
+          zoneSelect.disabled = true;
+          const allOpt = zoneSelect.querySelector('option[value="ALL"]');
+          if (allOpt) allOpt.style.display = 'none';
+        }
+      }
+
+      let zonesToRender = [];
+      if (selectedZone === 'ALL') {
+        zonesToRender = ZONES_ORDER;
+      } else {
+        const clean = selectedZone.trim().toLowerCase().replace(/ zone$/i, '');
+        const matched = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === clean) || selectedZone;
+        zonesToRender = [matched];
+      }
+
+      // Calculate required Canvas Height
+      let computedHeight = 165 + 195; // Header + Overview KPI Card
+      zonesToRender.forEach(z => {
+        const units = getOrganizationalUnits(z);
+        const unassigned = getZoneUnassignedCount(z);
+        const unitRows = Math.ceil(units.length / 2);
+        const zoneCardHeight = 56 + (unitRows * 76) + (unassigned > 0 ? 34 : 0) + 25;
+        computedHeight += zoneCardHeight + 20;
+      });
+      computedHeight += 95; // Footer + margin
+      computedHeight = Math.max(computedHeight, 750);
+
+      const ctx = canvas.getContext('2d');
+      canvas.width = 1080;
+      canvas.height = computedHeight;
+
+      const dateIST = getFormattedISTDateTime();
+      if (timeBadge) {
+        timeBadge.innerHTML = `<i class="fas fa-clock text-cyan"></i> Live Report Image Generated: <strong>${dateIST}</strong>`;
+      }
+
+      // Background
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(0, 0, 1080, computedHeight);
+
+      // Top Header (Dark Slate/Navy)
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(0, 0, 1080, 150);
+
+      // Top Gradient Accent Stripe
+      const gradStripe = ctx.createLinearGradient(0, 0, 1080, 0);
+      gradStripe.addColorStop(0, '#E60067');
+      gradStripe.addColorStop(1, '#00A8E8');
+      ctx.fillStyle = gradStripe;
+      ctx.fillRect(0, 0, 1080, 8);
+
+      // Branding Title & Subtitles
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('TEENSPACE 2026', 45, 30);
+
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = '800 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('REGISTRATION & TARGET PROGRESS REPORT', 45, 72);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(selectedZone === 'ALL' ? 'THRISSUR DISTRICT ADULT & STUDENT CONFERENCE' : `${selectedZone.toUpperCase()} ZONE PERFORMANCE SUMMARY`, 45, 98);
+
+      // Date & Time Stamp Badge (Top Right)
+      const badgeW = 410;
+      const badgeH = 80;
+      const badgeX = 1080 - 45 - badgeW;
+      const badgeY = 32;
+      drawCanvasRoundRect(ctx, badgeX, badgeY, badgeW, badgeH, 12, 'rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.22)', 1.5);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '700 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('📅 DATE & TIME OF DOWNLOAD (IST)', badgeX + 16, badgeY + 12);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 17px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(dateIST, badgeX + 16, badgeY + 31);
+
+      ctx.fillStyle = '#10B981';
+      ctx.font = '700 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('● OFFICIAL REAL-TIME CLOUD DATA', badgeX + 16, badgeY + 58);
+
+      // Overview KPI Metrics Box
+      let summaryActual = 0;
+      let summaryTarget = 0;
+      if (selectedZone === 'ALL') {
+        summaryActual = registrations.length;
+        summaryTarget = getDistrictTotalTargetValue();
+      } else {
+        summaryActual = getZoneActualCount(selectedZone);
+        summaryTarget = getZoneTargetValue(selectedZone);
+      }
+      const summaryPct = summaryTarget > 0 ? Math.min(Math.round((summaryActual / summaryTarget) * 100), 100) : 0;
+      const summaryRemaining = Math.max(0, summaryTarget - summaryActual);
+
+      const kpiY = 175;
+      const kpiW = 990;
+      const kpiH = 160;
+      drawCanvasRoundRect(ctx, 45, kpiY, kpiW, kpiH, 14, '#FFFFFF', '#CBD5E1', 2);
+
+      const colW = kpiW / 4;
+      const kpiItems = [
+        { label: selectedZone === 'ALL' ? 'TOTAL REGISTERED' : 'ZONE REGISTERED', val: summaryActual.toLocaleString(), color: '#E60067' },
+        { label: selectedZone === 'ALL' ? 'DISTRICT GOAL' : 'ZONE GOAL', val: summaryTarget.toLocaleString(), color: '#0284C7' },
+        { label: 'COMPLETION RATE', val: `${summaryPct}%`, color: '#10B981' },
+        { label: 'REMAINING GOAL', val: summaryRemaining.toLocaleString(), color: '#F59E0B' }
+      ];
+
+      kpiItems.forEach((item, idx) => {
+        const colX = 45 + (idx * colW);
+        ctx.fillStyle = '#64748B';
+        ctx.font = '700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(item.label, colX + 24, kpiY + 22);
+
+        ctx.fillStyle = item.color;
+        ctx.font = '900 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.fillText(item.val, colX + 24, kpiY + 44);
+
+        if (idx > 0) {
+          ctx.strokeStyle = '#E2E8F0';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(colX, kpiY + 18);
+          ctx.lineTo(colX, kpiY + 98);
+          ctx.stroke();
+        }
+      });
+
+      // Overall Progress Bar
+      const barX = 65;
+      const barY = kpiY + 115;
+      const barW = 950;
+      const barH = 16;
+      drawCanvasRoundRect(ctx, barX, barY, barW, barH, 8, '#F1F5F9', null);
+
+      const fillW = Math.max(16, Math.min(barW, Math.round((barW * summaryPct) / 100)));
+      const pGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      pGrad.addColorStop(0, '#E60067');
+      pGrad.addColorStop(1, '#00A8E8');
+      drawCanvasRoundRect(ctx, barX, barY, fillW, barH, 8, pGrad, null);
+
+      // Render Zones & Units
+      let currentY = 360;
+
+      zonesToRender.forEach(zone => {
+        const zoneActual = getZoneActualCount(zone);
+        const zoneTarget = getZoneTargetValue(zone);
+        const zonePct = zoneTarget > 0 ? Math.min(Math.round((zoneActual / zoneTarget) * 100), 100) : 0;
+        const units = getOrganizationalUnits(zone);
+        const unassigned = getZoneUnassignedCount(zone);
+        const unitRows = Math.ceil(units.length / 2);
+        const zoneCardHeight = 56 + (unitRows * 76) + (unassigned > 0 ? 34 : 0) + 25;
+
+        // Zone Outer Container Card
+        drawCanvasRoundRect(ctx, 45, currentY, 990, zoneCardHeight, 14, '#FFFFFF', '#CBD5E1', 2);
+
+        // Zone Header Banner (Dark Navy with Accent Bar)
+        drawCanvasRoundRect(ctx, 45, currentY, 990, 56, { tl: 14, tr: 14, bl: 0, br: 0 }, '#1E293B', null);
+        ctx.fillStyle = '#E60067';
+        ctx.fillRect(45, currentY, 8, 56);
+
+        // Zone Title
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('📍 ' + zone.toUpperCase() + ' ZONE', 68, currentY + 28);
+
+        // Zone High-Visibility Stat Badges (Right side of header)
+        // 1. Registered Pill
+        drawCanvasRoundRect(ctx, 510, currentY + 12, 140, 32, 6, 'rgba(230,0,103,0.18)', '#E60067', 1.5);
+        ctx.fillStyle = '#F8FAFC';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('Reg: ', 520, currentY + 28);
+        ctx.fillStyle = '#FF69B4';
+        ctx.font = '900 17px sans-serif';
+        ctx.fillText(zoneActual.toString(), 555, currentY + 28);
+
+        // 2. Target Pill
+        drawCanvasRoundRect(ctx, 660, currentY + 12, 155, 32, 6, 'rgba(0,168,232,0.18)', '#00A8E8', 1.5);
+        ctx.fillStyle = '#F8FAFC';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('Target: ', 670, currentY + 28);
+        ctx.fillStyle = '#38BDF8';
+        ctx.font = '900 17px sans-serif';
+        ctx.fillText(zoneTarget.toString(), 720, currentY + 28);
+
+        // 3. Progress Pill
+        drawCanvasRoundRect(ctx, 825, currentY + 12, 190, 32, 6, '#065F46', '#10B981', 1.5);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 15px sans-serif';
+        ctx.fillText(`Progress: ${zonePct}%`, 845, currentY + 28);
+
+        // Units Grid (2 Columns)
+        let unitGridY = currentY + 70;
+        units.forEach((unit, idx) => {
+          const isRightCol = (idx % 2 === 1);
+          const uX = isRightCol ? 545 : 65;
+          const uY = unitGridY;
+          const unitActual = getUnitActualCount(unit, zone);
+          const unitTarget = getUnitTargetValue(unit, zone);
+          const unitPct = unitTarget > 0 ? Math.min(Math.round((unitActual / unitTarget) * 100), 100) : 0;
+
+          // Unit Mini Card
+          drawCanvasRoundRect(ctx, uX, uY, 470, 66, 8, '#F8FAFC', '#E2E8F0', 1.5);
+
+          // Line 1: Unit Name & Registered/Target Numbers
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = '#0F172A';
+          ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          ctx.fillText(unit, uX + 14, uY + 12);
+
+          // Unit Badge
+          drawCanvasRoundRect(ctx, uX + 14 + ctx.measureText(unit).width + 8, uY + 11, 40, 18, 4, 'rgba(0,168,232,0.1)', '#00A8E8', 1);
+          ctx.fillStyle = '#0284C7';
+          ctx.font = '800 10px sans-serif';
+          ctx.fillText('UNIT', uX + 14 + ctx.measureText(unit).width + 15, uY + 14);
+
+          // Right Numbers (EXTRA VISIBLE)
+          ctx.textAlign = 'right';
+          ctx.font = 'bold 13px sans-serif';
+          ctx.fillStyle = '#64748B';
+          ctx.fillText('Target: ', uX + 456 - ctx.measureText(unitTarget.toString()).width, uY + 14);
+          ctx.fillStyle = '#0284C7';
+          ctx.font = '900 16px sans-serif';
+          ctx.fillText(unitTarget.toString(), uX + 456, uY + 12);
+
+          const targetStrWidth = ctx.measureText(unitTarget.toString()).width + 55;
+          ctx.fillStyle = '#E60067';
+          ctx.font = '900 18px sans-serif';
+          ctx.fillText(unitActual.toString(), uX + 456 - targetStrWidth, uY + 11);
+          ctx.fillStyle = '#64748B';
+          ctx.font = 'bold 13px sans-serif';
+          ctx.fillText('Reg: ', uX + 456 - targetStrWidth - ctx.measureText(unitActual.toString()).width - 4, uY + 14);
+          ctx.textAlign = 'left';
+
+          // Line 2: Progress Track & % Badge
+          const uTrackX = uX + 14;
+          const uTrackY = uY + 44;
+          const uTrackW = 345;
+          const uTrackH = 8;
+          drawCanvasRoundRect(ctx, uTrackX, uTrackY, uTrackW, uTrackH, 4, '#E2E8F0', null);
+
+          const uFillW = Math.max(6, Math.min(uTrackW, Math.round((uTrackW * unitPct) / 100)));
+          drawCanvasRoundRect(ctx, uTrackX, uTrackY, uFillW, uTrackH, 4, '#00A8E8', null);
+
+          // Percentage Badge Pill
+          drawCanvasRoundRect(ctx, uX + 375, uY + 36, 80, 22, 6, '#DCFCE7', '#16A34A', 1);
+          ctx.fillStyle = '#166534';
+          ctx.font = '900 13px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`${unitPct}%`, uX + 415, uY + 47);
+          ctx.textAlign = 'left';
+
+          if (isRightCol || idx === units.length - 1) {
+            unitGridY += 76;
+          }
+        });
+
+        // Unassigned Row if applicable
+        if (unassigned > 0) {
+          drawCanvasRoundRect(ctx, 65, unitGridY, 950, 28, 6, '#FFFBEB', '#FDE68A', 1);
+          ctx.fillStyle = '#B45309';
+          ctx.font = '600 12px sans-serif';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`⚠️ Unassigned Unit Registrations in this Zone: ${unassigned} delegates`, 78, unitGridY + 14);
+        }
+
+        currentY += zoneCardHeight + 20;
+      });
+
+      // Bottom Footer Bar
+      drawCanvasRoundRect(ctx, 0, currentY, 1080, 75, 0, '#0F172A', null);
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('TEENSPACE 2026 • Official Registration Dashboard • teenspacetsr.in', 45, currentY + 37);
+
+      ctx.fillStyle = '#38BDF8';
+      ctx.font = 'bold 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Report Stamped: ${dateIST}`, 1035, currentY + 37);
+      ctx.textAlign = 'left';
+
+      // Update responsive preview image
+      imgPreview.src = canvas.toDataURL('image/png');
+    }
+
+    function downloadWhatsAppReportImage() {
+      const canvas = document.getElementById('waReportCanvas');
+      if (!canvas) return;
+      const zoneSelect = document.getElementById('waReportZoneSelect');
+      const zoneVal = zoneSelect ? zoneSelect.value : 'ALL';
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
+      const fileName = `teenspace_report_${zoneVal.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${dateStr}_${timeStr}.png`;
+
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function buildWhatsAppSummaryText(selectedZone, dateIST) {
+      const districtTarget = getDistrictTotalTargetValue();
+      const totalReg = registrations.length;
+      const distPct = districtTarget > 0 ? ((totalReg / districtTarget) * 100).toFixed(1) : '0';
+
+      let lines = [];
+      lines.push(`📊 *TEENSPACE 2026 - REGISTRATION & TARGET REPORT*`);
+      lines.push(`📅 *Date & Time:* ${dateIST}`);
+      lines.push(``);
+
+      if (selectedZone === 'ALL') {
+        lines.push(`🎯 *DISTRICT TOTAL:* ${totalReg} / ${districtTarget} (${distPct}%)`);
+        lines.push(`────────────────────────`);
+
+        ZONES_ORDER.forEach(z => {
+          const zActual = getZoneActualCount(z);
+          const zTarget = getZoneTargetValue(z);
+          const zPct = zTarget > 0 ? ((zActual / zTarget) * 100).toFixed(1) : '0';
+          
+          lines.push(``);
+          lines.push(`📍 *${z.toUpperCase()} ZONE:* ${zActual} / ${zTarget} (${zPct}%)`);
+          const units = getOrganizationalUnits(z);
+          units.forEach(u => {
+            const uActual = getUnitActualCount(u, z);
+            const uTarget = getUnitTargetValue(u, z);
+            const uPct = uTarget > 0 ? ((uActual / uTarget) * 100).toFixed(1) : '0';
+            lines.push(`  ▫️ ${u}: *${uActual} / ${uTarget}* (${uPct}%)`);
+          });
+        });
+      } else {
+        const z = selectedZone;
+        const zActual = getZoneActualCount(z);
+        const zTarget = getZoneTargetValue(z);
+        const zPct = zTarget > 0 ? ((zActual / zTarget) * 100).toFixed(1) : '0';
+
+        lines.push(`📍 *${z.toUpperCase()} ZONE SUMMARY*`);
+        lines.push(`🎯 *Zone Registered:* ${zActual} / ${zTarget} (${zPct}%)`);
+        lines.push(`────────────────────────`);
+        lines.push(`*UNIT BREAKDOWN:*`);
+        const units = getOrganizationalUnits(z);
+        units.forEach(u => {
+          const uActual = getUnitActualCount(u, z);
+          const uTarget = getUnitTargetValue(u, z);
+          const uPct = uTarget > 0 ? ((uActual / uTarget) * 100).toFixed(1) : '0';
+          lines.push(`  ▫️ *${u}:* ${uActual} / ${uTarget} (${uPct}%)`);
+        });
+      }
+
+      lines.push(``);
+      lines.push(`🌐 *Live Portal:* https://www.teenspacetsr.in/admin.html`);
+      return lines.join('\n');
+    }
+
+    async function shareWhatsAppReport() {
+      const canvas = document.getElementById('waReportCanvas');
+      if (!canvas) return;
+      const zoneSelect = document.getElementById('waReportZoneSelect');
+      const zoneVal = zoneSelect ? zoneSelect.value : 'ALL';
+      const dateIST = getFormattedISTDateTime();
+      const fileName = `teenspace_report_${zoneVal.toLowerCase().replace(/[^a-z0-9]/g, '_')}.png`;
+
+      const waText = buildWhatsAppSummaryText(zoneVal, dateIST);
+
+      // Check if Web Share API with file support is available (Mobile Chrome / iOS Safari)
+      if (navigator.canShare && canvas.toBlob) {
+        try {
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'TEENSPACE 2026 Registration Report',
+              text: waText
+            });
+            return;
+          }
+        } catch (err) {
+          if (err.name !== 'AbortError') {
+            console.log('Native share error, falling back:', err);
+          } else {
+            return;
+          }
+        }
+      }
+
+      // Fallback: Download image and open WhatsApp
+      downloadWhatsAppReportImage();
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`;
+      window.open(waUrl, '_blank');
+    }
+
+    function copyWhatsAppSummaryText() {
+      const zoneSelect = document.getElementById('waReportZoneSelect');
+      const zoneVal = zoneSelect ? zoneSelect.value : 'ALL';
+      const dateIST = getFormattedISTDateTime();
+      const text = buildWhatsAppSummaryText(zoneVal, dateIST);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('✅ WhatsApp report summary copied to clipboard! You can paste it into your WhatsApp group.');
+        }).catch(() => {
+          prompt('Copy the report text below:', text);
+        });
+      } else {
+        prompt('Copy the report text below:', text);
       }
     }
 
