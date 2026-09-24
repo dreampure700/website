@@ -1126,7 +1126,7 @@
           <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
-          <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')"><i class="fas fa-images"></i> Media Management</button>
+          <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
           <button class="tab-link" id="tabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;"><i class="fas fa-user-shield text-cyan"></i> Zone Admins</button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
@@ -2260,6 +2260,12 @@
         const isZone = sessionUser.role === 'Zone';
         const canAccessAccounts = isDistrict || isZone;
 
+        // Media Management is strictly for District Admin only
+        const mediaTab = document.getElementById('tabMediaLink');
+        if (mediaTab) mediaTab.style.display = isDistrict ? 'inline-flex' : 'none';
+        const bottomMediaTab = document.getElementById('bottomTabMediaLink');
+        if (bottomMediaTab) bottomMediaTab.style.display = isDistrict ? 'flex' : 'none';
+
         const zoneAdminsTab = document.getElementById('tabZoneAdminsLink');
         if (zoneAdminsTab) {
           zoneAdminsTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
@@ -2284,6 +2290,12 @@
     function switchTab(tabId) {
       if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
         return; // Coordinators are restricted to their dedicated view only
+      }
+
+      // Media Management: District Admin only
+      if (tabId === 'tab-media' && sessionUser && sessionUser.role !== 'District') {
+        alert('Access Denied: Media Management is only accessible to District Admins.');
+        return;
       }
 
       if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
@@ -3998,8 +4010,8 @@
     document.getElementById('addMediaForm').addEventListener('submit', (e) => {
       e.preventDefault();
       
-      if (!sessionUser) {
-        alert('Access Denied: Please log in first.');
+      if (!sessionUser || sessionUser.role !== 'District') {
+        alert('Access Denied: Only District Admins can publish or edit media items.');
         return;
       }
 
@@ -4994,6 +5006,11 @@
     // MEDIA CMS POST DELETION
     // ========================================================
     function deleteMedia(btn) {
+      if (!sessionUser || sessionUser.role !== 'District') {
+        alert('Access Denied: Only District Admins can delete media items.');
+        return;
+      }
+
       const title = btn.dataset.title || '';
       const url = btn.dataset.url || '';
 
@@ -5738,7 +5755,7 @@ _Note: Please keep your login credentials secure._`;
       <i class="fas fa-bus"></i>
       <span>Vehicle</span>
     </button>
-    <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')">
+    <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')" style="display: none;">
       <i class="fas fa-images"></i>
       <span>Media</span>
     </button>
