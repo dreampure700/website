@@ -1559,7 +1559,7 @@
               <button class="btn btn-outline btn-sm" onclick="toggleAllAccordions()">
                 <i class="fas fa-expand-alt" id="toggleAllAccIcon"></i> <span id="toggleAllAccText">Expand All</span>
               </button>
-              <button class="btn btn-primary btn-sm" onclick="openAccountModal('add')">
+              <button id="accAddAccountTopBtn" class="btn btn-primary btn-sm" onclick="openAccountModal('add')">
                 <i class="fas fa-plus"></i> Add Account
               </button>
             </div>
@@ -2207,6 +2207,26 @@
       }
 
       if (matchedZone) {
+        // If this zone has been customized in DB, reject default credentials
+        try {
+          const zoneClean = matchedZone.trim().toLowerCase().replace(/ zone$/i, '');
+          const { data: customZone } = await supabase
+            .from('registrations')
+            .select('reg_id, zone')
+            .ilike('reg_id', 'SYS_ACC_%')
+            .eq('student_class', 'Zone');
+
+          const isZoneCustomized = (customZone || []).some(cz => {
+            const czZone = (cz.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+            return czZone === zoneClean;
+          });
+
+          if (isZoneCustomized) {
+            showAuthError();
+            return;
+          }
+        } catch (e) {}
+
         if (p === 'zone123') {
           sessionUser = { username: rawU.trim(), role: "Zone", target: matchedZone };
           sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
@@ -2233,6 +2253,21 @@
         }
 
         if (matchedUnit) {
+          // If this unit has been customized in DB, reject default credentials
+          try {
+            const { data: customUnit } = await supabase
+              .from('registrations')
+              .select('reg_id')
+              .ilike('reg_id', 'SYS_ACC_%')
+              .eq('student_class', 'Unit')
+              .ilike('unit', matchedUnit);
+
+            if (customUnit && customUnit.length > 0) {
+              showAuthError();
+              return;
+            }
+          } catch (e) {}
+
           if (p === 'unit123') {
             sessionUser = { username: rawU.trim(), role: "Unit", target: matchedUnit };
             sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
@@ -2307,6 +2342,13 @@
           bottomZoneAdmins.innerHTML = isZone
             ? '<i class="fas fa-users-cog"></i><span>Unit Accs</span>'
             : '<i class="fas fa-user-shield"></i><span>Accounts</span>';
+        }
+
+        const topAddBtn = document.getElementById('accAddAccountTopBtn');
+        if (topAddBtn) {
+          topAddBtn.innerHTML = isZone
+            ? '<i class="fas fa-plus"></i> Add Unit Admin'
+            : '<i class="fas fa-plus"></i> Add Account';
         }
       }
 
@@ -5251,8 +5293,20 @@
         console.warn("Notice reading from accounts table:", e);
       }
 
+      // Also directly query registrations for any custom SYS_ACC_ accounts
+      let directSys = [];
+      try {
+        const { data: dList } = await supabase.from('registrations').select('*').ilike('reg_id', 'SYS_ACC_%');
+        if (dList) directSys = dList;
+      } catch(e) {}
+
+      const allSys = [...(sysAccs || [])];
+      directSys.forEach(ds => {
+        if (!allSys.some(s => s.reg_id === ds.reg_id)) allSys.push(ds);
+      });
+
       // Map system account records from registrations
-      const sysAccounts = (sysAccs || []).map(a => {
+      const sysAccounts = allSys.map(a => {
         const isUnit = a.student_class === 'Unit' || (a.unit && a.unit !== 'ZONE_ADMIN');
         return {
           id: a.id,
@@ -5262,7 +5316,8 @@
           target: isUnit ? a.unit : a.zone,
           zone: a.zone,
           reg_id: a.reg_id,
-          source: 'registrations'
+          source: 'registrations',
+          isDefault: false
         };
       });
 
@@ -5294,7 +5349,7 @@
       let totalUnitsCount = 0;
 
       zonesToRender.forEach((zoneName, zoneIdx) => {
-        const unitsList = ORGANIZATIONAL_MAP[zoneName] || [];
+        const unitsList = getOrganizationalUnits(zoneName);
         totalZonesCount++;
         totalUnitsCount += unitsList.length;
 
@@ -5312,7 +5367,7 @@
         // Filter units by search query if applicable
         const matchingUnits = unitsList.filter(unitName => {
           if (!q) return true;
-          const uAcc = allAccountsList.find(a => a.role === 'Unit' && (a.target || '').toLowerCase() === unitName.toLowerCase());
+          const uAcc = allAccountsList.find(a => a.role === 'Unit' && (a.target || '').trim().toLowerCase() === unitName.trim().toLowerCase());
           const uUser = uAcc ? uAcc.username : (unitName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_admin');
           return unitName.toLowerCase().includes(q) || uUser.toLowerCase().includes(q) || zoneName.toLowerCase().includes(q) || zoneAcc.username.toLowerCase().includes(q);
         });
@@ -5369,10 +5424,16 @@
                   <i class="fas fa-copy"></i> <span>Copy</span>
                 </button>
 
-                <!-- Edit Button -->
+                <!-- Edit Button (Only District Admin can edit Zone login) -->
+                ${!isZoneAdmin ? `
                 <button type="button" class="btn btn-outline btn-sm" onclick="openAccountModal('edit', 'Zone', '${zoneName}', '', '${zoneAcc.username}', '${safeZonePass}', '${zoneAcc.reg_id || ''}')" title="Edit Zone Login">
                   <i class="fas fa-edit"></i> <span>Edit</span>
                 </button>
+                ` : `
+                <span class="badge-reg" style="background:#F1F5F9; color:#64748B; font-size:0.75rem; padding:0.4rem 0.65rem; border-radius:8px;" title="Zone login credentials are managed by District Admin">
+                  <i class="fas fa-lock text-cyan"></i> District Managed
+                </span>
+                `}
               </div>
             </div>
           </div>
@@ -5392,7 +5453,7 @@
             <div style="display:flex; flex-direction:column; gap:0.6rem;">
               ${unitsList.map((unitName, uIdx) => {
                 const uAcc = allAccountsList.find(a => 
-                  a.role === 'Unit' && (a.target || '').toLowerCase() === unitName.toLowerCase()
+                  a.role === 'Unit' && (a.target || '').trim().toLowerCase() === unitName.trim().toLowerCase()
                 ) || {
                   username: unitName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_admin',
                   password: 'unit123',
@@ -5596,7 +5657,7 @@ _Note: Please keep your login credentials secure._`;
       const unitSelect = document.getElementById('accSelectUnit');
       if (!unitSelect) return;
       unitSelect.innerHTML = '';
-      const units = ORGANIZATIONAL_MAP[zone] || [];
+      const units = getOrganizationalUnits(zone);
       units.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u;
@@ -5612,15 +5673,14 @@ _Note: Please keep your login credentials secure._`;
 
       const isZoneAdmin = sessionUser && sessionUser.role === 'Zone';
       if (isZoneAdmin) {
-        const userZoneClean = (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '');
+        const userZoneClean = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
         const normZone = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean) || sessionUser.target;
-        if (mode === 'add') {
-          role = 'Unit';
-        }
+        role = 'Unit';
         zone = normZone;
       }
 
       const title = document.getElementById('accountModalTitle');
+      const subtitle = document.getElementById('accountModalSubtitle');
       const modeInput = document.getElementById('accountFormMode');
       const zoneSelect = document.getElementById('accSelectZone');
       const unitSelect = document.getElementById('accSelectUnit');
@@ -5638,7 +5698,7 @@ _Note: Please keep your login credentials secure._`;
       origUserInput.value = username;
       origRegIdInput.value = regId;
 
-      // Set radio
+      // Set role radio
       const radio = document.querySelector(`input[name="accRoleRadio"][value="${role}"]`);
       if (radio) {
         radio.checked = true;
@@ -5648,17 +5708,24 @@ _Note: Please keep your login credentials secure._`;
       zoneSelect.value = zone;
       zoneSelect.disabled = isZoneAdmin;
       handleAccountZoneSelectChange();
+
       if (unit) {
         unitSelect.value = unit;
+      }
+      // When editing an existing unit account, lock unit dropdown to avoid accidental reassignment
+      if (unitSelect) {
+        unitSelect.disabled = (mode === 'edit' && role === 'Unit' && !!unit);
       }
 
       userInput.value = username;
       passInput.value = password;
 
       if (mode === 'edit') {
-        title.innerHTML = `<i class="fas fa-user-edit text-cyan"></i> Edit ${role} Admin Account`;
+        title.innerHTML = `<i class="fas fa-user-edit text-cyan"></i> Edit ${role === 'Unit' ? (unit ? unit + ' Unit' : 'Unit') : 'Zone'} Admin Account`;
+        if (subtitle) subtitle.textContent = `Update username and password for ${unit || role} Coordinator.`;
       } else {
-        title.innerHTML = `<i class="fas fa-user-plus text-cyan"></i> Add ${role} Admin Account`;
+        title.innerHTML = `<i class="fas fa-user-plus text-cyan"></i> Add ${isZoneAdmin ? 'Unit' : role} Admin Account`;
+        if (subtitle) subtitle.textContent = `Configure new login credentials for ${isZoneAdmin ? zone + ' Unit' : 'Coordinator'}.`;
       }
 
       modal.classList.add('active');
@@ -5669,6 +5736,8 @@ _Note: Please keep your login credentials secure._`;
       if (modal) modal.classList.remove('active');
       const zoneSelect = document.getElementById('accSelectZone');
       if (zoneSelect) zoneSelect.disabled = false;
+      const unitSelect = document.getElementById('accSelectUnit');
+      if (unitSelect) unitSelect.disabled = false;
       const roleGroup = document.getElementById('accRoleSelectorGroup');
       if (roleGroup) roleGroup.style.display = 'block';
     }
@@ -5678,7 +5747,7 @@ _Note: Please keep your login credentials secure._`;
       e.preventDefault();
       const mode = document.getElementById('accountFormMode').value;
       const role = document.querySelector('input[name="accRoleRadio"]:checked').value;
-      const zone = document.getElementById('accSelectZone').value;
+      let zone = document.getElementById('accSelectZone').value;
       const unit = role === 'Unit' ? document.getElementById('accSelectUnit').value : '';
       const username = document.getElementById('accUsernameInput').value.trim();
       const password = document.getElementById('accPasswordInput').value.trim();
@@ -5686,11 +5755,23 @@ _Note: Please keep your login credentials secure._`;
       const submitBtn = document.getElementById('accSubmitBtn');
 
       if (sessionUser && sessionUser.role === 'Zone') {
-        const userZoneClean = (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '');
-        if (role !== 'Unit' || zone.toLowerCase().replace(/ zone$/i, '') !== userZoneClean) {
+        const userZoneClean = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        const normZone = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean) || sessionUser.target;
+        zone = normZone;
+        if (role !== 'Unit') {
           alert('Access Denied: Zone Admins can only manage Unit accounts for their assigned zone.');
           return;
         }
+        const zoneUnits = getOrganizationalUnits(normZone);
+        if (unit && !zoneUnits.some(u => u.trim().toLowerCase() === unit.trim().toLowerCase())) {
+          alert(`Access Denied: Unit "${unit}" does not belong to ${normZone} Zone.`);
+          return;
+        }
+      }
+
+      if (role === 'Unit' && !unit) {
+        alert('Please select an Organization Unit.');
+        return;
       }
 
       if (!username || !password) {
@@ -5709,6 +5790,23 @@ _Note: Please keep your login credentials secure._`;
         if (mode === 'edit' && origRegId && origRegId !== targetRegId) {
           await supabase.from('registrations').delete().eq('reg_id', origRegId);
           try { await supabase.from('accounts').delete().ilike('username', origRegId.replace('SYS_ACC_', '')); } catch(e) {}
+        }
+
+        // Clean up any other duplicate custom account for this exact unit
+        if (role === 'Unit' && unit) {
+          const { data: existingUnitAccs } = await supabase
+            .from('registrations')
+            .select('reg_id')
+            .eq('student_class', 'Unit')
+            .eq('unit', unit);
+
+          if (existingUnitAccs && existingUnitAccs.length > 0) {
+            for (const item of existingUnitAccs) {
+              if (item.reg_id !== targetRegId && item.reg_id !== origRegId) {
+                await supabase.from('registrations').delete().eq('reg_id', item.reg_id);
+              }
+            }
+          }
         }
 
         // 1. Save to registrations table (bulletproof cloud storage)
@@ -5749,7 +5847,7 @@ _Note: Please keep your login credentials secure._`;
           console.warn("Accounts table upsert notice:", e);
         }
 
-        alert(`✅ ${role} Admin account for "${target}" saved successfully!`);
+        alert(`✅ ${role} Admin credentials for "${target}" saved successfully!`);
         closeAccountModal();
         await loadData();
       } catch (err) {
@@ -5767,9 +5865,16 @@ _Note: Please keep your login credentials secure._`;
           alert('Access Denied: Zone Admins can only delete Unit accounts.');
           return;
         }
+        const userZoneClean = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        const normZone = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean) || sessionUser.target;
+        const zoneUnits = getOrganizationalUnits(normZone);
+        if (target && !zoneUnits.some(u => u.trim().toLowerCase() === target.trim().toLowerCase())) {
+          alert(`Access Denied: Unit "${target}" does not belong to your zone.`);
+          return;
+        }
       }
 
-      if (!confirm(`Are you sure you want to delete the ${role} Admin account for "${target}" (${username})?`)) {
+      if (!confirm(`Are you sure you want to reset the login credentials for Unit "${target}" (${username}) back to default?`)) {
         return;
       }
 
@@ -5783,11 +5888,11 @@ _Note: Please keep your login credentials secure._`;
           await supabase.from('accounts').delete().ilike('username', username);
         } catch(e) {}
 
-        alert(`Account "${username}" deleted successfully.`);
+        alert(`✅ Login credentials for "${target}" reset back to default.`);
         await loadData();
       } catch (err) {
-        console.error("Error deleting account:", err);
-        alert('Error deleting account: ' + err.message);
+        console.error("Error resetting account:", err);
+        alert('Error resetting account: ' + err.message);
       }
     }
   </script>
