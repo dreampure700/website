@@ -2001,25 +2001,52 @@
     const ORGANIZATIONAL_MAP = {
       'Chavakkad': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
       'Chavakkad Zone': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
+      'CHAVAKKAD': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
       'Pavaratty': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
       'Pavaratty Zone': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
+      'PAVARATTY': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
       'Kunnamkulam': ['Chowallurpadi', 'Kechery', 'Paninthadam', 'Perumpilavu'],
       'Kunnamkulam Zone': ['Chowallurpadi', 'Kechery', 'Paninthadam', 'Perumpilavu'],
+      'KUNNAMKULAM': ['Chowallurpadi', 'Kechery', 'Paninthadam', 'Perumpilavu'],
       'Guruvayoor': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
       'Guruvayur': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
       'Guruvayoor Zone': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
+      'GURUVAYOOR': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
+      'GURUVAYUR': ['Vadakkekad', 'Punnayurkulam', 'Kochannur', 'Pillakkad'],
       'Thrissur': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
       'Thrissur City': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
       'Thrissur City Zone': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
+      'THRISSUR': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
+      'THRISSUR CITY': ['Poothole', 'Kallur', 'Vellanikkara', 'Ottupara', 'Attur', 'Cherpu'],
       'Kodungallur': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
       'Kodungallur Zone': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
+      'KODUNGALLUR': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
       'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
-      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar']
+      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
+      'KAIPAMANGALAM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
+      'KPM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
+      'KPM ZONE': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar']
     };
+
+    function getOrganizationalUnits(zName) {
+      if (!zName) return [];
+      const clean = zName.trim().toLowerCase().replace(/ zone$/i, '');
+      for (const [k, list] of Object.entries(ORGANIZATIONAL_MAP)) {
+        if (k.toLowerCase().replace(/ zone$/i, '') === clean) {
+          return list;
+        }
+      }
+      return ORGANIZATIONAL_MAP[zName] || [];
+    }
 
     // Session authentication check
     if (sessionStorage.getItem('auth_user')) {
       sessionUser = JSON.parse(sessionStorage.getItem('auth_user'));
+      if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
+        const clean = sessionUser.target.trim().toLowerCase().replace(/ zone$/i, '');
+        const matched = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'].find(z => z.toLowerCase().replace(/ zone$/i, '') === clean);
+        if (matched) sessionUser.target = matched;
+      }
       initDashboard();
     }
 
@@ -2575,10 +2602,11 @@
       if (tbody) tbody.innerHTML = '';
       if (mobileContainer) mobileContainer.innerHTML = '';
 
-      let activeZones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      let activeZones = ZONES_ORDER;
       if (sessionUser.role === 'Zone') {
         const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
-        activeZones = ZONES_ORDER.filter(z => z.toLowerCase().replace(/ zone$/i, '') === uTarget);
+        const matched = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === uTarget);
+        activeZones = matched ? [matched] : [sessionUser.target];
       } else if (sessionUser.role === 'Unit') {
         let userZone = '';
         for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
@@ -2590,17 +2618,24 @@
         activeZones = userZone ? [userZone] : [];
       }
 
+      const isZoneUser = sessionUser.role === 'Zone';
+
       activeZones.forEach(zone => {
         const zoneId = zone.toLowerCase().replace(/[^a-z0-9]/g, '');
 
         // Calculate Zone actual count
         const zoneActual = registrations.filter(r => {
-          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
-          return z === zone.trim().toLowerCase() || z === (zone.trim() + ' zone').toLowerCase();
+          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+          const zoneClean = zone.trim().toLowerCase().replace(/ zone$/i, '');
+          return z === zoneClean;
         }).length;
         
         // Find Zone target
-        const zoneTargetObj = targets.find(t => t.Zone && (t.Zone.trim().toLowerCase() === zone.trim().toLowerCase() || t.Zone.trim().toLowerCase() === (zone.trim() + ' zone').toLowerCase()));
+        const zoneTargetObj = targets.find(t => {
+          if (!t.Zone) return false;
+          const tz = t.Zone.trim().toLowerCase().replace(/ zone$/i, '');
+          return tz === zone.trim().toLowerCase().replace(/ zone$/i, '');
+        });
         const zoneTargetVal = zoneTargetObj ? parseInt(zoneTargetObj.Target) : 100;
         const zonePercentage = Math.min(Math.round((zoneActual / zoneTargetVal) * 100), 100);
 
@@ -2613,7 +2648,7 @@
         // 1. Render Desktop Zone Row
         if (tbody) {
           const zoneRow = document.createElement('tr');
-          zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)'; // light primary tint
+          zoneRow.style.backgroundColor = 'rgba(230, 0, 103, 0.02)';
           zoneRow.style.borderLeft = '4px solid var(--magenta)';
           zoneRow.style.cursor = 'pointer';
           zoneRow.onclick = (e) => {
@@ -2622,7 +2657,7 @@
           };
 
           zoneRow.innerHTML = `
-            <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s;"></i> Zone: ${zone}</strong></td>
+            <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s; ${isZoneUser ? 'transform: rotate(90deg);' : ''}"></i> Zone: ${zone}</strong></td>
             <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
             <td data-label="Registered"><strong>${zoneActual}</strong></td>
             <td data-label="Target">${zoneTargetVal}</td>
@@ -2663,7 +2698,7 @@
           zoneCard.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
               <strong style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem;">
-                <i class="fas fa-chevron-right" id="marrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s; font-size:0.75rem;"></i>
+                <i class="fas fa-chevron-right" id="marrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s; font-size:0.75rem; ${isZoneUser ? 'transform: rotate(90deg);' : ''}"></i>
                 Zone: ${zone}
               </strong>
               <span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.65rem; font-weight:700;">ZONE</span>
@@ -2682,34 +2717,41 @@
               ${zoneActionHtmlMobile}
             </div>
 
-            <!-- Subunits list container (Collapsed by default) -->
-            <div id="munits-${zoneId}" style="display:none; margin-top:0.75rem; border-top:1px dashed #E2E8F0; padding-top:0.5rem; flex-direction:column; gap:0.5rem;">
+            <!-- Subunits list container -->
+            <div id="munits-${zoneId}" style="display:${isZoneUser ? 'flex' : 'none'}; margin-top:0.75rem; border-top:1px dashed #E2E8F0; padding-top:0.5rem; flex-direction:column; gap:0.5rem;">
             </div>
           `;
           mobileContainer.appendChild(zoneCard);
         }
 
         // Loop through units under this zone
-        let units = ORGANIZATIONAL_MAP[zone] || [];
+        let units = getOrganizationalUnits(zone);
         if (sessionUser.role === 'Unit') {
           units = [sessionUser.target];
         }
 
         units.forEach(unit => {
           const unitActual = registrations.filter(r => {
+            const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+            const zoneClean = zone.trim().toLowerCase().replace(/ zone$/i, '');
+            if (z !== zoneClean) return false;
+
             const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase();
-            return u === unit.trim().toLowerCase();
+            const uClean = u.replace(/[^a-z0-9]/g, '');
+            const targetClean = unit.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            return uClean === targetClean || uClean.includes(targetClean) || targetClean.includes(uClean);
           }).length;
 
           // Find Unit target (default to zone target equally divided among its units)
           const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unit.trim().toLowerCase());
-          const parentZoneUnits = ORGANIZATIONAL_MAP[zone] || [];
+          const parentZoneUnits = getOrganizationalUnits(zone);
           const defaultUnitTarget = parentZoneUnits.length > 0 ? Math.floor(zoneTargetVal / parentZoneUnits.length) : 0;
           const unitTargetVal = unitTargetObj ? parseInt(unitTargetObj.Target) : defaultUnitTarget;
           const unitPercentage = unitTargetVal > 0 ? Math.min(Math.round((unitActual / unitTargetVal) * 100), 100) : 0;
 
           // Check if current user can edit unit target (District OR Zone Admin of parent zone)
-          const canEditUnit = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && sessionUser.target === zone);
+          const canEditUnit = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '') === zone.toLowerCase().replace(/ zone$/i, ''));
           const unitActionHtml = canEditUnit
             ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; border-color:rgba(0,168,232,0.3); color:var(--cyan);" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
@@ -2718,7 +2760,7 @@
           if (tbody) {
             const unitRow = document.createElement('tr');
             unitRow.className = `unit-row-for-${zoneId}`;
-            unitRow.style.display = 'none'; // collapsed by default
+            unitRow.style.display = isZoneUser ? 'table-row' : 'none'; // Auto-expanded for Zone Admin
             unitRow.innerHTML = `
               <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #475569;"><i class="fas fa-arrow-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
               <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
@@ -2774,10 +2816,19 @@
         // Render Unassigned Unit row for this zone
         if (sessionUser.role !== 'Unit') {
           const unassignedCount = registrations.filter(r => {
-            const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase();
+            const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+            const zoneClean = zone.trim().toLowerCase().replace(/ zone$/i, '');
+            if (z !== zoneClean) return false;
+
             const u = (r["Organization Unit"] || r.unit || '').trim();
-            const belongsToZone = z === zone.trim().toLowerCase() || z === (zone.trim() + ' zone').toLowerCase();
-            return belongsToZone && (!u || u === '' || u.toLowerCase() === 'n/a');
+            if (!u || u === '' || u.toLowerCase() === 'n/a') return true;
+
+            const uClean = u.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const matchedAny = units.some(unitName => {
+              const targetClean = unitName.toLowerCase().replace(/[^a-z0-9]/g, '');
+              return uClean === targetClean || uClean.includes(targetClean) || targetClean.includes(uClean);
+            });
+            return !matchedAny;
           }).length;
 
           if (unassignedCount > 0) {
@@ -2785,7 +2836,7 @@
             if (tbody) {
               const unassignedRow = document.createElement('tr');
               unassignedRow.className = `unit-row-for-${zoneId}`;
-              unassignedRow.style.display = 'none'; // collapsed by default
+              unassignedRow.style.display = isZoneUser ? 'table-row' : 'none';
               unassignedRow.innerHTML = `
                 <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #64748B; font-style:italic;"><i class="fas fa-exclamation-circle" style="font-size:0.75rem; margin-right:0.4rem;"></i> [Unassigned / No Unit]</span></td>
                 <td data-label="Type"><span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.7rem; font-weight:700;">N/A</span></td>
