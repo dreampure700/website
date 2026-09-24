@@ -1548,10 +1548,10 @@
           <!-- Top Control Header -->
           <div class="accounts-top-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
             <div>
-              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;" id="accountsSectionTitle">
                 <i class="fas fa-users-shield text-cyan"></i> Zone & Unit Admin Accounts
               </h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;" id="accountsSectionSubtitle">
                 Click any Zone arrow (<i class="fas fa-chevron-down text-cyan"></i>) to view its Units. Manage credentials and share via WhatsApp in 1-click.
               </p>
             </div>
@@ -1917,7 +1917,7 @@
         <input type="hidden" id="origAccountRegId" value="">
 
         <!-- Role Selector (Zone Admin or Unit Admin) -->
-        <div class="form-group" style="margin-bottom: 1.2rem;">
+        <div class="form-group" id="accRoleSelectorGroup" style="margin-bottom: 1.2rem;">
           <label class="form-label" style="font-weight:700;">Account Role *</label>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
             <label style="border: 2px solid var(--cyan); background: rgba(0,168,232,0.06); padding: 0.75rem 1rem; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.85rem;" id="labelRoleZone">
@@ -2257,10 +2257,24 @@
         document.getElementById('welcomeUser').textContent = `Welcome, ${sessionUser.username} (${sessionUser.target || 'District'})`;
 
         const isDistrict = sessionUser.role === 'District';
+        const isZone = sessionUser.role === 'Zone';
+        const canAccessAccounts = isDistrict || isZone;
+
         const zoneAdminsTab = document.getElementById('tabZoneAdminsLink');
-        if (zoneAdminsTab) zoneAdminsTab.style.display = isDistrict ? 'inline-flex' : 'none';
+        if (zoneAdminsTab) {
+          zoneAdminsTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
+          zoneAdminsTab.innerHTML = isZone 
+            ? '<i class="fas fa-users-cog text-cyan"></i> Unit Accounts'
+            : '<i class="fas fa-user-shield text-cyan"></i> Zone & Unit Admins';
+        }
+
         const bottomZoneAdmins = document.getElementById('bottomTabZoneAdminsLink');
-        if (bottomZoneAdmins) bottomZoneAdmins.style.display = isDistrict ? 'flex' : 'none';
+        if (bottomZoneAdmins) {
+          bottomZoneAdmins.style.display = canAccessAccounts ? 'flex' : 'none';
+          bottomZoneAdmins.innerHTML = isZone
+            ? '<i class="fas fa-users-cog"></i><span>Unit Accs</span>'
+            : '<i class="fas fa-user-shield"></i><span>Accounts</span>';
+        }
       }
 
       loadData();
@@ -2272,9 +2286,25 @@
         return; // Coordinators are restricted to their dedicated view only
       }
 
-      if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District') {
-        alert('Access Denied: Only District Admin can manage Zone Admin accounts.');
+      if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
+        alert('Access Denied: Only District and Zone Admins can view account credentials.');
         return;
+      }
+
+      if (tabId === 'tab-zone-admins' && sessionUser) {
+        const isZone = sessionUser.role === 'Zone';
+        const secTitle = document.getElementById('accountsSectionTitle');
+        const secSubtitle = document.getElementById('accountsSectionSubtitle');
+        if (secTitle) {
+          secTitle.innerHTML = isZone 
+            ? `<i class="fas fa-users-shield text-cyan"></i> ${sessionUser.target} Zone & Unit Accounts`
+            : `<i class="fas fa-users-shield text-cyan"></i> Zone & Unit Admin Accounts`;
+        }
+        if (secSubtitle) {
+          secSubtitle.innerHTML = isZone 
+            ? `Manage login credentials for ${sessionUser.target} Zone and your Units. Share directly via WhatsApp.`
+            : `Click any Zone arrow (<i class="fas fa-chevron-down text-cyan"></i>) to view its Units. Manage credentials and share via WhatsApp in 1-click.`;
+        }
       }
       
       document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
@@ -2484,9 +2514,17 @@
       // 1. Apply Role Data Isolation
       let filteredRegs = registrations;
       if (sessionUser.role === 'Zone') {
-        filteredRegs = registrations.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        filteredRegs = registrations.filter(r => {
+          const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+          return z === uTarget;
+        });
       } else if (sessionUser.role === 'Unit') {
-        filteredRegs = registrations.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ unit$/i, '');
+        filteredRegs = registrations.filter(r => {
+          const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase().replace(/ unit$/i, '');
+          return u === uTarget;
+        });
       }
 
       // 2. Header counters
@@ -2527,7 +2565,8 @@
 
       let activeZones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       if (sessionUser.role === 'Zone') {
-        activeZones = [sessionUser.target];
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        activeZones = ZONES_ORDER.filter(z => z.toLowerCase().replace(/ zone$/i, '') === uTarget);
       } else if (sessionUser.role === 'Unit') {
         let userZone = '';
         for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
@@ -2841,9 +2880,11 @@
       // Filter vehicles based on logged in role
       let activeVehicles = vehicles;
       if (sessionUser.role === 'Zone') {
-        activeVehicles = vehicles.filter(v => v.Zone === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        activeVehicles = vehicles.filter(v => (v.Zone || '').trim().toLowerCase().replace(/ zone$/i, '') === uTarget);
       } else if (sessionUser.role === 'Unit') {
-        activeVehicles = vehicles.filter(v => v.Unit === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ unit$/i, '');
+        activeVehicles = vehicles.filter(v => (v.Unit || '').trim().toLowerCase().replace(/ unit$/i, '') === uTarget);
       }
 
       // Calculate dynamic vehicle capacity stats based on filtered activeVehicles
@@ -3222,7 +3263,9 @@
       };
 
       if (sessionUser.role === 'Zone') {
-        zoneSelect.value = sessionUser.target;
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        const matchingOpt = Array.from(zoneSelect.options).find(opt => opt.value.trim().toLowerCase().replace(/ zone$/i, '') === uTarget);
+        if (matchingOpt) zoneSelect.value = matchingOpt.value;
         zoneSelect.disabled = true;
         updateFilterUnits();
       } 
@@ -3261,9 +3304,11 @@
       
       // Role level isolation
       if (sessionUser.role === 'Zone') {
-        filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        filtered = filtered.filter(r => (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '') === uTarget);
       } else if (sessionUser.role === 'Unit') {
-        filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ unit$/i, '');
+        filtered = filtered.filter(r => (r["Organization Unit"] || r.unit || '').trim().toLowerCase().replace(/ unit$/i, '') === uTarget);
       }
 
       // Filter inputs
@@ -5169,17 +5214,25 @@
       container.innerHTML = '';
       const q = (accountsSearchQuery || '').toLowerCase().trim();
 
+      const isZoneAdmin = sessionUser && sessionUser.role === 'Zone';
+      const userZoneClean = isZoneAdmin ? (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '') : null;
+
+      // Filter zones: Zone Admin sees ONLY their own zone; District Admin sees all
+      const zonesToRender = isZoneAdmin 
+        ? ZONES_ORDER.filter(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean)
+        : ZONES_ORDER;
+
       let totalZonesCount = 0;
       let totalUnitsCount = 0;
 
-      ZONES_ORDER.forEach((zoneName, zoneIdx) => {
+      zonesToRender.forEach((zoneName, zoneIdx) => {
         const unitsList = ORGANIZATIONAL_MAP[zoneName] || [];
         totalZonesCount++;
         totalUnitsCount += unitsList.length;
 
         // Find Zone account
         const zoneAcc = allAccountsList.find(a => 
-          a.role === 'Zone' && (a.target || '').toLowerCase() === zoneName.toLowerCase()
+          a.role === 'Zone' && (a.target || '').toLowerCase().replace(/ zone$/i, '') === zoneName.toLowerCase().replace(/ zone$/i, '')
         ) || {
           username: zoneName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_admin',
           password: 'zone123',
@@ -5199,7 +5252,7 @@
         const zoneMatchesSearch = !q || zoneName.toLowerCase().includes(q) || zoneAcc.username.toLowerCase().includes(q) || matchingUnits.length > 0;
         if (!zoneMatchesSearch) return;
 
-        const isAutoExpanded = q.length > 0;
+        const isAutoExpanded = isZoneAdmin || q.length > 0;
         const safeZonePass = (zoneAcc.password || '').replace(/'/g, "\\'");
 
         const card = document.createElement('div');
@@ -5343,7 +5396,9 @@
 
       const summary = document.getElementById('accountsCountSummary');
       if (summary) {
-        summary.textContent = `${totalZonesCount} Zones · ${totalUnitsCount} Units`;
+        summary.textContent = isZoneAdmin
+          ? `1 Zone · ${totalUnitsCount} Units`
+          : `${totalZonesCount} Zones · ${totalUnitsCount} Units`;
       }
     }
 
@@ -5487,6 +5542,16 @@ _Note: Please keep your login credentials secure._`;
       const form = document.getElementById('accountForm');
       form.reset();
 
+      const isZoneAdmin = sessionUser && sessionUser.role === 'Zone';
+      if (isZoneAdmin) {
+        const userZoneClean = (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '');
+        const normZone = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean) || sessionUser.target;
+        if (mode === 'add') {
+          role = 'Unit';
+        }
+        zone = normZone;
+      }
+
       const title = document.getElementById('accountModalTitle');
       const modeInput = document.getElementById('accountFormMode');
       const zoneSelect = document.getElementById('accSelectZone');
@@ -5495,6 +5560,11 @@ _Note: Please keep your login credentials secure._`;
       const passInput = document.getElementById('accPasswordInput');
       const origUserInput = document.getElementById('origAccountUser');
       const origRegIdInput = document.getElementById('origAccountRegId');
+      const roleGroup = document.getElementById('accRoleSelectorGroup');
+
+      if (roleGroup) {
+        roleGroup.style.display = isZoneAdmin ? 'none' : 'block';
+      }
 
       modeInput.value = mode;
       origUserInput.value = username;
@@ -5508,6 +5578,7 @@ _Note: Please keep your login credentials secure._`;
       }
 
       zoneSelect.value = zone;
+      zoneSelect.disabled = isZoneAdmin;
       handleAccountZoneSelectChange();
       if (unit) {
         unitSelect.value = unit;
@@ -5528,6 +5599,10 @@ _Note: Please keep your login credentials secure._`;
     function closeAccountModal() {
       const modal = document.getElementById('accountModal');
       if (modal) modal.classList.remove('active');
+      const zoneSelect = document.getElementById('accSelectZone');
+      if (zoneSelect) zoneSelect.disabled = false;
+      const roleGroup = document.getElementById('accRoleSelectorGroup');
+      if (roleGroup) roleGroup.style.display = 'block';
     }
 
     // Submit handler for #accountForm
@@ -5541,6 +5616,14 @@ _Note: Please keep your login credentials secure._`;
       const password = document.getElementById('accPasswordInput').value.trim();
       const origRegId = document.getElementById('origAccountRegId').value;
       const submitBtn = document.getElementById('accSubmitBtn');
+
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const userZoneClean = (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '');
+        if (role !== 'Unit' || zone.toLowerCase().replace(/ zone$/i, '') !== userZoneClean) {
+          alert('Access Denied: Zone Admins can only manage Unit accounts for their assigned zone.');
+          return;
+        }
+      }
 
       if (!username || !password) {
         alert('Please fill in both Username and Password.');
@@ -5611,6 +5694,13 @@ _Note: Please keep your login credentials secure._`;
     });
 
     async function deleteAccount(username, regId, role, target) {
+      if (sessionUser && sessionUser.role === 'Zone') {
+        if (role !== 'Unit') {
+          alert('Access Denied: Zone Admins can only delete Unit accounts.');
+          return;
+        }
+      }
+
       if (!confirm(`Are you sure you want to delete the ${role} Admin account for "${target}" (${username})?`)) {
         return;
       }
