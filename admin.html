@@ -1191,6 +1191,9 @@
 
       <!-- ================= SECTION 1: OVERVIEW DASHBOARD ================= -->
       <div id="tab-overview" class="dashboard-section active">
+        <!-- Target Allocation Summary Banner (District & Zone Views) -->
+        <div id="targetAllocationSummaryBanner"></div>
+
         <!-- Zone Progress Card -->
         <div class="table-container" id="zoneOverviewCard">
           <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin-bottom: 1.5rem;"><i class="fas fa-bullseye text-magenta"></i> Zone & Unit Registration Target Progress Dashboard</h3>
@@ -1980,6 +1983,45 @@
     </div>
   </div>
 
+  <!-- TARGET EDIT & ALLOCATION MODAL -->
+  <div class="modal-overlay" id="targetEditModal">
+    <div class="modal-content" style="max-width: 480px; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closeTargetModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.35rem;" id="targetModalTitle">
+        <i class="fas fa-bullseye text-magenta"></i> Edit Target
+      </h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;" id="targetModalSubtitle">
+        Configure registration target allotment.
+      </p>
+
+      <!-- Target Context Info Box -->
+      <div id="targetModalContextBox" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:0.85rem 1rem; margin-bottom:1.25rem; font-size:0.82rem; line-height:1.5;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <form id="targetEditForm" onsubmit="handleTargetFormSubmit(event)">
+        <input type="hidden" id="targetFormKey" value="">
+        <input type="hidden" id="targetFormType" value="">
+        <input type="hidden" id="targetFormParentZone" value="">
+        <input type="hidden" id="targetFormMaxAllowed" value="99999">
+
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label class="form-label" for="targetFormValInput" style="font-weight:700;">Target Delegate Count *</label>
+          <input type="number" id="targetFormValInput" class="form-input" min="0" required autocomplete="off" oninput="handleTargetInputValidation()">
+          <div id="targetFormValidationMsg" style="font-size:0.78rem; margin-top:0.4rem; font-weight:600;"></div>
+        </div>
+
+        <div style="display:flex; gap:0.75rem;">
+          <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeTargetModal()">Cancel</button>
+          <button type="submit" id="targetSubmitBtn" class="btn btn-primary" style="flex:2;">
+            <i class="fas fa-check"></i> Save Target
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/registration.js?v=1.5"></script>
   <script>
@@ -2528,9 +2570,10 @@
         if (rRes1.error) throw rRes1.error;
         const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
         
-        // Separate custom Zone Admin accounts from student delegate registrations
+        // Separate custom accounts & targets from student delegate registrations
         const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
-        const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_ACC_'));
+        const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
+        const studentRegData = (regData || []).filter(d => !d.reg_id || (!d.reg_id.startsWith('SYS_ACC_') && !d.reg_id.startsWith('SYS_TARGET_')));
 
         registrations = studentRegData.map(d => ({
           Timestamp: d.timestamp,
@@ -2560,6 +2603,24 @@
 
         // Populate Zone Admins Management
         populateZoneAdminsFromDb(sysAccs);
+
+        // Load custom targets from registrations table
+        let directTargets = [];
+        try {
+          const { data: dtList } = await supabase.from('registrations').select('*').ilike('reg_id', 'SYS_TARGET_%');
+          if (dtList) directTargets = dtList;
+        } catch(e) {}
+
+        const allTargetRecs = [...sysTargetRecs];
+        directTargets.forEach(dt => {
+          if (!allTargetRecs.some(r => r.reg_id === dt.reg_id)) allTargetRecs.push(dt);
+        });
+
+        customTargetsMap.clear();
+        allTargetRecs.forEach(tr => {
+          const key = tr.reg_id.replace('SYS_TARGET_', '').toLowerCase();
+          customTargetsMap.set(key, tr.phone || '0');
+        });
 
         spinner.style.display = 'none';
 
@@ -2638,12 +2699,150 @@
 
     // Render Unified Zone & Unit Target Progress Report
     function renderZoneAndUnitTargets() {
+      const banner = document.getElementById('targetAllocationSummaryBanner');
       const tbody = document.getElementById('zoneTargetBody');
       const mobileContainer = document.getElementById('zoneTargetCardsMobile');
       
       if (tbody) tbody.innerHTML = '';
       if (mobileContainer) mobileContainer.innerHTML = '';
 
+      const isDistrict = sessionUser && sessionUser.role === 'District';
+      const isZone = sessionUser && sessionUser.role === 'Zone';
+
+      // 1. Calculate District & Zone Target Metrics
+      const districtTotalTarget = getDistrictTotalTargetValue();
+      const totalRegistered = registrations.length;
+      const sumAllZonesTarget = getSumOfAllZoneTargets();
+      const districtBuffer = Math.max(0, districtTotalTarget - sumAllZonesTarget);
+      const districtPct = districtTotalTarget > 0 ? Math.min(Math.round((totalRegistered / districtTotalTarget) * 100), 100) : 0;
+
+      // 2. Render Target Allocation Summary Banner
+      if (banner) {
+        if (isDistrict) {
+          banner.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(230,0,103,0.06) 0%, rgba(0,168,232,0.06) 100%); border: 1px solid rgba(230,0,103,0.18); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                <div>
+                  <div style="font-size:0.75rem; font-weight:700; color:var(--magenta); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.25rem;">
+                    <i class="fas fa-bullseye"></i> Total District Registration Target
+                  </div>
+                  <div style="display:flex; align-items:baseline; gap:0.75rem; flex-wrap:wrap;">
+                    <span style="font-size:2.2rem; font-weight:800; color:var(--text-main); font-family:var(--font-heading);">${districtTotalTarget.toLocaleString()}</span>
+                    <span style="font-size:0.85rem; color:#64748B;">Total Goal</span>
+                    <button class="btn btn-outline btn-sm" style="padding:0.25rem 0.65rem; font-size:0.78rem; border-color:var(--magenta); color:var(--magenta); border-radius:8px;" onclick="openTargetModal('DISTRICT', 'District Total Goal', 'District', ${districtTotalTarget})">
+                      <i class="fas fa-edit"></i> Edit Total Target
+                    </button>
+                  </div>
+                </div>
+                
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:90px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">REGISTERED</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--magenta);">${totalRegistered}</div>
+                  </div>
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:110px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">ALLOTTED TO ZONES</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--cyan);">${sumAllZonesTarget.toLocaleString()}</div>
+                  </div>
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:110px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">UNALLOTTED BUFFER</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:${districtBuffer === 0 ? '#10B981' : '#F59E0B'};">${districtBuffer.toLocaleString()}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Overall Completion Bar -->
+              <div style="margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; color:#475569; margin-bottom:0.35rem;">
+                  <span>District Completion Progress: <strong>${districtPct}%</strong></span>
+                  <span><strong>${totalRegistered}</strong> of <strong>${districtTotalTarget.toLocaleString()}</strong> registered</span>
+                </div>
+                <div class="progress-track" style="height:8px; background:rgba(0,0,0,0.06); border-radius:4px;">
+                  <div class="progress-fill" style="width:${districtPct}%; height:100%; border-radius:4px; background:var(--grad-primary);"></div>
+                </div>
+              </div>
+
+              <div style="font-size:0.75rem; color:#64748B; display:flex; align-items:center; gap:0.4rem;">
+                <i class="fas fa-info-circle text-cyan"></i> As District Admin, you can edit the overall target and allot target counts for each Zone. Zone Admins will distribute their allotted share to their units.
+              </div>
+            </div>
+          `;
+        } else if (isZone) {
+          const userZoneClean = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+          const normZone = ZONES_ORDER.find(z => z.toLowerCase().replace(/ zone$/i, '') === userZoneClean) || sessionUser.target;
+          const myZoneTarget = getZoneTargetValue(normZone);
+          const myZoneUnits = getOrganizationalUnits(normZone);
+          
+          let myZoneActual = 0;
+          let myUnitsAllocated = 0;
+          myZoneUnits.forEach(u => {
+            myUnitsAllocated += getUnitTargetValue(u, normZone);
+          });
+
+          myZoneActual = registrations.filter(r => {
+            const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+            return z === userZoneClean;
+          }).length;
+
+          const myZonePct = myZoneTarget > 0 ? Math.min(Math.round((myZoneActual / myZoneTarget) * 100), 100) : 0;
+          const remainingForUnits = Math.max(0, myZoneTarget - myUnitsAllocated);
+
+          banner.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(0,168,232,0.06) 0%, rgba(230,0,103,0.05) 100%); border: 1px solid rgba(0,168,232,0.22); border-radius: 16px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                <div>
+                  <div style="font-size:0.75rem; font-weight:700; color:var(--cyan); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.25rem;">
+                    <i class="fas fa-shield-alt"></i> ${normZone} Zone Registration Target
+                  </div>
+                  <div style="display:flex; align-items:baseline; gap:0.75rem; flex-wrap:wrap;">
+                    <span style="font-size:2.2rem; font-weight:800; color:var(--text-main); font-family:var(--font-heading);">${myZoneTarget}</span>
+                    <span class="badge" style="background:#F1F5F9; color:#475569; font-size:0.75rem; padding:0.35rem 0.65rem; border-radius:8px;"><i class="fas fa-lock text-cyan"></i> District Assigned Target</span>
+                  </div>
+                </div>
+                
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:90px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">REGISTERED</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--magenta);">${myZoneActual}</div>
+                  </div>
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:110px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">ALLOTTED TO UNITS</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--cyan);">${myUnitsAllocated} / ${myZoneTarget}</div>
+                  </div>
+                  <div style="background:#FFF; padding:0.6rem 1rem; border-radius:12px; border:1px solid #E2E8F0; text-align:center; min-width:110px;">
+                    <div style="font-size:0.68rem; color:#64748B; font-weight:700;">REMAINING BUFFER</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:${remainingForUnits === 0 ? '#10B981' : '#F59E0B'};">${remainingForUnits}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Zone Progress Bar -->
+              <div style="margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:600; color:#475569; margin-bottom:0.35rem;">
+                  <span>Zone Progress: <strong>${myZonePct}%</strong></span>
+                  <span><strong>${myZoneActual}</strong> of <strong>${myZoneTarget}</strong> registered</span>
+                </div>
+                <div class="progress-track" style="height:8px; background:rgba(0,0,0,0.06); border-radius:4px;">
+                  <div class="progress-fill" style="width:${myZonePct}%; height:100%; border-radius:4px; background:var(--grad-primary);"></div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                <span style="font-size:0.78rem; color:#64748B;">
+                  <i class="fas fa-info-circle text-magenta"></i> You can distribute your allotted <strong>${myZoneTarget}</strong> target among your units below. You cannot allocate more than ${myZoneTarget}.
+                </span>
+                <button class="btn btn-outline btn-sm" style="font-size:0.78rem; padding:0.35rem 0.75rem; border-color:var(--cyan); color:var(--cyan); border-radius:8px;" onclick="distributeZoneTargetEqually('${normZone}')">
+                  <i class="fas fa-balance-scale"></i> Distribute Equally to Units
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          banner.innerHTML = '';
+        }
+      }
+
+      // 3. Render Table & Mobile Cards for Active Zones
       let activeZones = ZONES_ORDER;
       if (sessionUser.role === 'Zone') {
         const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
@@ -2673,19 +2872,21 @@
         }).length;
         
         // Find Zone target
-        const zoneTargetObj = targets.find(t => {
-          if (!t.Zone) return false;
-          const tz = t.Zone.trim().toLowerCase().replace(/ zone$/i, '');
-          return tz === zone.trim().toLowerCase().replace(/ zone$/i, '');
+        const zoneTargetVal = getZoneTargetValue(zone);
+        const zonePercentage = zoneTargetVal > 0 ? Math.min(Math.round((zoneActual / zoneTargetVal) * 100), 100) : 0;
+
+        // Sum targets of units under this zone
+        const zoneUnitsList = getOrganizationalUnits(zone);
+        let sumZoneUnitsAllocated = 0;
+        zoneUnitsList.forEach(u => {
+          sumZoneUnitsAllocated += getUnitTargetValue(u, zone);
         });
-        const zoneTargetVal = zoneTargetObj ? parseInt(zoneTargetObj.Target) : 100;
-        const zonePercentage = Math.min(Math.round((zoneActual / zoneTargetVal) * 100), 100);
 
         // Check if current user can edit zone target (only District Admins)
         const canEditZone = (sessionUser.role === 'District');
         const zoneActionHtml = canEditZone
-          ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="promptEditTarget('${zone}', ${zoneTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
-          : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
+          ? `<button class="btn btn-outline" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="openTargetModal('${zone}', '${zone} Zone', 'Zone', ${zoneTargetVal})"><i class="fas fa-edit"></i> Allot Target</button>`
+          : `<span class="badge-reg" style="background:#F1F5F9; color:#64748B; font-size:0.72rem;"><i class="fas fa-lock text-cyan"></i> District Allotted</span>`;
 
         // 1. Render Desktop Zone Row
         if (tbody) {
@@ -2702,7 +2903,10 @@
             <td data-label="Zone / Unit"><strong style="display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-chevron-right" id="arrow-${zoneId}" style="color:var(--magenta); transition: transform 0.2s; ${isZoneUser ? 'transform: rotate(90deg);' : ''}"></i> Zone: ${zone}</strong></td>
             <td data-label="Type"><span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; font-weight:700;">ZONE</span></td>
             <td data-label="Registered"><strong>${zoneActual}</strong></td>
-            <td data-label="Target">${zoneTargetVal}</td>
+            <td data-label="Target">
+              <strong>${zoneTargetVal}</strong>
+              <div style="font-size:0.7rem; color:#64748B;">(${sumZoneUnitsAllocated} allotted to units)</div>
+            </td>
             <td data-label="Progress">
               <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
                 <div class="progress-track" style="flex-grow:1; height:6px;">
@@ -2734,8 +2938,8 @@
           };
 
           const zoneActionHtmlMobile = canEditZone
-            ? `<button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.7rem; margin-top:0.25rem;" onclick="promptEditTarget('${zone}', ${zoneTargetVal})"><i class="fas fa-edit"></i> Target</button>`
-            : '';
+            ? `<button class="btn btn-outline" style="padding:0.25rem 0.5rem; font-size:0.7rem;" onclick="openTargetModal('${zone}', '${zone} Zone', 'Zone', ${zoneTargetVal})"><i class="fas fa-edit"></i> Allot Target</button>`
+            : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.65rem;"><i class="fas fa-lock"></i> District Assigned</span>`;
 
           zoneCard.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
@@ -2751,11 +2955,12 @@
               <strong>${zonePercentage}%</strong>
             </div>
 
-            <div class="progress-track" style="height:6px; background:#F1F5F9; border-radius:3px;">
+            <div class="progress-track" style="height:6px; background:#F1F5F9; border-radius:3px; margin-bottom:0.4rem;">
               <div class="progress-fill" style="width: ${zonePercentage}%; height:100%; border-radius:3px; background:var(--grad-primary);"></div>
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#64748B;">
+              <span>Units Allocated: <strong>${sumZoneUnitsAllocated} / ${zoneTargetVal}</strong></span>
               ${zoneActionHtmlMobile}
             </div>
 
@@ -2785,17 +2990,14 @@
             return uClean === targetClean || uClean.includes(targetClean) || targetClean.includes(uClean);
           }).length;
 
-          // Find Unit target (default to zone target equally divided among its units)
-          const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unit.trim().toLowerCase());
-          const parentZoneUnits = getOrganizationalUnits(zone);
-          const defaultUnitTarget = parentZoneUnits.length > 0 ? Math.floor(zoneTargetVal / parentZoneUnits.length) : 0;
-          const unitTargetVal = unitTargetObj ? parseInt(unitTargetObj.Target) : defaultUnitTarget;
+          // Find Unit target
+          const unitTargetVal = getUnitTargetValue(unit, zone);
           const unitPercentage = unitTargetVal > 0 ? Math.min(Math.round((unitActual / unitTargetVal) * 100), 100) : 0;
 
           // Check if current user can edit unit target (District OR Zone Admin of parent zone)
           const canEditUnit = (sessionUser.role === 'District') || (sessionUser.role === 'Zone' && (sessionUser.target || '').toLowerCase().replace(/ zone$/i, '') === zone.toLowerCase().replace(/ zone$/i, ''));
           const unitActionHtml = canEditUnit
-            ? `<button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; border-color:rgba(0,168,232,0.3); color:var(--cyan);" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i> Edit Target</button>`
+            ? `<button class="btn btn-outline" style="padding:0.25rem 0.55rem; font-size:0.75rem; border-color:rgba(0,168,232,0.3); color:var(--cyan); border-radius:8px;" onclick="openTargetModal('${unit.replace(/'/g, "\\'")}', '${unit.replace(/'/g, "\\'")} Unit', 'Unit', ${unitTargetVal}, '${zone}')"><i class="fas fa-edit"></i> ${unitTargetVal > 0 ? 'Edit' : 'Set'} Target</button>`
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;"><i class="fas fa-lock"></i> Locked</span>`;
 
           // 1. Desktop Unit Row
@@ -2807,13 +3009,13 @@
               <td data-label="Zone / Unit"><span style="padding-left: 2rem; color: #475569;"><i class="fas fa-arrow-right" style="font-size:0.7rem; margin-right:0.4rem; color:var(--cyan);"></i> ${unit}</span></td>
               <td data-label="Type"><span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.7rem; font-weight:700;">UNIT</span></td>
               <td data-label="Registered">${unitActual}</td>
-              <td data-label="Target">${unitTargetVal}</td>
+              <td data-label="Target">${unitTargetVal > 0 ? `<strong>${unitTargetVal}</strong>` : '<span style="color:#94A3B8; font-style:italic;">Not Set (0)</span>'}</td>
               <td data-label="Progress">
                 <div style="display:flex; align-items:center; gap:0.75rem; min-width:120px;">
                   <div class="progress-track" style="flex-grow:1; height:5px; background:#E2E8F0;">
                     <div class="progress-fill" style="width: ${unitPercentage}%; background:var(--grad-primary);"></div>
                   </div>
-                  <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${unitPercentage}%</span>
+                  <span style="font-weight:700; font-size:0.75rem; min-width:35px; text-align:right;">${unitTargetVal > 0 ? unitPercentage + '%' : '—'}</span>
                 </div>
               </td>
               <td data-label="Actions">${unitActionHtml}</td>
@@ -2825,7 +3027,7 @@
           const mUnitsContainer = document.getElementById(`munits-${zoneId}`);
           if (mUnitsContainer) {
             const unitActionHtmlMobile = canEditUnit
-              ? `<button class="btn btn-outline" style="padding:0.2rem 0.4rem; font-size:0.65rem;" onclick="promptEditTarget('${unit.replace(/'/g, "\\'")}', ${unitTargetVal})"><i class="fas fa-edit"></i></button>`
+              ? `<button class="btn btn-outline" style="padding:0.2rem 0.45rem; font-size:0.65rem;" onclick="openTargetModal('${unit.replace(/'/g, "\\'")}', '${unit.replace(/'/g, "\\'")} Unit', 'Unit', ${unitTargetVal}, '${zone}')"><i class="fas fa-edit"></i></button>`
               : '';
 
             const unitItem = document.createElement('div');
@@ -2843,8 +3045,8 @@
               </div>
               
               <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:#64748B; margin-bottom:0.25rem;">
-                <span>Count: <strong>${unitActual} / ${unitTargetVal}</strong></span>
-                <strong>${unitPercentage}%</strong>
+                <span>Count: <strong>${unitActual} / ${unitTargetVal > 0 ? unitTargetVal : 0}</strong></span>
+                <strong>${unitTargetVal > 0 ? unitPercentage + '%' : '—'}</strong>
               </div>
 
               <div class="progress-track" style="height:4px; background:#E2E8F0; border-radius:2px;">
@@ -4746,34 +4948,408 @@
     };
 
     // ========================================================
-    // DIRECT TARGET EDITING FROM DASHBOARD
+    // DYNAMIC TARGET ALLOCATION & MANAGEMENT SUITE
     // ========================================================
-    function getUnitTargetValue(unitName, parentZoneName, parentZoneTargetVal) {
-      const unitTargetObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === unitName.trim().toLowerCase());
-      if (unitTargetObj) {
-        return parseInt(unitTargetObj.Target);
+    let customTargetsMap = new Map();
+
+    function getDistrictTotalTargetValue() {
+      if (customTargetsMap.has('district')) {
+        return parseInt(customTargetsMap.get('district')) || 0;
       }
-      const parentZoneUnits = ORGANIZATIONAL_MAP[parentZoneName] || [];
-      const defaultUnitTarget = parentZoneUnits.length > 0 ? Math.floor(parentZoneTargetVal / parentZoneUnits.length) : 0;
-      return defaultUnitTarget;
+      return getSumOfAllZoneTargets();
     }
 
-    function promptEditTarget(targetName, currentVal) {
+    function getSumOfAllZoneTargets() {
+      let sum = 0;
+      ZONES_ORDER.forEach(z => {
+        sum += getZoneTargetValue(z);
+      });
+      return sum;
+    }
+
+    function getZoneTargetValue(zoneName) {
+      if (!zoneName) return 150;
+      const clean = zoneName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      if (customTargetsMap.has('zone_' + clean)) {
+        return parseInt(customTargetsMap.get('zone_' + clean)) || 0;
+      }
+      const zoneClean = zoneName.trim().toLowerCase().replace(/ zone$/i, '');
+      const tObj = targets.find(t => {
+        if (!t.Zone) return false;
+        return t.Zone.trim().toLowerCase().replace(/ zone$/i, '') === zoneClean;
+      });
+      return tObj ? (parseInt(tObj.Target) || 150) : 150;
+    }
+
+    function getUnitTargetValue(unitName, parentZone) {
+      if (!unitName) return 0;
+      const clean = unitName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      if (customTargetsMap.has('unit_' + clean)) {
+        return parseInt(customTargetsMap.get('unit_' + clean)) || 0;
+      }
+      return 0; // Unallocated until set by Zone or District Admin
+    }
+
+    function openTargetModal(key, titleName, type, currentVal = 0, parentZone = '') {
+      const modal = document.getElementById('targetEditModal');
+      if (!modal) return;
+
+      const titleEl = document.getElementById('targetModalTitle');
+      const subtitleEl = document.getElementById('targetModalSubtitle');
+      const contextBox = document.getElementById('targetModalContextBox');
+      const keyInput = document.getElementById('targetFormKey');
+      const typeInput = document.getElementById('targetFormType');
+      const parentZoneInput = document.getElementById('targetFormParentZone');
+      const maxAllowedInput = document.getElementById('targetFormMaxAllowed');
+      const valInput = document.getElementById('targetFormValInput');
+
+      keyInput.value = key;
+      typeInput.value = type;
+      parentZoneInput.value = parentZone;
+      valInput.value = currentVal || 0;
+
       const isDistrict = sessionUser && sessionUser.role === 'District';
-      let isAllowedZoneAdmin = false;
-      if (sessionUser && sessionUser.role === 'Zone') {
-        const myZoneUnits = ORGANIZATIONAL_MAP[sessionUser.target] || [];
-        if (myZoneUnits.includes(targetName)) {
-          isAllowedZoneAdmin = true;
+      const isZone = sessionUser && sessionUser.role === 'Zone';
+
+      if (type === 'District') {
+        if (!isDistrict) {
+          alert('Access Denied: Only District Admins can edit the overall District Target.');
+          return;
         }
+        titleEl.innerHTML = `<i class="fas fa-bullseye text-magenta"></i> Edit Total District Target`;
+        subtitleEl.textContent = 'Set the overall delegate registration target for the entire District.';
+        const sumZones = getSumOfAllZoneTargets();
+        contextBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+            <span>Current Allotted across 7 Zones:</span>
+            <strong>${sumZones.toLocaleString()}</strong>
+          </div>
+          <div style="font-size:0.75rem; color:#64748B;">
+            Zones can distribute their allotted share to their respective units. Total cannot exceed the goal you specify.
+          </div>
+        `;
+        maxAllowedInput.value = '999999';
+      } else if (type === 'Zone') {
+        if (!isDistrict) {
+          alert('Access Denied: Only District Admins can allot Zone targets.');
+          return;
+        }
+        titleEl.innerHTML = `<i class="fas fa-bullseye text-magenta"></i> Allot Target: ${titleName}`;
+        subtitleEl.textContent = `Allot registration target for ${key} Zone from the District pool.`;
+        
+        const districtTotal = getDistrictTotalTargetValue();
+        let otherZonesSum = 0;
+        ZONES_ORDER.forEach(z => {
+          if (z.trim().toLowerCase() === key.trim().toLowerCase()) return;
+          otherZonesSum += getZoneTargetValue(z);
+        });
+        const remainingDistrictBuffer = Math.max(0, districtTotal - otherZonesSum);
+
+        contextBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+            <span>District Total Target:</span>
+            <strong>${districtTotal.toLocaleString()}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem; color:#64748B;">
+            <span>Allotted to Other 6 Zones:</span>
+            <strong>${otherZonesSum.toLocaleString()}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-top:1px dashed #CBD5E1; padding-top:0.35rem; color:var(--cyan); font-weight:700;">
+            <span>District Buffer Remaining:</span>
+            <span>${remainingDistrictBuffer.toLocaleString()}</span>
+          </div>
+        `;
+        maxAllowedInput.value = '999999';
+      } else if (type === 'Unit') {
+        // Find parent zone if not passed
+        if (!parentZone) {
+          for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+            if (uList.includes(key)) { parentZone = z; break; }
+          }
+        }
+        parentZoneInput.value = parentZone;
+
+        // Check permission: District Admin or Zone Admin of parent zone
+        const canEditUnit = isDistrict || (isZone && (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '') === parentZone.trim().toLowerCase().replace(/ zone$/i, ''));
+        if (!canEditUnit) {
+          alert('Access Denied: You do not have permission to edit targets for this Unit.');
+          return;
+        }
+
+        titleEl.innerHTML = `<i class="fas fa-bullseye text-cyan"></i> Allot Target: ${titleName}`;
+        subtitleEl.textContent = `Allot registration target for ${key} Unit under ${parentZone} Zone.`;
+
+        const zoneTarget = getZoneTargetValue(parentZone);
+        const zoneUnits = getOrganizationalUnits(parentZone);
+        let otherUnitsSum = 0;
+        zoneUnits.forEach(u => {
+          if (u.trim().toLowerCase() === key.trim().toLowerCase()) return;
+          otherUnitsSum += getUnitTargetValue(u, parentZone);
+        });
+
+        const maxAvailable = Math.max(0, zoneTarget - otherUnitsSum);
+        maxAllowedInput.value = maxAvailable.toString();
+
+        contextBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+            <span>Zone (${parentZone}) Allotted Target:</span>
+            <strong>${zoneTarget}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem; color:#64748B;">
+            <span>Allotted to Other Units:</span>
+            <strong>${otherUnitsSum}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; border-top:1px dashed #CBD5E1; padding-top:0.35rem; color:var(--magenta); font-weight:700;">
+            <span>Maximum Allowed for this Unit:</span>
+            <span>${maxAvailable}</span>
+          </div>
+        `;
       }
 
-      if (!isDistrict && !isAllowedZoneAdmin) {
-        alert('Access Denied: You do not have permission to edit this target.');
+      handleTargetInputValidation();
+      modal.classList.add('active');
+    }
+
+    function closeTargetModal() {
+      const modal = document.getElementById('targetEditModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function handleTargetInputValidation() {
+      const val = parseInt(document.getElementById('targetFormValInput').value) || 0;
+      const max = parseInt(document.getElementById('targetFormMaxAllowed').value);
+      const type = document.getElementById('targetFormType').value;
+      const msgEl = document.getElementById('targetFormValidationMsg');
+      const submitBtn = document.getElementById('targetSubmitBtn');
+
+      if (!msgEl || !submitBtn) return;
+
+      if (type === 'Unit') {
+        if (val > max) {
+          msgEl.innerHTML = `<span style="color:#EF4444;"><i class="fas fa-exclamation-triangle"></i> Exceeds Zone Target limit by ${val - max}! Maximum allowed is ${max}.</span>`;
+          submitBtn.disabled = true;
+        } else {
+          msgEl.innerHTML = `<span style="color:#10B981;"><i class="fas fa-check-circle"></i> Within allowed limit (${max - val} remaining in zone buffer).</span>`;
+          submitBtn.disabled = false;
+        }
+      } else {
+        msgEl.innerHTML = `<span style="color:#10B981;"><i class="fas fa-check-circle"></i> Valid target count.</span>`;
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function handleTargetFormSubmit(e) {
+      e.preventDefault();
+      const key = document.getElementById('targetFormKey').value;
+      const type = document.getElementById('targetFormType').value;
+      const parentZone = document.getElementById('targetFormParentZone').value;
+      const newVal = parseInt(document.getElementById('targetFormValInput').value);
+      const submitBtn = document.getElementById('targetSubmitBtn');
+
+      if (isNaN(newVal) || newVal < 0) {
+        alert('Please enter a valid non-negative number.');
         return;
       }
 
-      // Check if target is a Unit or a Zone
+      if (type === 'Unit') {
+        const zoneTarget = getZoneTargetValue(parentZone);
+        const zoneUnits = getOrganizationalUnits(parentZone);
+        let otherUnitsSum = 0;
+        zoneUnits.forEach(u => {
+          if (u.trim().toLowerCase() === key.trim().toLowerCase()) return;
+          otherUnitsSum += getUnitTargetValue(u, parentZone);
+        });
+
+        if (newVal + otherUnitsSum > zoneTarget) {
+          alert(`❌ Target Limit Exceeded!\n\nYou cannot allocate more than the target allotted by District Admin (${zoneTarget}).\nCurrent allocation across other units: ${otherUnitsSum}.\nMaximum allowed for "${key}": ${zoneTarget - otherUnitsSum}.`);
+          return;
+        }
+      } else if (type === 'Zone') {
+        if (!sessionUser || sessionUser.role !== 'District') {
+          alert('Access Denied: Only District Admins can allot zone targets.');
+          return;
+        }
+        const districtTotal = getDistrictTotalTargetValue();
+        let otherZonesSum = 0;
+        ZONES_ORDER.forEach(z => {
+          if (z.trim().toLowerCase() === key.trim().toLowerCase()) return;
+          otherZonesSum += getZoneTargetValue(z);
+        });
+
+        if (newVal + otherZonesSum > districtTotal) {
+          const confirmAutoExpand = confirm(`Total allotted across all 7 zones (${newVal + otherZonesSum}) would exceed the Total District Target (${districtTotal}).\n\nWould you like to automatically increase the Total District Target to ${newVal + otherZonesSum}?`);
+          if (!confirmAutoExpand) return;
+          await saveDistrictTotalTarget(newVal + otherZonesSum);
+        }
+      } else if (type === 'District') {
+        if (!sessionUser || sessionUser.role !== 'District') {
+          alert('Access Denied: Only District Admins can edit total district target.');
+          return;
+        }
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      try {
+        if (type === 'District') {
+          await saveDistrictTotalTarget(newVal);
+          alert(`✅ Total District Target updated to ${newVal.toLocaleString()}!`);
+        } else if (type === 'Zone') {
+          await saveZoneTarget(key, newVal);
+          alert(`✅ Target for ${key} Zone updated to ${newVal.toLocaleString()}!`);
+        } else if (type === 'Unit') {
+          await saveUnitTarget(key, parentZone, newVal);
+          alert(`✅ Target for ${key} Unit updated to ${newVal.toLocaleString()}!`);
+        }
+
+        closeTargetModal();
+        await loadData();
+      } catch (err) {
+        console.error("Error saving target:", err);
+        alert('Error saving target: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Target';
+      }
+    }
+
+    async function saveDistrictTotalTarget(newVal) {
+      const regId = 'SYS_TARGET_district';
+      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+      if (existing && existing.length > 0) {
+        await supabase.from('registrations').update({
+          phone: newVal.toString(),
+          name: 'DISTRICT_TOTAL_TARGET',
+          zone: 'DISTRICT',
+          unit: 'DISTRICT',
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG'
+        }).eq('reg_id', regId);
+      } else {
+        await supabase.from('registrations').insert([{
+          reg_id: regId,
+          name: 'DISTRICT_TOTAL_TARGET',
+          phone: newVal.toString(),
+          zone: 'DISTRICT',
+          unit: 'DISTRICT',
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG',
+          school: 'N/A',
+          panchayath: 'N/A',
+          ward: 'N/A'
+        }]);
+      }
+    }
+
+    async function saveZoneTarget(zoneName, newVal) {
+      const zoneClean = zoneName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const regId = 'SYS_TARGET_zone_' + zoneClean;
+      
+      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+      if (existing && existing.length > 0) {
+        await supabase.from('registrations').update({
+          phone: newVal.toString(),
+          name: zoneName,
+          zone: zoneName,
+          unit: 'ZONE_TARGET',
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG'
+        }).eq('reg_id', regId);
+      } else {
+        await supabase.from('registrations').insert([{
+          reg_id: regId,
+          name: zoneName,
+          phone: newVal.toString(),
+          zone: zoneName,
+          unit: 'ZONE_TARGET',
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG',
+          school: 'N/A',
+          panchayath: 'N/A',
+          ward: 'N/A'
+        }]);
+      }
+
+      // Also sync to targets table if row exists
+      try {
+        await supabase.from('targets').update({ target: newVal }).ilike('zone', zoneName);
+        await supabase.from('targets').update({ target: newVal }).ilike('zone', zoneName + ' zone');
+      } catch(e) {
+        console.warn("Notice syncing targets table:", e);
+      }
+    }
+
+    async function saveUnitTarget(unitName, parentZone, newVal) {
+      const unitClean = unitName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const regId = 'SYS_TARGET_unit_' + unitClean;
+
+      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+      if (existing && existing.length > 0) {
+        await supabase.from('registrations').update({
+          phone: newVal.toString(),
+          name: unitName,
+          zone: parentZone,
+          unit: unitName,
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG'
+        }).eq('reg_id', regId);
+      } else {
+        await supabase.from('registrations').insert([{
+          reg_id: regId,
+          name: unitName,
+          phone: newVal.toString(),
+          zone: parentZone,
+          unit: unitName,
+          student_class: 'Target',
+          place: 'SYSTEM_CONFIG',
+          school: 'N/A',
+          panchayath: 'N/A',
+          ward: 'N/A'
+        }]);
+      }
+    }
+
+    async function distributeZoneTargetEqually(zoneName) {
+      const zoneUnits = getOrganizationalUnits(zoneName);
+      if (!zoneUnits || zoneUnits.length === 0) {
+        alert('No units found under ' + zoneName);
+        return;
+      }
+
+      const zoneTarget = getZoneTargetValue(zoneName);
+      if (zoneTarget <= 0) {
+        alert('Zone target is 0. Please contact District Admin to allot a target for your zone first.');
+        return;
+      }
+
+      const perUnit = Math.floor(zoneTarget / zoneUnits.length);
+      const remainder = zoneTarget % zoneUnits.length;
+
+      if (!confirm(`Evenly distribute ${zoneName} Zone Target (${zoneTarget}) across all ${zoneUnits.length} units?\n\nEach unit will be allotted ${perUnit} delegates${remainder > 0 ? ` (with ${remainder} buffer remaining)` : ''}.`)) {
+        return;
+      }
+
+      const spinner = document.getElementById('loadingSpinner');
+      if (spinner) spinner.style.display = 'block';
+
+      try {
+        for (let i = 0; i < zoneUnits.length; i++) {
+          const unit = zoneUnits[i];
+          await saveUnitTarget(unit, zoneName, perUnit);
+        }
+        alert(`✅ Zone Target of ${zoneTarget} has been evenly distributed across all ${zoneUnits.length} units (${perUnit} delegates each)!`);
+        await loadData();
+      } catch (err) {
+        console.error("Error distributing targets:", err);
+        alert('Error distributing targets: ' + err.message);
+      } finally {
+        if (spinner) spinner.style.display = 'none';
+      }
+    }
+
+    // Compatibility alias
+    function promptEditTarget(targetName, currentVal) {
       let isUnit = false;
       let parentZone = '';
       for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
@@ -4783,89 +5359,7 @@
           break;
         }
       }
-
-      const newValStr = prompt(`Enter new registration target count for ${targetName}:`, currentVal);
-      if (newValStr === null) return;
-      
-      const newVal = parseInt(newValStr);
-      if (isNaN(newVal) || newVal < 0) {
-        alert('Please enter a valid non-negative integer.');
-        return;
-      }
-
-      if (isUnit) {
-        // Find parent zone target
-        const parentZoneObj = targets.find(t => t.Zone && (t.Zone.trim().toLowerCase() === parentZone.trim().toLowerCase() || t.Zone.trim().toLowerCase() === (parentZone.trim() + ' zone').toLowerCase()));
-        const parentZoneTargetVal = parentZoneObj ? parseInt(parentZoneObj.Target) : 100;
-
-        // Sum targets of other units under the same zone
-        const parentZoneUnits = ORGANIZATIONAL_MAP[parentZone] || [];
-        let sumOtherUnits = 0;
-        parentZoneUnits.forEach(u => {
-          if (u.trim().toLowerCase() === targetName.trim().toLowerCase()) return;
-          sumOtherUnits += getUnitTargetValue(u, parentZone, parentZoneTargetVal);
-        });
-
-        // Enforce sum target limit rule
-        if (newVal + sumOtherUnits > parentZoneTargetVal) {
-          alert(`Cannot set Unit target. The sum of all Unit targets under Zone ${parentZone} (${newVal + sumOtherUnits}) would exceed the Zone's target limit (${parentZoneTargetVal}). Please reduce other unit targets first.`);
-          return;
-        }
-      } else {
-        // It is a Zone. Check that Zone target is not less than sum of explicitly set Unit targets
-        const zoneUnits = ORGANIZATIONAL_MAP[targetName] || [];
-        let sumUnitTargets = 0;
-        zoneUnits.forEach(u => {
-          const uObj = targets.find(t => t.Zone && t.Zone.trim().toLowerCase() === u.trim().toLowerCase());
-          sumUnitTargets += uObj ? parseInt(uObj.Target) : 0;
-        });
-
-        if (newVal < sumUnitTargets) {
-          alert(`Cannot set Zone target. The sum of currently set Unit targets under this Zone is ${sumUnitTargets}, which exceeds ${newVal}. Please reduce unit targets first.`);
-          return;
-        }
-      }
-
-      // Check if target entry already exists in DB to decide update vs insert (Upsert logic)
-      supabase
-        .from('targets')
-        .select('*')
-        .eq('zone', targetName)
-        .then(({ data, error }) => {
-          if (error) {
-            alert('Error verifying target: ' + error.message);
-            return;
-          }
-
-          if (data && data.length > 0) {
-            // Update
-            supabase
-              .from('targets')
-              .update({ target: newVal })
-              .eq('zone', targetName)
-              .then(({ error: updateErr }) => {
-                if (updateErr) {
-                  alert('Error updating target: ' + updateErr.message);
-                } else {
-                  alert(`Target for ${targetName} successfully updated to ${newVal}!`);
-                  loadData();
-                }
-              });
-          } else {
-            // Insert
-            supabase
-              .from('targets')
-              .insert([{ zone: targetName, target: newVal }])
-              .then(({ error: insertErr }) => {
-                if (insertErr) {
-                  alert('Error saving target: ' + insertErr.message);
-                } else {
-                  alert(`Target for ${targetName} successfully saved as ${newVal}!`);
-                  loadData();
-                }
-              });
-          }
-        });
+      openTargetModal(targetName, targetName + (isUnit ? ' Unit' : ' Zone'), isUnit ? 'Unit' : 'Zone', currentVal, parentZone);
     }
 
     function handleMappingVisibilityToggle(isEnabled) {
