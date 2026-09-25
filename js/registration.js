@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <form id="registrationForm">
         <div style="text-align:center; margin-bottom: 1.5rem;">
           <span class="section-tag"><i class="fas fa-user-plus"></i> Online Registration</span>
-          <h2 style="font-family:var(--font-heading); font-size:1.8rem;">TEENSPACE 2026 Pass</h2>
+          <h2 style="font-family:var(--font-heading); font-size:1.8rem;">TEENSPACE 2026</h2>
           <p style="color:var(--text-muted); font-size:0.9rem;">For Boys Studying in Classes 10, 11 & 12</p>
         </div>
 
