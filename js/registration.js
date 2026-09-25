@@ -818,12 +818,61 @@ function initDonateContactModal() {
   });
 }
 
+// Direct URL link helpers
+function getDonateDirectUrl() {
+  const origin = window.location.origin;
+  const path = window.location.pathname.replace(/[^/]*$/, '');
+  return `${origin}${path}donate.html`;
+}
+
+function copyDonateDirectLink() {
+  const url = getDonateDirectUrl();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert('🔗 Direct Link copied to clipboard:\n\n' + url + '\n\nYou can share this link directly on WhatsApp or social media!');
+    }).catch(() => {
+      prompt('Copy the Donate a Contact direct link below:', url);
+    });
+  } else {
+    prompt('Copy the Donate a Contact direct link below:', url);
+  }
+}
+
+function shareDonateWhatsAppLink() {
+  const url = getDonateDirectUrl();
+  const text = `🤝 *TEENSPACE 2026 - DONATE A STUDENT CONTACT* 🤝\n\nKnow a student studying in Class 10, 11, or 12? Help empower them by sharing their contact details so our team can invite and guide them for TEENSPACE 2026.\n\n👉 *Direct Link:* ${url}\n\n_Together, let's shape our teenagers' future!_ ✨`;
+  const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+  window.open(waUrl, '_blank');
+}
+
+// Auto-open modal on direct deep link (#donate or ?donate)
+function checkUrlDirectActions() {
+  const hash = (window.location.hash || '').toLowerCase();
+  const params = new URLSearchParams(window.location.search || '');
+
+  if (hash === '#donate' || hash === '#donate-contact' || hash === '#donatecontact' || params.has('donate')) {
+    setTimeout(() => {
+      openDonateContactModal();
+      const donateSec = document.getElementById('donate');
+      if (donateSec) donateSec.scrollIntoView({ behavior: 'smooth' });
+    }, 350);
+  } else if (hash === '#register' || params.has('register')) {
+    setTimeout(() => {
+      openRegisterModal();
+    }, 350);
+  }
+}
+
+window.addEventListener('hashchange', checkUrlDirectActions);
+
 // Auto-initialize when document loads
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initDonateContactModal();
+    checkUrlDirectActions();
   });
 } else {
   initDonateContactModal();
+  checkUrlDirectActions();
 }
 
