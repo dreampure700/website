@@ -95,6 +95,25 @@
     grid-template-columns: 1fr;
   }
 
+  /* Mobile Modals: sleek, spacious, scrollbar-free form */
+  .modal-overlay {
+    padding: 0.85rem 0.65rem !important;
+  }
+
+  .modal-content {
+    padding: 1.6rem 1.15rem 1.4rem !important;
+    border-radius: 20px !important;
+    max-height: 92vh !important;
+  }
+
+  .modal-close {
+    top: 0.85rem !important;
+    right: 0.85rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 1.1rem !important;
+  }
+
   /* Iframe heights optimized for mobile aspect ratios (excluding the hero countdown background video) */
   iframe[src*="instagram.com/reel"]:not(.hero-video-iframe), 
   iframe[src*="youtube.com/embed"]:not(.hero-video-iframe),

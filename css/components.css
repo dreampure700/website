@@ -673,8 +673,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -682,6 +683,7 @@
   padding: 1.5rem;
   opacity: 0;
   visibility: hidden;
+  overscroll-behavior: contain;
   transition: var(--transition-normal);
 }
 
@@ -703,6 +705,19 @@
   position: relative;
   transform: scale(0.9);
   transition: var(--transition-normal);
+
+  /* Modern, seamless scroll experience - no clunky browser scrollbars */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+.modal-content::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .modal-overlay.active .modal-content {

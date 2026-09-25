@@ -49,19 +49,20 @@ function initAutoRegistrationPopup() {
     }
   });
 
-  // 3. Auto-popup when entering the site (if not manually dismissed and not opening donate link)
-  const isDismissed = sessionStorage.getItem('reg_popup_closed');
+  // 3. Auto-popup when entering the site directly
   const currentHash = (window.location.hash || '').toLowerCase();
   const currentParams = new URLSearchParams(window.location.search || '');
   const isDonateMode = currentHash.includes('donate') || currentParams.has('donate');
 
-  if (!isDismissed && !isDonateMode) {
-    window.autoRegPopupTimer = setTimeout(() => {
-      const donateModal = document.getElementById('donateContactModal');
-      if (donateModal && donateModal.classList.contains('active')) return;
-      openRegisterModal();
-    }, 1200);
-  }
+  // If visitor enters through donate link, NEVER popup registration form
+  if (isDonateMode) return;
+
+  // When visitor enters website directly, show registration form popup
+  window.autoRegPopupTimer = setTimeout(() => {
+    const donateModal = document.getElementById('donateContactModal');
+    if (donateModal && donateModal.classList.contains('active')) return;
+    openRegisterModal();
+  }, 800);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
