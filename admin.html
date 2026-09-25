@@ -1195,7 +1195,7 @@
         <!-- Target Allocation Summary Banner (District & Zone Views) -->
         <div id="targetAllocationSummaryBanner"></div>
 
-        <!-- ================= MANDALAM & ZONE COMPETITIVE SCOREBOARD ================= -->
+        <!-- ================= ZONE COMPETITIVE SCOREBOARD ================= -->
         <div class="table-container" id="zoneScoreboardCard" style="margin-bottom: 2rem; border-radius: 18px; border: 1.5px solid rgba(230, 0, 103, 0.2); background: #FFFFFF; box-shadow: 0 10px 30px rgba(0,0,0,0.04); overflow: hidden;">
           <!-- Scoreboard Header -->
           <div style="background: linear-gradient(135deg, rgba(230, 0, 103, 0.08) 0%, rgba(0, 168, 232, 0.08) 100%); padding: 1.25rem 1.5rem; border-bottom: 1px solid rgba(230, 0, 103, 0.12); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -1204,10 +1204,10 @@
                 <span style="font-size: 1.6rem;">🏆</span>
                 <div>
                   <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin: 0; color: var(--text-main); font-weight: 800; letter-spacing: -0.01em;">
-                    Mandalam & Zone Competitive Scoreboard
+                    Zone Competitive Scoreboard
                   </h3>
                   <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">
-                    Live registration ranking across all 7 zones • See which Mandalam is on top!
+                    Live registration ranking across all 7 zones • See which Zone is on top!
                   </p>
                 </div>
               </div>
@@ -1245,7 +1245,7 @@
               <thead>
                 <tr style="background: #F8FAFC;">
                   <th style="width: 75px; text-align: center;">Rank</th>
-                  <th>Mandalam / Zone</th>
+                  <th>Zone</th>
                   <th style="text-align: center;">Registered</th>
                   <th style="text-align: center;">Allotted Target</th>
                   <th style="min-width: 200px;">Target Completion</th>
@@ -2866,7 +2866,7 @@
       // 3. Render Unified Zone & Unit Targets
       renderZoneAndUnitTargets();
 
-      // 4. Render Mandalam / Zone Competitive Scoreboard
+      // 4. Render Zone Competitive Scoreboard
       renderZoneScoreboard();
 
       // 5. Render Panchayath & Wards Breakdown
@@ -5912,7 +5912,7 @@
     }
 
     // =========================================================================
-    // MANDALAM & ZONE COMPETITIVE SCOREBOARD SUITE
+    // ZONE COMPETITIVE SCOREBOARD SUITE
     // =========================================================================
     let scoreboardSortMode = 'pct'; // 'pct' or 'count'
 
@@ -6000,7 +6000,7 @@
             <div>
               <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                 <span class="badge" style="background:#FEF3C7; color:#B45309; font-weight:800; font-size:0.75rem; border:1px solid #FCD34D;">
-                  🥇 CURRENT #1 MANDALAM LEADER
+                  🥇 CURRENT #1 ZONE LEADER
                 </span>
                 <span style="font-size:0.8rem; color:#64748B;">• Competitive Standings</span>
               </div>
@@ -6063,7 +6063,7 @@
             <td style="vertical-align:middle;">
               <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                 <strong style="font-size:0.95rem; color:#1E293B;">${item.zone} Zone</strong>
-                ${isLeader ? '<span class="badge" style="background:#FEF3C7; color:#B45309; font-size:0.68rem; font-weight:800;"><i class="fas fa-crown text-amber-500"></i> TOP MANDALAM</span>' : ''}
+                ${isLeader ? '<span class="badge" style="background:#FEF3C7; color:#B45309; font-size:0.68rem; font-weight:800;"><i class="fas fa-crown text-amber-500"></i> TOP ZONE</span>' : ''}
                 ${isMyZone ? '<span class="badge" style="background:rgba(0,168,232,0.15); color:var(--cyan); font-size:0.68rem; font-weight:800;"><i class="fas fa-user-check"></i> YOUR ZONE</span>' : ''}
               </div>
             </td>
@@ -6190,7 +6190,7 @@
 
       const sortLabel = scoreboardSortMode === 'pct' ? 'By % Target Achieved' : 'By Total Registrations';
 
-      let msg = `🏆 *TEENSPACE 2026 - MANDALAM SCOREBOARD* 🏆\n`;
+      let msg = `🏆 *TEENSPACE 2026 - ZONE SCOREBOARD* 🏆\n`;
       msg += `_Competitive Registration Leaderboard_\n`;
       msg += `📅 *Date & Time:* ${dateIST}\n`;
       msg += `🎯 *Ranked:* ${sortLabel}\n`;
@@ -6213,7 +6213,7 @@
 
       msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
       msg += `📊 *District Total:* *${totalReg}* / ${totalTgt} (${totalPct}%)\n\n`;
-      msg += `🔥 _Which Mandalam will lead the race? Keep pushing registrations!_ 🚀✨\n`;
+      msg += `🔥 _Which Zone will lead the race? Keep pushing registrations!_ 🚀✨\n`;
 
       return msg;
     }
