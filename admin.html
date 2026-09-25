@@ -2590,7 +2590,50 @@
           "Asst Coordinator Password": d.asst_pass || ""
         }));
 
-        // 5. Fetch Media
+        // 5. Fetch Registrations (Paginated for >1000 rows)
+        const [rRes1, rRes2, rRes3, rRes4, rRes5] = await Promise.all([
+          supabase.from('registrations').select('*').range(0, 999),
+          supabase.from('registrations').select('*').range(1000, 1999),
+          supabase.from('registrations').select('*').range(2000, 2999),
+          supabase.from('registrations').select('*').range(3000, 3999),
+          supabase.from('registrations').select('*').range(4000, 4999)
+        ]);
+        if (rRes1.error) throw rRes1.error;
+        const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
+        
+        // Separate custom accounts, targets & donated contacts from student delegate registrations
+        const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
+        const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
+        const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
+        const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
+
+        registrations = studentRegData.map(d => ({
+          Timestamp: d.timestamp,
+          "Registration ID": d.reg_id,
+          regId: d.reg_id,
+          "Student Name": d.name,
+          name: d.name,
+          "Student Mobile Number": d.phone,
+          phone: d.phone,
+          "Parent Mobile Number": d.parent_phone || "",
+          Class: d.student_class || "",
+          School: d.school || "",
+          Place: d.place || "",
+          Panchayath: d.panchayath || "",
+          Ward: d.ward || "",
+          "Organization Unit": d.unit || "",
+          unit: d.unit || "",
+          "Organization Zone": d.zone || "",
+          zone: d.zone || "",
+          "Assigned Vehicle": d.assigned_vehicle || "",
+          assignedVehicle: d.assigned_vehicle || "",
+          "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
+          pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
+          "Picked Up": d.picked_up ? "true" : "false",
+          pickedUp: d.picked_up ? "true" : "false"
+        }));
+
+        // 6. Fetch Media
         try {
           const { data: mediaData, error: mediaErr } = await supabase.from('media').select('*');
           if (mediaErr) console.warn("Notice fetching media table:", mediaErr);
@@ -2661,49 +2704,6 @@
 
         // Render Master Mapping Table
         renderMasterMapping();
-
-        // 6. Fetch Registrations (Paginated for >1000 rows)
-        const [rRes1, rRes2, rRes3, rRes4, rRes5] = await Promise.all([
-          supabase.from('registrations').select('*').range(0, 999),
-          supabase.from('registrations').select('*').range(1000, 1999),
-          supabase.from('registrations').select('*').range(2000, 2999),
-          supabase.from('registrations').select('*').range(3000, 3999),
-          supabase.from('registrations').select('*').range(4000, 4999)
-        ]);
-        if (rRes1.error) throw rRes1.error;
-        const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
-        
-        // Separate custom accounts, targets & donated contacts from student delegate registrations
-        const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
-        const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
-        const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
-        const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
-
-        registrations = studentRegData.map(d => ({
-          Timestamp: d.timestamp,
-          "Registration ID": d.reg_id,
-          regId: d.reg_id,
-          "Student Name": d.name,
-          name: d.name,
-          "Student Mobile Number": d.phone,
-          phone: d.phone,
-          "Parent Mobile Number": d.parent_phone || "",
-          Class: d.student_class || "",
-          School: d.school || "",
-          Place: d.place || "",
-          Panchayath: d.panchayath || "",
-          Ward: d.ward || "",
-          "Organization Unit": d.unit || "",
-          unit: d.unit || "",
-          "Organization Zone": d.zone || "",
-          zone: d.zone || "",
-          "Assigned Vehicle": d.assigned_vehicle || "",
-          assignedVehicle: d.assigned_vehicle || "",
-          "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
-          pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
-          "Picked Up": d.picked_up ? "true" : "false",
-          pickedUp: d.picked_up ? "true" : "false"
-        }));
 
         // Populate Zone Admins Management
         populateZoneAdminsFromDb(sysAccs);
