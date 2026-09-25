@@ -49,10 +49,16 @@ function initAutoRegistrationPopup() {
     }
   });
 
-  // 3. Auto-popup when entering the site (if not manually dismissed in current session)
+  // 3. Auto-popup when entering the site (if not manually dismissed and not opening donate link)
   const isDismissed = sessionStorage.getItem('reg_popup_closed');
-  if (!isDismissed) {
-    setTimeout(() => {
+  const currentHash = (window.location.hash || '').toLowerCase();
+  const currentParams = new URLSearchParams(window.location.search || '');
+  const isDonateMode = currentHash.includes('donate') || currentParams.has('donate');
+
+  if (!isDismissed && !isDonateMode) {
+    window.autoRegPopupTimer = setTimeout(() => {
+      const donateModal = document.getElementById('donateContactModal');
+      if (donateModal && donateModal.classList.contains('active')) return;
       openRegisterModal();
     }, 1200);
   }
@@ -545,6 +551,11 @@ function resetRegForm() {
 let donatedStudentCardSeq = 0;
 
 function openDonateContactModal() {
+  if (window.autoRegPopupTimer) {
+    clearTimeout(window.autoRegPopupTimer);
+  }
+  closeRegisterModal();
+
   const modal = document.getElementById('donateContactModal');
   if (!modal) return;
   modal.classList.add('active');
@@ -851,11 +862,15 @@ function checkUrlDirectActions() {
   const params = new URLSearchParams(window.location.search || '');
 
   if (hash === '#donate' || hash === '#donate-contact' || hash === '#donatecontact' || params.has('donate')) {
+    if (window.autoRegPopupTimer) {
+      clearTimeout(window.autoRegPopupTimer);
+    }
+    closeRegisterModal();
     setTimeout(() => {
       openDonateContactModal();
       const donateSec = document.getElementById('donate');
       if (donateSec) donateSec.scrollIntoView({ behavior: 'smooth' });
-    }, 350);
+    }, 200);
   } else if (hash === '#register' || params.has('register')) {
     setTimeout(() => {
       openRegisterModal();
