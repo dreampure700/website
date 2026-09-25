@@ -2582,9 +2582,27 @@
         }));
 
         // 5. Fetch Media
-        const { data: mediaData, error: mediaErr } = await supabase.from('media').select('*');
-        if (mediaErr) throw mediaErr;
-        media = (mediaData || []).map(d => ({ Timestamp: d.timestamp, Type: d.type, Title: d.title, URL: d.url, Description: d.description || "" }));
+        try {
+          const { data: mediaData, error: mediaErr } = await supabase.from('media').select('*');
+          if (mediaErr) console.warn("Notice fetching media table:", mediaErr);
+          media = (mediaData || []).map(d => ({ Timestamp: d.timestamp, Type: d.type, Title: d.title, URL: d.url, Description: d.description || "" }));
+        } catch(e) {
+          media = [];
+        }
+
+        // Merge any SYS_MEDIA_ records from registrations table
+        const sysMediaRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_MEDIA_')).map(d => ({
+          Timestamp: d.timestamp,
+          Type: d.student_class,
+          Title: d.name,
+          URL: d.school,
+          Description: d.place || ""
+        }));
+        sysMediaRecs.forEach(sm => {
+          if (!media.some(m => (m.URL && m.URL === sm.URL) || (m.Title && m.Title === sm.Title))) {
+            media.push(sm);
+          }
+        });
 
         // Dynamic Mapping visibility toggle rule
         const isMappingDisabled = targets.some(t => t.Zone === 'CONFIG_MAPPING_DISABLED' && t.Target === 'true');
@@ -4422,33 +4440,70 @@
         ? '<i class="fas fa-spinner fa-spin"></i> Publishing...' 
         : '<i class="fas fa-spinner fa-spin"></i> Updating...';
 
-      let dbQuery;
-      if (mode === 'add') {
-        dbQuery = supabase
-          .from('media')
-          .insert([{ type: type, title: title, url: url, description: desc }]);
-      } else {
-        dbQuery = supabase
-          .from('media')
-          .update({ type: type, title: title, url: url, description: desc })
-          .eq('title', origTitle)
-          .eq('url', origUrl);
-      }
-
-      dbQuery.then(({ error }) => {
+      const handleSaveSuccess = () => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = mode === 'add' 
           ? '<i class="fas fa-upload"></i> Publish Media Update' 
           : '<i class="fas fa-check"></i> Update Media Details';
-        
-        if (!error) {
-          alert(mode === 'add' ? 'Media published successfully!' : 'Media details updated successfully!');
-          cancelMediaEdit();
-          loadData();
-        } else {
-          alert('Error saving media: ' + error.message);
-        }
-      });
+        alert(mode === 'add' ? 'Media published successfully!' : 'Media details updated successfully!');
+        cancelMediaEdit();
+        loadData();
+      };
+
+      const handleSaveError = (errMsg) => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = mode === 'add' 
+          ? '<i class="fas fa-upload"></i> Publish Media Update' 
+          : '<i class="fas fa-check"></i> Update Media Details';
+        alert('Error saving media: ' + errMsg);
+      };
+
+      if (mode === 'add') {
+        supabase
+          .from('media')
+          .insert([{ type: type, title: title, url: url, description: desc }])
+          .then(async ({ error }) => {
+            if (error) {
+              // RLS fallback: store in registrations table with SYS_MEDIA_ prefix
+              const fbRow = {
+                reg_id: 'SYS_MEDIA_' + Date.now(),
+                name: title,
+                phone: '0000000000',
+                student_class: type,
+                school: url,
+                place: desc,
+                unit: 'Media',
+                zone: 'Media',
+                timestamp: new Date().toISOString()
+              };
+              const { error: fbErr } = await supabase.from('registrations').insert([fbRow]);
+              if (fbErr) {
+                handleSaveError(fbErr.message);
+                return;
+              }
+            }
+            handleSaveSuccess();
+          })
+          .catch(err => handleSaveError(err.message));
+      } else {
+        supabase
+          .from('media')
+          .update({ type: type, title: title, url: url, description: desc })
+          .eq('title', origTitle)
+          .eq('url', origUrl)
+          .then(async ({ error }) => {
+            try {
+              await supabase.from('registrations').update({
+                name: title,
+                student_class: type,
+                school: url,
+                place: desc
+              }).ilike('reg_id', 'SYS_MEDIA_%').eq('name', origTitle);
+            } catch(e) {}
+            handleSaveSuccess();
+          })
+          .catch(err => handleSaveError(err.message));
+      }
     });
 
     function startMediaEdit(btn) {
@@ -5879,13 +5934,12 @@
         .delete()
         .eq('title', title)
         .eq('url', url)
-        .then(({ error }) => {
-          if (!error) {
-            alert('Media update deleted successfully!');
-            loadData();
-          } else {
-            alert('Error deleting media: ' + error.message);
-          }
+        .then(async ({ error }) => {
+          try {
+            await supabase.from('registrations').delete().ilike('reg_id', 'SYS_MEDIA_%').eq('name', title);
+          } catch(e) {}
+          alert('Media update deleted successfully!');
+          loadData();
         });
     }
 

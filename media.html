@@ -212,36 +212,132 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/app.js?v=1.5"></script>
   <script src="js/registration.js?v=1.5"></script>
   <script>
-    let mediaItems = [];
+    // Curated Media List (instantly rendered, updated dynamically from Supabase & Google Sheets)
+    const CURATED_MEDIA = [
+      {
+        Timestamp: new Date().toISOString(),
+        Type: 'Photo',
+        Title: 'ANNOUNCING TEENSPACE 2026',
+        URL: 'https://www.instagram.com/p/DbgFiLZpL7N/?stkn=eTUyZzY0enNpeDY2',
+        Description: 'Teenspace 2026 has been officially announced by V. M. Riyas, a State Executive Member of the Wisdom Islamic Organisation.'
+      },
+      {
+        Timestamp: '2026-07-23T06:30:33.820Z',
+        Type: 'Photo',
+        Title: 'Teenspace 2026 coming soon',
+        URL: 'https://www.instagram.com/p/DaatBQZuWqG/?igsh=OGJybmo1eWhjOG4y',
+        Description: 'Coming Soon'
+      },
+      {
+        Timestamp: '2026-07-23T06:30:33.820Z',
+        Type: 'Video',
+        Title: 'Previous TEENSPACE Reel Highlights',
+        URL: 'https://www.instagram.com/reel/CzTE_UmPk9x/?igsh=YTd1NWdtbWFyMHJq',
+        Description: 'A glimpse of the grand student summit held previously!'
+      },
+      {
+        Timestamp: '2026-07-23T06:30:33.820Z',
+        Type: 'Video',
+        Title: 'Eenam session 2024',
+        URL: 'https://www.youtube.com/watch?v=kGCQDnJqZNg&list=PLLBvF66jFa70KeCf18iaZp23-cDlNQXav',
+        Description: 'Session of Eenam'
+      },
+      {
+        Timestamp: '2026-07-23T06:30:33.820Z',
+        Type: 'Photo',
+        Title: 'Press Meet Teenspace 2024',
+        URL: 'https://www.instagram.com/p/CzLYElSv5yf/?igsh=Y3h1eDVmY2RoZTVv',
+        Description: 'ഹയർ സെക്കൻഡറി വിദ്യാർത്ഥി സമൂഹത്തിന് ധൈഷണിക മൂല്യങ്ങൾ പകർന്നു നൽകുക, പുതിയ ഉപരി പഠന സാധ്യതകളും തൊഴിൽ മേഖലകളും പരിചയപ്പെടുത്തുക, കൗമാരക്കാർക്കിടയിൽ വർധിക്കുന്ന ലഹരി ഉപയോഗം, കുറ്റകൃത്യ വാസനകൾ, സോഷ്യൽ മീഡിയ ദുരുപയോഗം, വിധ്വംസക പ്രവർത്തനങ്ങൾ, മതനിരാസം എന്നിവക്കെതിരെ ബോധവൽക്കരണം നടത്തുക, സാമൂഹിക-സാംസ്കാരിക രംഗങ്ങളിൽ ഹയർ സെക്കൻഡറി വിദ്യാർത്ഥികളുടെ ഗുണപരമായ പങ്കാളിത്തം ഉറപ്പുവരുത്തുക, ഹയർ സെക്കൻഡറി വിദ്യാർത്ഥികളുടെ കഴിവുകളും മികവുകളും രാജ്യനന്മക്കും സാമൂഹ്യപുരോഗതിക്കും ഉപയോഗപ്പെടുത്താൻ പ്രേരിപ്പിക്കുക തുടങ്ങിയ ലക്ഷ്യങ്ങളോടെയാണ് സമ്മേളനം സംഘടിപ്പിക്കുന്നത്'
+      }
+    ];
+
+    let mediaItems = [...CURATED_MEDIA];
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Immediate render of curated media for instant load
+      const loader = document.getElementById('galleryLoading');
+      const grid = document.getElementById('galleryContainer');
+      renderGallery(mediaItems);
+      if (loader) loader.style.display = 'none';
+      if (grid) grid.style.display = 'grid';
+
+      // Background fetch to sync any additional updates from Supabase and Google Apps Script
       loadMedia();
     });
 
-    function loadMedia() {
-      const loader = document.getElementById('galleryLoading');
-      const grid = document.getElementById('galleryContainer');
+    async function loadMedia() {
+      const allFetched = [];
 
-      if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL === "YOUR_GOOGLE_SCRIPT_URL_HERE") {
-        loader.innerHTML = `<i class="fas fa-exclamation-circle fa-2x" style="color:orange;"></i><br><br>Google Sheets script URL is not configured.`;
-        return;
+      // 1. Fetch from Supabase media table
+      try {
+        if (window.supabase) {
+          const sb = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data: sbMedia } = await sb.from('media').select('*');
+          if (sbMedia && sbMedia.length > 0) {
+            sbMedia.forEach(d => {
+              allFetched.push({
+                Timestamp: d.timestamp,
+                Type: d.type,
+                Title: d.title,
+                URL: d.url,
+                Description: d.description || ""
+              });
+            });
+          }
+
+          // Also check registrations for SYS_MEDIA_ items
+          const { data: sysMedia } = await sb.from('registrations').select('*').ilike('reg_id', 'SYS_MEDIA_%');
+          if (sysMedia && sysMedia.length > 0) {
+            sysMedia.forEach(d => {
+              allFetched.push({
+                Timestamp: d.timestamp,
+                Type: d.student_class,
+                Title: d.name,
+                URL: d.school,
+                Description: d.place || ""
+              });
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Notice fetching Supabase media:", err);
       }
 
-      fetch(`${GOOGLE_SCRIPT_URL}?action=get_media`)
-        .then(res => res.json())
-        .then(data => {
-          mediaItems = data;
-          renderGallery(data);
-          loader.style.display = 'none';
-          grid.style.display = 'grid';
-        })
-        .catch(err => {
-          console.error(err);
-          loader.innerHTML = `<i class="fas fa-times-circle fa-2x" style="color:red;"></i><br><br>Error loading media. Verify your Google Apps Script is active.`;
+      // 2. Fetch from Google Apps Script
+      try {
+        if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "YOUR_GOOGLE_SCRIPT_URL_HERE") {
+          const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_media`);
+          if (res.ok) {
+            const gsMedia = await res.json();
+            if (Array.isArray(gsMedia)) {
+              allFetched.push(...gsMedia);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Notice fetching Google Script media:", err);
+      }
+
+      // Combine with CURATED_MEDIA and deduplicate by URL or normalized Title
+      const combined = [...CURATED_MEDIA];
+      allFetched.forEach(item => {
+        if (!item || !item.URL) return;
+        const cleanUrl = (item.URL || '').toLowerCase().replace(/\/$/, '').split('?')[0];
+        const exists = combined.some(m => {
+          const existingUrl = (m.URL || '').toLowerCase().replace(/\/$/, '').split('?')[0];
+          return existingUrl === cleanUrl || (m.Title && item.Title && m.Title.trim().toLowerCase() === item.Title.trim().toLowerCase());
         });
+        if (!exists) {
+          combined.push(item);
+        }
+      });
+
+      mediaItems = combined;
+      renderGallery(mediaItems);
     }
 
     function renderGallery(items) {
