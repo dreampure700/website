@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
 
         <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.9rem;">
-          <i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass
+          <i class="fas fa-check-circle"></i> Submit Registration
         </button>
 
         <button type="button" class="btn btn-outline" onclick="closeRegisterModal()" style="width: 100%; margin-top: 0.65rem; padding: 0.65rem; border: 1px solid var(--border-light); color: var(--text-dim); font-size: 0.85rem;">
@@ -540,7 +540,7 @@ function resetRegForm() {
     }
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Complete Registration & Get Delegate Pass';
+      submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Registration';
     }
   }
   document.getElementById('ticketPassView').style.display = 'none';
