@@ -538,3 +538,292 @@ function resetRegForm() {
   }
   document.getElementById('ticketPassView').style.display = 'none';
 }
+
+// ==========================================
+// DONATE A CONTACT FEATURE
+// ==========================================
+let donatedStudentCardSeq = 0;
+
+function openDonateContactModal() {
+  const modal = document.getElementById('donateContactModal');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  const container = document.getElementById('donatedStudentsContainer');
+  if (container && container.children.length === 0) {
+    addDonatedStudentCard();
+  }
+}
+
+function closeDonateContactModal() {
+  const modal = document.getElementById('donateContactModal');
+  if (!modal) return;
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function updateDonatedStudentsBadge() {
+  const container = document.getElementById('donatedStudentsContainer');
+  const badge = document.getElementById('donatedStudentCountBadge');
+  if (!container) return;
+  const cards = container.querySelectorAll('.donated-student-card');
+  const count = cards.length;
+  if (badge) {
+    badge.textContent = `${count} Student${count === 1 ? '' : 's'} Added`;
+  }
+  // Re-number labels and toggle remove button visibility
+  cards.forEach((card, idx) => {
+    const numSpan = card.querySelector('.student-card-num');
+    if (numSpan) numSpan.textContent = `#${idx + 1}`;
+    const removeBtn = card.querySelector('.student-card-remove-btn');
+    if (removeBtn) {
+      removeBtn.style.display = cards.length > 1 ? 'inline-flex' : 'none';
+    }
+  });
+}
+
+function addDonatedStudentCard() {
+  const container = document.getElementById('donatedStudentsContainer');
+  if (!container) return;
+
+  donatedStudentCardSeq++;
+  const cardId = `donated_card_${donatedStudentCardSeq}`;
+
+  const card = document.createElement('div');
+  card.className = 'donated-student-card';
+  card.id = cardId;
+  card.style.cssText = 'background: #FFFFFF; border: 1px solid rgba(15, 23, 42, 0.1); border-radius: 14px; padding: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.2s ease; position: relative;';
+
+  card.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; border-bottom: 1px dashed rgba(15, 23, 42, 0.08); padding-bottom: 0.5rem;">
+      <div style="font-weight: 700; color: var(--magenta); font-size: 0.88rem; display: flex; align-items: center; gap: 0.35rem;">
+        <i class="fas fa-user-graduate"></i> Student <span class="student-card-num">#1</span> Details
+      </div>
+      <button type="button" class="student-card-remove-btn btn btn-outline btn-sm" onclick="removeDonatedStudentCard('${cardId}')" style="display: none; padding: 0.2rem 0.55rem; font-size: 0.75rem; color: #EF4444; border-color: rgba(239, 68, 68, 0.3); border-radius: 6px; background: rgba(239, 68, 68, 0.04);">
+        <i class="fas fa-trash-alt"></i> Remove
+      </button>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 0.65rem;">
+      <label class="form-label" style="font-size: 0.8rem; margin-bottom: 0.3rem;"><i class="fas fa-user text-magenta"></i> Student Name *</label>
+      <input type="text" class="form-input donated-student-name" placeholder="Enter student's full name" required style="padding: 0.65rem 0.85rem; font-size: 0.9rem;">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom: 0.35rem;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 0.3rem;"><i class="fas fa-phone text-cyan"></i> Student Mobile Number *</label>
+        <input type="tel" class="form-input donated-student-phone" placeholder="10-digit mobile" required pattern="[0-9]{10}" style="padding: 0.65rem 0.85rem; font-size: 0.9rem;">
+      </div>
+
+      <div class="form-group" style="margin-bottom: 0.35rem;">
+        <label class="form-label" style="font-size: 0.8rem; margin-bottom: 0.3rem;"><i class="fas fa-map-marker-alt text-magenta"></i> Place / Town *</label>
+        <input type="text" class="form-input donated-student-place" placeholder="e.g. Chavakkad" required style="padding: 0.65rem 0.85rem; font-size: 0.9rem;">
+      </div>
+    </div>
+  `;
+
+  container.appendChild(card);
+  updateDonatedStudentsBadge();
+
+  // Scroll smoothly to newly added card if not first
+  if (donatedStudentCardSeq > 1) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const nameInput = card.querySelector('.donated-student-name');
+    if (nameInput) setTimeout(() => nameInput.focus(), 250);
+  }
+}
+
+function removeDonatedStudentCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (card) {
+    card.remove();
+    updateDonatedStudentsBadge();
+  }
+}
+
+function resetDonateForm() {
+  const form = document.getElementById('donateContactForm');
+  const donatorName = document.getElementById('donatorName');
+  const donatorPhone = document.getElementById('donatorPhone');
+  const container = document.getElementById('donatedStudentsContainer');
+  const successView = document.getElementById('donateSuccessView');
+  const submitBtn = document.getElementById('donateSubmitBtn');
+
+  if (donatorName) donatorName.value = '';
+  if (donatorPhone) donatorPhone.value = '';
+  if (container) {
+    container.innerHTML = '';
+    donatedStudentCardSeq = 0;
+    addDonatedStudentCard();
+  }
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Contact(s)';
+  }
+  if (successView) successView.style.display = 'none';
+  if (form) form.style.display = 'block';
+}
+
+function initDonateContactModal() {
+  const modal = document.getElementById('donateContactModal');
+  if (!modal) return;
+
+  // 1. Close when clicking outside overlay
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeDonateContactModal();
+    }
+  });
+
+  // 2. Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('active')) {
+      closeDonateContactModal();
+    }
+  });
+
+  // 3. Form Submit handling
+  const form = document.getElementById('donateContactForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const donatorName = (document.getElementById('donatorName')?.value || '').trim();
+    const donatorPhone = (document.getElementById('donatorPhone')?.value || '').trim();
+    const submitBtn = document.getElementById('donateSubmitBtn');
+
+    if (!donatorName || !donatorPhone) {
+      alert('Please enter your name and 10-digit mobile number.');
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(donatorPhone)) {
+      alert('Please enter a valid 10-digit donator mobile number.');
+      return;
+    }
+
+    const cards = document.querySelectorAll('#donatedStudentsContainer .donated-student-card');
+    if (!cards || cards.length === 0) {
+      alert('Please add at least 1 student contact detail.');
+      return;
+    }
+
+    const students = [];
+    let validationError = null;
+
+    cards.forEach((card, idx) => {
+      const name = (card.querySelector('.donated-student-name')?.value || '').trim();
+      const phone = (card.querySelector('.donated-student-phone')?.value || '').trim();
+      const place = (card.querySelector('.donated-student-place')?.value || '').trim();
+
+      if (!name) {
+        validationError = `Please enter the name for Student #${idx + 1}.`;
+        return;
+      }
+      if (!phone || !/^[0-9]{10}$/.test(phone)) {
+        validationError = `Please enter a valid 10-digit mobile number for Student #${idx + 1} (${name || 'Student'}).`;
+        return;
+      }
+      if (!place) {
+        validationError = `Please enter the place for Student #${idx + 1}.`;
+        return;
+      }
+
+      students.push({ name, phone, place });
+    });
+
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
+    // Build payload rows for Supabase registrations table
+    const timestamp = new Date().toISOString();
+    const rows = students.map((s, i) => {
+      const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      return {
+        reg_id: `SYS_DON_${Date.now()}_${i + 1}_${uniqueSuffix}`,
+        name: s.name,
+        phone: s.phone,
+        parent_phone: donatorPhone, // Keep donator phone accessible
+        student_class: 'Donated Lead',
+        school: `Referred by ${donatorName} (${donatorPhone})`,
+        place: s.place,
+        panchayath: '',
+        ward: '',
+        unit: donatorName, // Storing donator name here for fast filtering/identification
+        zone: 'Donated',
+        timestamp: timestamp
+      };
+    });
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Contacts...';
+
+    try {
+      // 1. Direct fetch to Supabase REST API (bypasses SDK nuances & works 100% reliably)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/registrations`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(rows)
+      });
+
+      if (!res.ok) {
+        // Fallback to supabase SDK if direct fetch returns an error
+        if (window.supabaseClient) {
+          const { error: sbErr } = await window.supabaseClient.from('registrations').insert(rows);
+          if (sbErr) throw sbErr;
+        } else {
+          const errText = await res.text();
+          throw new Error(errText || 'Failed to submit contacts');
+        }
+      }
+
+      // Success! Update success view
+      document.getElementById('successDonatorName').textContent = donatorName;
+      document.getElementById('successStudentCount').textContent = `${students.length} student${students.length > 1 ? 's' : ''}`;
+
+      const listContainer = document.getElementById('successStudentsList');
+      if (listContainer) {
+        listContainer.innerHTML = students.map((s, idx) => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; border-bottom: ${idx < students.length - 1 ? '1px solid #E2E8F0' : 'none'}; font-size: 0.88rem;">
+            <div>
+              <strong style="color: var(--text-main);">${s.name}</strong>
+              <div style="font-size: 0.78rem; color: var(--text-dim);"><i class="fas fa-map-marker-alt"></i> ${s.place}</div>
+            </div>
+            <div style="font-family: monospace; font-weight: 600; color: var(--cyan);">
+              <i class="fas fa-phone-alt" style="font-size: 0.75rem;"></i> ${s.phone}
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Toggle views
+      form.style.display = 'none';
+      const successView = document.getElementById('donateSuccessView');
+      if (successView) successView.style.display = 'block';
+
+    } catch (err) {
+      console.error('Error submitting donated contacts:', err);
+      alert('Error submitting contacts: ' + (err.message || 'Please check your internet connection and try again.'));
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Contact(s)';
+    }
+  });
+}
+
+// Auto-initialize when document loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initDonateContactModal();
+  });
+} else {
+  initDonateContactModal();
+}
+

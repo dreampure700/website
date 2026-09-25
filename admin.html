@@ -1126,6 +1126,7 @@
           <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
+          <button class="tab-link" id="tabDonatedLink" onclick="switchTab('tab-donated')"><i class="fas fa-hand-holding-heart text-cyan"></i> Donated Contacts <span id="donatedCountNavBadge" class="badge" style="background: rgba(0, 168, 232, 0.15); color: var(--cyan); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
           <button class="tab-link" id="tabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;"><i class="fas fa-user-shield text-cyan"></i> Zone Admins</button>
         </div>
@@ -1483,6 +1484,69 @@
 
           <!-- Mobile card view placeholder -->
           <div class="student-mobile-card-list" id="studentMobileCardList"></div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION: DONATED CONTACTS (REFERRALS) ================= -->
+      <div id="tab-donated" class="dashboard-section" style="display: none;">
+        <div class="table-container" style="padding: 1.5rem 1.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-hand-holding-heart text-cyan"></i> Donated Student Contacts
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
+                Students recommended by supporters for TEENSPACE 2026. Contact and guide them to register.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+              <span class="badge" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); font-weight: 700; padding: 0.45rem 0.85rem; border-radius: 8px;">
+                <i class="fas fa-user-graduate"></i> <span id="donatedTotalCountBadge">0</span> Leads
+              </span>
+              <span class="badge" style="background: rgba(230, 0, 103, 0.08); color: var(--magenta); font-weight: 700; padding: 0.45rem 0.85rem; border-radius: 8px;">
+                <i class="fas fa-hands-helping"></i> <span id="donatedDonatorsCountBadge">0</span> Donators
+              </span>
+              <button class="btn btn-primary btn-sm btn-wa-share" onclick="shareDonatedContactsWhatsApp()">
+                <i class="fab fa-whatsapp"></i> Share All on WhatsApp
+              </button>
+            </div>
+          </div>
+
+          <!-- Search Filter Bar -->
+          <div style="display: flex; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; align-items: center;">
+            <div style="flex-grow: 1; position: relative;">
+              <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+              <input type="text" id="donatedSearchInput" class="form-input" style="padding-left: 2.5rem; font-size: 0.88rem;" placeholder="Search by student name, phone, place, or donator..." oninput="searchDonatedContacts(this.value)">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadData()" title="Refresh records">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+
+          <!-- Desktop Table -->
+          <div style="overflow-x: auto;" class="table-responsive desktop-only">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">#</th>
+                  <th>Student Name</th>
+                  <th>Mobile Number</th>
+                  <th>Place</th>
+                  <th>Donated By (Referrer)</th>
+                  <th>Submitted At</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="donatedContactsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Mobile Cards -->
+          <div id="donatedContactsCardsMobile" class="mobile-only" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </div>
 
@@ -2048,6 +2112,8 @@
     let targets = [];
     let vehicles = [];
     let media = [];
+    let donatedContacts = [];
+    let donatedContactsFilterText = '';
 
     // Exact Wisdom Students Thrissur District Zone & Unit Mapping
     const ORGANIZATIONAL_MAP = {
@@ -2580,10 +2646,11 @@
         if (rRes1.error) throw rRes1.error;
         const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
         
-        // Separate custom accounts & targets from student delegate registrations
+        // Separate custom accounts, targets & donated contacts from student delegate registrations
         const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
         const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
-        const studentRegData = (regData || []).filter(d => !d.reg_id || (!d.reg_id.startsWith('SYS_ACC_') && !d.reg_id.startsWith('SYS_TARGET_')));
+        const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
+        const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
 
         registrations = studentRegData.map(d => ({
           Timestamp: d.timestamp,
@@ -2613,6 +2680,10 @@
 
         // Populate Zone Admins Management
         populateZoneAdminsFromDb(sysAccs);
+
+        // Populate Donated Contacts
+        donatedContacts = sysDonatedRecs;
+        renderDonatedContacts();
 
         // Load custom targets from registrations table
         let directTargets = [];
@@ -6587,6 +6658,211 @@ _Note: Please keep your login credentials secure._`;
         alert('Error resetting account: ' + err.message);
       }
     }
+
+    // ==========================================
+    // DONATED CONTACTS MANAGEMENT
+    // ==========================================
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderDonatedContacts() {
+      const tableBody = document.getElementById('donatedContactsTableBody');
+      const cardsContainer = document.getElementById('donatedContactsCardsMobile');
+      const badge = document.getElementById('donatedCountNavBadge');
+      const totalBadge = document.getElementById('donatedTotalCountBadge');
+      const donatorsCountBadge = document.getElementById('donatedDonatorsCountBadge');
+
+      if (!tableBody && !cardsContainer) return;
+
+      const count = donatedContacts.length;
+      if (badge) badge.textContent = count;
+      if (totalBadge) totalBadge.textContent = count;
+
+      // Count unique donators
+      const uniqueDonators = new Set();
+      donatedContacts.forEach(d => {
+        if (d.parent_phone) uniqueDonators.add(d.parent_phone.trim());
+        else if (d.unit) uniqueDonators.add(d.unit.trim());
+      });
+      if (donatorsCountBadge) donatorsCountBadge.textContent = uniqueDonators.size;
+
+      const query = (donatedContactsFilterText || '').trim().toLowerCase();
+      const filtered = donatedContacts.filter(d => {
+        if (!query) return true;
+        const name = (d.name || '').toLowerCase();
+        const phone = (d.phone || '').toLowerCase();
+        const place = (d.place || '').toLowerCase();
+        const donator = (d.unit || '').toLowerCase();
+        const donatorPhone = (d.parent_phone || '').toLowerCase();
+        return name.includes(query) || phone.includes(query) || place.includes(query) || donator.includes(query) || donatorPhone.includes(query);
+      });
+
+      if (filtered.length === 0) {
+        const emptyRow = `<tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-dim);"><i class="fas fa-inbox fa-2x" style="margin-bottom: 0.5rem; display: block; opacity: 0.4;"></i>No donated contacts found${query ? ' matching "' + escapeHtml(query) + '"' : ''}.</td></tr>`;
+        if (tableBody) tableBody.innerHTML = emptyRow;
+        if (cardsContainer) cardsContainer.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-dim); background: #FFF; border-radius: 14px; border: 1px dashed rgba(15,23,42,0.1);">No donated contacts found.</div>`;
+        return;
+      }
+
+      // Render Desktop Table Rows
+      if (tableBody) {
+        tableBody.innerHTML = filtered.map((d, index) => {
+          const studentPhone = (d.phone || '').trim();
+          const donatorName = (d.unit || 'Supporter').trim();
+          const donatorPhone = (d.parent_phone || '').trim();
+          const place = (d.place || '-').trim();
+          const dateStr = d.timestamp ? new Date(d.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+          
+          const inviteMsg = encodeURIComponent(`Assalamu Alaikum ${d.name},\nYou have been recommended for TEENSPACE 2026 - Higher Secondary Students Conference (for boys in Class 10, 11 & 12) happening on May 10, 2026 at Thrissur!\n\nGrab your delegate entry pass online here:\nhttps://teenspace.in\n\nNeed any guidance? Feel free to reply to this message.`);
+
+          return `
+            <tr>
+              <td style="font-weight: 700; color: var(--text-dim); font-size: 0.8rem;">#${index + 1}</td>
+              <td>
+                <strong style="color: var(--text-main); font-size: 0.95rem;">${escapeHtml(d.name || '')}</strong>
+              </td>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span style="font-family: monospace; font-weight: 700; color: var(--cyan);">${escapeHtml(studentPhone)}</span>
+                  ${studentPhone ? `
+                    <a href="https://wa.me/91${studentPhone}?text=${inviteMsg}" target="_blank" class="btn btn-sm btn-wa-share" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" title="WhatsApp Student">
+                      <i class="fab fa-whatsapp"></i>
+                    </a>
+                    <a href="tel:${studentPhone}" class="btn btn-outline btn-sm" style="padding: 0.2rem 0.45rem; font-size: 0.75rem;" title="Call Student">
+                      <i class="fas fa-phone-alt"></i>
+                    </a>
+                  ` : ''}
+                </div>
+              </td>
+              <td><span class="badge" style="background: rgba(15, 23, 42, 0.05); color: var(--text-main); font-weight: 600;"><i class="fas fa-map-marker-alt text-magenta"></i> ${escapeHtml(place)}</span></td>
+              <td>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">${escapeHtml(donatorName)}</div>
+                  ${donatorPhone ? `
+                    <div style="display: flex; align-items: center; gap: 0.35rem; margin-top: 0.15rem;">
+                      <span style="font-family: monospace; font-size: 0.78rem; color: var(--text-dim);">${escapeHtml(donatorPhone)}</span>
+                      <a href="https://wa.me/91${donatorPhone}" target="_blank" style="color: #25D366; font-size: 0.8rem;" title="WhatsApp Donator"><i class="fab fa-whatsapp"></i></a>
+                      <a href="tel:${donatorPhone}" style="color: var(--cyan); font-size: 0.75rem;" title="Call Donator"><i class="fas fa-phone"></i></a>
+                    </div>
+                  ` : ''}
+                </div>
+              </td>
+              <td style="font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">${dateStr}</td>
+              <td style="text-align: right;">
+                <div style="display: flex; gap: 0.35rem; align-items: center; justify-content: flex-end;">
+                  ${studentPhone ? `
+                    <a href="https://wa.me/91${studentPhone}?text=${inviteMsg}" target="_blank" class="btn btn-primary btn-sm" style="background: #25D366; border-color: #25D366; font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 6px;">
+                      <i class="fab fa-whatsapp"></i> Invite
+                    </a>
+                  ` : ''}
+                  <button class="btn btn-outline btn-sm" onclick="deleteDonatedContact('${d.reg_id}', '${escapeHtml(d.name || '')}')" style="color: #EF4444; border-color: rgba(239,68,68,0.3); padding: 0.3rem 0.5rem; font-size: 0.75rem;" title="Delete Record">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // Render Mobile Cards
+      if (cardsContainer) {
+        cardsContainer.innerHTML = filtered.map((d, index) => {
+          const studentPhone = (d.phone || '').trim();
+          const donatorName = (d.unit || 'Supporter').trim();
+          const donatorPhone = (d.parent_phone || '').trim();
+          const place = (d.place || '-').trim();
+          const dateStr = d.timestamp ? new Date(d.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '-';
+          const inviteMsg = encodeURIComponent(`Assalamu Alaikum ${d.name},\nYou have been recommended for TEENSPACE 2026 - Higher Secondary Students Conference (for boys in Class 10, 11 & 12) happening on May 10, 2026 at Thrissur!\n\nGrab your delegate entry pass online here:\nhttps://teenspace.in\n\nNeed any guidance? Feel free to reply to this message.`);
+
+          return `
+            <div style="background: #FFFFFF; border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 16px; padding: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; border-bottom: 1px dashed rgba(15,23,42,0.08); padding-bottom: 0.5rem;">
+                <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">${escapeHtml(d.name || '')}</div>
+                <span style="font-size: 0.75rem; color: var(--text-dim);">${dateStr}</span>
+              </div>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.85rem;">
+                <div>
+                  <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Student Phone</div>
+                  <div style="font-family: monospace; font-weight: 700; color: var(--cyan); margin-top: 0.15rem;">${escapeHtml(studentPhone || '-')}</div>
+                </div>
+                <div>
+                  <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Place</div>
+                  <div style="font-weight: 600; color: var(--text-main); margin-top: 0.15rem;"><i class="fas fa-map-marker-alt text-magenta" style="font-size: 0.75rem;"></i> ${escapeHtml(place)}</div>
+                </div>
+                <div style="grid-column: 1 / -1; background: #F8FAFC; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid rgba(15,23,42,0.04);">
+                  <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Donated By (Referrer)</div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.15rem;">
+                    <span style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">${escapeHtml(donatorName)}</span>
+                    ${donatorPhone ? `<span style="font-family: monospace; font-size: 0.78rem; color: var(--text-dim);">${escapeHtml(donatorPhone)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                ${studentPhone ? `
+                  <a href="tel:${studentPhone}" class="btn btn-outline btn-sm" style="border-radius: 8px; font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+                    <i class="fas fa-phone-alt"></i> Call
+                  </a>
+                  <a href="https://wa.me/91${studentPhone}?text=${inviteMsg}" target="_blank" class="btn btn-primary btn-sm" style="background: #25D366; border-color: #25D366; border-radius: 8px; font-size: 0.8rem; padding: 0.4rem 0.9rem; font-weight: 700;">
+                    <i class="fab fa-whatsapp"></i> WhatsApp Invite
+                  </a>
+                ` : ''}
+                <button class="btn btn-outline btn-sm" onclick="deleteDonatedContact('${d.reg_id}', '${escapeHtml(d.name || '')}')" style="color: #EF4444; border-color: rgba(239,68,68,0.25); border-radius: 8px; padding: 0.4rem 0.6rem;">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function searchDonatedContacts(val) {
+      donatedContactsFilterText = val;
+      renderDonatedContacts();
+    }
+
+    async function deleteDonatedContact(regId, studentName) {
+      if (!confirm(`Are you sure you want to remove the donated contact for "${studentName}"?`)) return;
+      try {
+        const { error } = await supabase.from('registrations').delete().eq('reg_id', regId);
+        if (error) throw error;
+        donatedContacts = donatedContacts.filter(d => d.reg_id !== regId);
+        renderDonatedContacts();
+        alert(`Donated contact for "${studentName}" removed successfully.`);
+      } catch (err) {
+        console.error('Error deleting donated contact:', err);
+        alert('Failed to delete contact: ' + err.message);
+      }
+    }
+
+    function shareDonatedContactsWhatsApp() {
+      if (!donatedContacts || donatedContacts.length === 0) {
+        alert('No donated contacts to share.');
+        return;
+      }
+      let text = `*TEENSPACE 2026 - DONATED STUDENT CONTACTS SUMMARY*\n`;
+      text += `📅 As of: ${new Date().toLocaleDateString('en-IN')}\n`;
+      text += `👥 Total Leads: ${donatedContacts.length}\n`;
+      text += `------------------------------------\n`;
+      donatedContacts.forEach((d, idx) => {
+        text += `${idx + 1}. *${d.name || 'Student'}* - 📞 ${d.phone || '-'}\n`;
+        text += `   📍 Place: ${d.place || '-'}\n`;
+        text += `   🤝 Referred by: ${d.unit || 'Supporter'} (${d.parent_phone || '-'})\n\n`;
+      });
+      text += `------------------------------------\n`;
+      text += `🔗 Register online: https://teenspace.in`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
   </script>
 
   <!-- BOTTOM NAVIGATION BAR (Mobile View Mockup Style) -->
@@ -6602,6 +6878,10 @@ _Note: Please keep your login credentials secure._`;
     <button class="bottom-nav-item" id="bottomTabTransportLink" onclick="switchTab('tab-transport')">
       <i class="fas fa-bus"></i>
       <span>Vehicle</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabDonatedLink" onclick="switchTab('tab-donated')">
+      <i class="fas fa-hand-holding-heart"></i>
+      <span>Donated</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')" style="display: none;">
       <i class="fas fa-images"></i>
