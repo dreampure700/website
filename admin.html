@@ -2259,16 +2259,96 @@
       'Kodungalloor': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam', 'Edavilangu'],
       'Kodungalloor Zone': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam', 'Edavilangu'],
       'KODUNGALLOOR': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam', 'Edavilangu'],
-      'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
-      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
-      'KAIPAMANGALAM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
-      'KPM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
-      'KPM ZONE': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor']
+      'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Chentrappinni Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Chentrappinni Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KAIPAMANGALAM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Chentrappinni Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KPM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Chentrappinni Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KPM ZONE': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Chentrappinni Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor']
     };
 
     const ZONES_ORDER = [
       'Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'
     ];
+
+    const CANONICAL_UNITS = {
+      // Chavakkad
+      'mannalamkunnu': 'Mannalamkunnu',
+      'akalad': 'Akalad',
+      'thiruvathra': 'Thiruvathra',
+      'edakazhiyoor': 'Edakazhiyoor',
+      'edakkazhiyoor': 'Edakazhiyoor',
+      // Pavaratty
+      'orumanayoor': 'Orumanayoor',
+      'padoor': 'Padoor',
+      'venkidang': 'Venkidang',
+      'vengidangu': 'Venkidang',
+      'pavaratty': 'Pavaratty',
+      // Kunnamkulam
+      'chowallurpadi': 'Chowallurpadi',
+      'chowwalloorpadi': 'Chowallurpadi',
+      'kechery': 'Kechery',
+      'paninthadam': 'Paninthadam',
+      'pannithadam': 'Paninthadam',
+      'perumpilavu': 'Perumpilavu',
+      // Guruvayoor
+      'vadakkekad': 'Vadakkekad',
+      'punnayurkulam': 'Punnayurkulam',
+      'punnayoorkulam': 'Punnayurkulam',
+      'kochannur': 'Kochannur',
+      'pillakkad': 'Pillakkad',
+      // Thrissur City
+      'poothole': 'Poothole',
+      'kallur': 'Kallur',
+      'vellanikkara': 'Vellanikkara',
+      'vellanikara': 'Vellanikkara',
+      'ottupara': 'Ottupara',
+      'attur': 'Attur',
+      'cherpu': 'Cherpu',
+      // Kodungallur
+      'eriyad': 'Eriyad',
+      'karupadanna': 'Karupadanna',
+      'kodakara': 'Kodakara',
+      'mathilakam': 'Mathilakam',
+      'edavilangu': 'Edavilangu',
+      'edavilang': 'Edavilangu',
+      'mala': 'Mala',
+      // Kaipamangalam
+      'vadanappally': 'Vadanappally',
+      'peringottukara': 'Peringottukara',
+      'koorikuzhi': 'Koorikuzhi',
+      'koprakalam': 'Chentrappinni Koprakalam',
+      'koprakkalam': 'Chentrappinni Koprakalam',
+      'chentrappinnikoprakalam': 'Chentrappinni Koprakalam',
+      'chentrappinnikoprakkalam': 'Chentrappinni Koprakalam',
+      'chenthrappinnikoprakalam': 'Chentrappinni Koprakalam',
+      'chenthrappinnikoprakkalam': 'Chentrappinni Koprakalam',
+      'valapad': 'Valapad',
+      'valappad': 'Valapad',
+      'thriprayar': 'Thriprayar',
+      'chuloor': 'Chuloor',
+      'chooloor': 'Chuloor',
+      'thali': 'Thali'
+    };
+
+    function canonicalUnit(unit) {
+      if (!unit || unit.trim() === '' || unit.trim().toUpperCase() === 'N/A') return 'N/A';
+      const clean = unit.trim().toLowerCase().replace(/ unit$/i, '').replace(/[^a-z0-9]/g, '');
+      if (CANONICAL_UNITS[clean]) return CANONICAL_UNITS[clean];
+      return unit.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+
+    function canonicalZone(zone) {
+      if (!zone || zone.trim() === '' || zone.trim().toUpperCase() === 'N/A') return 'N/A';
+      const clean = zone.trim().toLowerCase().replace(/ zone$/i, '').replace(/[^a-z0-9]/g, '');
+      if (clean === 'chavakkad') return 'Chavakkad';
+      if (clean === 'pavaratty') return 'Pavaratty';
+      if (clean === 'kunnamkulam') return 'Kunnamkulam';
+      if (clean === 'guruvayoor' || clean === 'guruvayur') return 'Guruvayoor';
+      if (clean === 'thrissur' || clean === 'thrissurcity') return 'Thrissur City';
+      if (clean === 'kodungallur' || clean === 'kodungalloor') return 'Kodungallur';
+      if (clean === 'kaipamangalam' || clean === 'kpm') return 'Kaipamangalam';
+      return zone.trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
 
     function getOrganizationalUnits(zName) {
       if (!zName) return [];
@@ -2285,9 +2365,9 @@
     if (sessionStorage.getItem('auth_user')) {
       sessionUser = JSON.parse(sessionStorage.getItem('auth_user'));
       if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
-        const clean = sessionUser.target.trim().toLowerCase().replace(/ zone$/i, '');
-        const matched = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'].find(z => z.toLowerCase().replace(/ zone$/i, '') === clean);
-        if (matched) sessionUser.target = matched;
+        sessionUser.target = canonicalZone(sessionUser.target);
+      } else if (sessionUser && sessionUser.role === 'Unit' && sessionUser.target) {
+        sessionUser.target = canonicalUnit(sessionUser.target);
       }
       initDashboard();
     }
@@ -2676,7 +2756,7 @@
         ]);
         if (mRes1.error) throw mRes1.error;
         const mapData = [...(mRes1.data || []), ...(mRes2.data || []), ...(mRes3.data || [])];
-        mapping = mapData.map(d => ({ Panchayath: d.panchayath, Ward: d.ward, Unit: d.unit, Zone: d.zone }));
+        mapping = mapData.map(d => ({ Panchayath: d.panchayath, Ward: d.ward, Unit: canonicalUnit(d.unit), Zone: canonicalZone(d.zone) }));
 
         // 2. Fetch Targets
         const { data: targetData, error: targetErr } = await supabase.from('targets').select('*');
@@ -2696,8 +2776,8 @@
         vehicles = (vehicleData || []).map(d => ({
           "Vehicle ID": d.vehicle_id,
           "Vehicle Name": d.name,
-          Zone: d.zone,
-          Unit: d.unit || "",
+          Zone: canonicalZone(d.zone),
+          Unit: canonicalUnit(d.unit) || "",
           Capacity: d.capacity.toString(),
           "Coordinator Username": d.coord_user || "",
           "Coordinator Password": d.coord_pass || "",
@@ -2739,8 +2819,8 @@
                 merged.push({
                   Panchayath: ov.panchayath || m.Panchayath,
                   Ward: ov.ward || m.Ward,
-                  Unit: ov.unit || m.Unit,
-                  Zone: ov.zone || m.Zone
+                  Unit: canonicalUnit(ov.unit || m.Unit),
+                  Zone: canonicalZone(ov.zone || m.Zone)
                 });
               }
               mapOverrides.delete(key);
@@ -2754,8 +2834,8 @@
               merged.push({
                 Panchayath: ov.panchayath,
                 Ward: ov.ward,
-                Unit: ov.unit,
-                Zone: ov.zone
+                Unit: canonicalUnit(ov.unit),
+                Zone: canonicalZone(ov.zone)
               });
             }
           });
@@ -2777,10 +2857,10 @@
           Place: d.place || "",
           Panchayath: d.panchayath || "",
           Ward: d.ward || "",
-          "Organization Unit": d.unit || "",
-          unit: d.unit || "",
-          "Organization Zone": d.zone || "",
-          zone: d.zone || "",
+          "Organization Unit": canonicalUnit(d.unit),
+          unit: canonicalUnit(d.unit),
+          "Organization Zone": canonicalZone(d.zone),
+          zone: canonicalZone(d.zone),
           "Assigned Vehicle": d.assigned_vehicle || "",
           assignedVehicle: d.assigned_vehicle || "",
           "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
@@ -5464,6 +5544,10 @@
       if (customTargetsMap.has('unit_' + clean)) {
         return parseInt(customTargetsMap.get('unit_' + clean)) || 0;
       }
+      if (clean.includes('koprakalam') || clean.includes('chentrappinni')) {
+        if (customTargetsMap.has('unit_koprakalam')) return parseInt(customTargetsMap.get('unit_koprakalam')) || 0;
+        if (customTargetsMap.has('unit_chentrappinni_koprakalam')) return parseInt(customTargetsMap.get('unit_chentrappinni_koprakalam')) || 0;
+      }
       return 0; // Unallocated until set by Zone or District Admin
     }
 
@@ -5859,8 +5943,7 @@
       let s = (str || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
       if (s === 'chooloor') return 'chuloor';
       if (s === 'punnayoorkulam') return 'punnayurkulam';
-      if (s === 'chentrappinnikoprakkalam') return 'koprakalam';
-      if (s === 'koprakkalam') return 'koprakalam';
+      if (s === 'chentrappinnikoprakkalam' || s === 'chentrappinnikoprakalam' || s === 'chenthrappinnikoprakalam' || s === 'chenthrappinnikoprakkalam' || s === 'koprakalam' || s === 'koprakkalam') return 'chentrappinnikoprakalam';
       if (s === 'valappad') return 'valapad';
       if (s === 'edakkazhiyoor') return 'edakazhiyoor';
       if (s === 'vengidangu') return 'venkidang';
@@ -6788,12 +6871,14 @@
       });
 
       sorted.forEach(item => {
+        const uDisplay = canonicalUnit(item.Unit);
+        const zDisplay = canonicalZone(item.Zone);
         const row = document.createElement('tr');
         row.innerHTML = `
           <td data-label="Panchayath"><strong>${item.Panchayath || 'N/A'}</strong></td>
           <td data-label="Ward">${item.Ward || 'N/A'}</td>
-          <td data-label="Unit"><span class="badge-reg">${item.Unit || 'N/A'}</span></td>
-          <td data-label="Zone"><span class="badge-reg badge-vehicle">${item.Zone || 'N/A'}</span></td>
+          <td data-label="Unit"><span class="badge-reg">${uDisplay}</span></td>
+          <td data-label="Zone"><span class="badge-reg badge-vehicle">${zDisplay}</span></td>
           <td data-label="Actions">
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openMappingEditModal('${item.Panchayath.replace(/'/g, "\\'")}', '${item.Ward.replace(/'/g, "\\'")}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteMapping('${item.Panchayath.replace(/'/g, "\\'")}', '${item.Ward.replace(/'/g, "\\'")}')"><i class="fas fa-trash-alt"></i> Delete</button>
@@ -6811,32 +6896,24 @@
       unitSelect.innerHTML = '<option value="">Select Unit</option><option value="N/A">N/A (No Unit Allocated)</option>';
       if (!zoneVal) return;
 
-      const cleanZone = zoneVal.trim().toLowerCase().replace(/ zone$/i, '');
-      let zoneUnits = [];
-      for (const [k, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
-        if (k.toLowerCase().replace(/ zone$/i, '') === cleanZone) {
-          zoneUnits = uList;
-          break;
-        }
-      }
-
+      const zoneUnits = getOrganizationalUnits(zoneVal);
       zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
 
       // If existing unit is not in list, dynamically append it so it's selectable
       if (selectedUnit && selectedUnit !== 'N/A') {
-        const uClean = selectedUnit.trim().toLowerCase();
+        const canonical = canonicalUnit(selectedUnit);
         let exists = false;
         for (let i = 0; i < unitSelect.options.length; i++) {
-          if (unitSelect.options[i].value.trim().toLowerCase() === uClean) {
+          if (canonicalUnit(unitSelect.options[i].value) === canonical) {
             unitSelect.selectedIndex = i;
             exists = true;
             break;
           }
         }
         if (!exists) {
-          const opt = new Option(selectedUnit, selectedUnit);
+          const opt = new Option(canonical, canonical);
           unitSelect.appendChild(opt);
-          unitSelect.value = selectedUnit;
+          unitSelect.value = canonical;
         }
       }
     }
@@ -6901,24 +6978,23 @@
       const zoneSelect = document.getElementById('mapZoneInput');
       zoneSelect.onchange = () => updateMappingUnits();
 
-      // Case-insensitive match for zone
-      const cleanZone = (item.Zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+      // Case-insensitive & canonical match for zone
+      const targetZone = canonicalZone(item.Zone);
       let zoneMatched = false;
       for (let i = 0; i < zoneSelect.options.length; i++) {
-        const optClean = zoneSelect.options[i].value.trim().toLowerCase().replace(/ zone$/i, '');
-        if (optClean === cleanZone || (cleanZone === 'thrissur' && optClean.includes('thrissur'))) {
+        if (canonicalZone(zoneSelect.options[i].value) === targetZone) {
           zoneSelect.selectedIndex = i;
           zoneMatched = true;
           break;
         }
       }
-      if (!zoneMatched && item.Zone) {
-        zoneSelect.appendChild(new Option(item.Zone, item.Zone));
-        zoneSelect.value = item.Zone;
+      if (!zoneMatched && targetZone && targetZone !== 'N/A') {
+        zoneSelect.appendChild(new Option(targetZone, targetZone));
+        zoneSelect.value = targetZone;
       }
 
       // Populate units with current unit pre-selected
-      updateMappingUnits(item.Unit || '');
+      updateMappingUnits(canonicalUnit(item.Unit) || '');
 
       const unitSelect = document.getElementById('mapUnitInput');
       if (sessionUser.role === 'Zone') {
