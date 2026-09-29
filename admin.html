@@ -2256,11 +2256,11 @@
       'Kodungallur': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
       'Kodungallur Zone': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
       'KODUNGALLUR': ['Eriyad', 'Karupadanna', 'Kodakara', 'Mathilakam'],
-      'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
-      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
-      'KAIPAMANGALAM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
-      'KPM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar'],
-      'KPM ZONE': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar']
+      'Kaipamangalam': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'Kaipamangalam Zone': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KAIPAMANGALAM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KPM': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor'],
+      'KPM ZONE': ['Vadanappally', 'Peringottukara', 'Koorikuzhi', 'Koprakalam', 'Valapad', 'Thriprayar', 'Chuloor']
     };
 
     const ZONES_ORDER = [
@@ -5852,13 +5852,27 @@
       }).length;
     }
 
+    function normUnit(str) {
+      let s = (str || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (s === 'chooloor') return 'chuloor';
+      if (s === 'punnayoorkulam') return 'punnayurkulam';
+      if (s === 'chentrappinnikoprakkalam') return 'koprakalam';
+      if (s === 'koprakkalam') return 'koprakalam';
+      if (s === 'valappad') return 'valapad';
+      if (s === 'edakkazhiyoor') return 'edakazhiyoor';
+      if (s === 'vengidangu') return 'venkidang';
+      if (s === 'pannithadam') return 'paninthadam';
+      if (s === 'chowwalloorpadi') return 'chowallurpadi';
+      return s;
+    }
+
     function getUnitActualCount(unit, zone) {
       const zoneClean = (zone || '').trim().toLowerCase().replace(/ zone$/i, '');
-      const targetClean = (unit || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const targetClean = normUnit(unit);
       return registrations.filter(r => {
         const z = (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
         if (z !== zoneClean) return false;
-        const u = (r["Organization Unit"] || r.unit || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const u = normUnit(r["Organization Unit"] || r.unit || '');
         return u === targetClean || u.includes(targetClean) || targetClean.includes(u);
       }).length;
     }
@@ -5871,9 +5885,9 @@
         if (z !== zoneClean) return false;
         const u = (r["Organization Unit"] || r.unit || '').trim();
         if (!u || u === '' || u.toLowerCase() === 'n/a') return true;
-        const uClean = u.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uClean = normUnit(u);
         const matchedAny = units.some(unitName => {
-          const targetClean = unitName.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const targetClean = normUnit(unitName);
           return uClean === targetClean || uClean.includes(targetClean) || targetClean.includes(uClean);
         });
         return !matchedAny;
