@@ -1129,6 +1129,7 @@
           <button class="tab-link" id="tabDonatedLink" onclick="switchTab('tab-donated')"><i class="fas fa-hand-holding-heart text-cyan"></i> Donated Contacts <span id="donatedCountNavBadge" class="badge" style="background: rgba(0, 168, 232, 0.15); color: var(--cyan); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
           <button class="tab-link" id="tabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;"><i class="fas fa-user-shield text-cyan"></i> Zone Admins</button>
+          <button class="tab-link" id="tabTrashLink" onclick="switchTab('tab-trash')" style="display: none;"><i class="fas fa-trash-alt" style="color:#ef4444;"></i> Trash <span id="trashCountNavBadge" class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
           <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
@@ -1768,8 +1769,168 @@
         </div>
       </div>
 
+      <!-- ================= SECTION 7: TRASH & RECYCLE BIN ================= -->
+      <div id="tab-trash" class="dashboard-section" style="display: none;">
+        <div class="table-container" style="padding: 1.5rem 1.75rem;">
+          <!-- Top Control Header -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fas fa-trash-alt" style="color: #ef4444;"></i> Trash & Recycle Bin
+              </h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
+                All deleted delegates and donated contacts are archived here. You can safely restore them back or permanently purge them.
+              </p>
+            </div>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+              <button class="btn btn-outline btn-sm" onclick="loadTrashData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="toggleTrashSqlModal()">
+                <i class="fas fa-database text-cyan"></i> Supabase SQL Setup
+              </button>
+              <button class="btn btn-outline btn-sm" style="color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="emptyTrash()">
+                <i class="fas fa-fire-alt"></i> Empty Trash
+              </button>
+            </div>
+          </div>
+
+          <!-- Supabase SQL Banner (Shown if table not created yet) -->
+          <div id="trashSqlSetupBanner" style="display:none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <h4 style="margin:0 0 0.25rem 0; color:#B45309; font-size:1rem; display:flex; align-items:center; gap:0.5rem;">
+                  <i class="fas fa-info-circle"></i> Supabase "trash" Table Setup Recommended
+                </h4>
+                <p style="margin:0; font-size:0.85rem; color:#92400E; line-height:1.5;">
+                  To archive deleted students directly in a dedicated Supabase table, run the SQL script in your Supabase SQL Editor.
+                </p>
+              </div>
+              <button class="btn btn-sm btn-primary" onclick="copyTrashSqlCode(this)">
+                <i class="fas fa-copy"></i> Copy SQL Script
+              </button>
+            </div>
+          </div>
+
+          <!-- Trash Stats Cards -->
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 44px; height: 44px; font-size: 1.2rem;">
+                <i class="fas fa-trash-alt"></i>
+              </div>
+              <div>
+                <div class="stat-val" id="trashTotalCount" style="font-size: 1.5rem;">0</div>
+                <div class="stat-label">Total in Trash</div>
+              </div>
+            </div>
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); width: 44px; height: 44px; font-size: 1.2rem;">
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <div>
+                <div class="stat-val" id="trashStudentCount" style="font-size: 1.5rem;">0</div>
+                <div class="stat-label">Deleted Delegates</div>
+              </div>
+            </div>
+            <div class="stat-card" style="padding: 1rem 1.25rem;">
+              <div class="stat-icon" style="background: rgba(230, 0, 103, 0.1); color: var(--magenta); width: 44px; height: 44px; font-size: 1.2rem;">
+                <i class="fas fa-hand-holding-heart"></i>
+              </div>
+              <div>
+                <div class="stat-val" id="trashDonatedCount" style="font-size: 1.5rem;">0</div>
+                <div class="stat-label">Deleted Donated Contacts</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search & Filters Grid -->
+          <div class="filter-grid" style="margin-bottom: 1.5rem;">
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Search</label>
+              <input type="text" id="trashSearchInput" class="form-input" placeholder="Search name, phone, reg id..." oninput="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Category</label>
+              <select id="trashTypeFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+                <option value="all">All Items</option>
+                <option value="student">Delegates Directory (Students)</option>
+                <option value="donated_contact">Donated Contacts (Referrals)</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Zone</label>
+              <select id="trashZoneFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+                <option value="">All Zones</option>
+                <option value="Chavakkad">Chavakkad</option>
+                <option value="Pavaratty">Pavaratty</option>
+                <option value="Kunnamkulam">Kunnamkulam</option>
+                <option value="Guruvayoor">Guruvayoor</option>
+                <option value="Thrissur City">Thrissur City</option>
+                <option value="Kodungallur">Kodungallur</option>
+                <option value="Kaipamangalam">Kaipamangalam</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Trash Table (Desktop) -->
+          <div style="overflow-x: auto;">
+            <table class="data-table" style="font-size: 0.88rem;">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Name & Reg ID</th>
+                  <th>Phone Numbers</th>
+                  <th>Details / Donor</th>
+                  <th>Zone / Unit</th>
+                  <th>Deleted At & By</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trashTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Trash Mobile Cards -->
+          <div id="trashMobileCards" class="mobile-only" style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="trashEmptyState" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 0.75rem; color: #CBD5E1;">
+              <i class="fas fa-trash-alt"></i>
+            </div>
+            <h4 style="margin: 0 0 0.5rem 0; color: var(--text-main);">Trash is empty</h4>
+            <p style="margin: 0; font-size: 0.9rem;">Deleted students and donated contacts will appear here.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
+
+  <!-- SUPABASE TRASH SQL SETUP MODAL -->
+  <div class="modal-overlay" id="trashSqlModal" style="display: none; z-index: 10001;">
+    <div class="modal-content" style="max-width: 600px; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closeTrashSqlModal()"><i class="fas fa-times"></i></button>
+      <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
+        <i class="fas fa-database text-cyan"></i> Supabase "trash" Table Setup
+      </h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+        Copy and run this SQL query in your <strong>Supabase Dashboard &gt; SQL Editor</strong> to create the dedicated trash archive table:
+      </p>
+      <div style="position: relative; background: #0F172A; color: #F8FAFC; padding: 1rem 1.25rem; border-radius: 12px; font-family: monospace; font-size: 0.78rem; max-height: 250px; overflow-y: auto; white-space: pre-wrap;" id="trashSqlCodeBlock">
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Saved in file: <code>supabase_trash_table.sql</code></span>
+        <button class="btn btn-primary btn-sm" onclick="copyTrashSqlCode(this)">
+          <i class="fas fa-copy"></i> Copy SQL to Clipboard
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- TRANSPORT ASSIGN MODAL -->
   <div class="modal-overlay" id="assignModal">
@@ -2734,6 +2895,11 @@
             : '<i class="fas fa-user-shield"></i><span>Accounts</span>';
         }
 
+        const trashTab = document.getElementById('tabTrashLink');
+        if (trashTab) trashTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
+        const bottomTrashTab = document.getElementById('bottomTabTrashLink');
+        if (bottomTrashTab) bottomTrashTab.style.display = canAccessAccounts ? 'flex' : 'none';
+
         const topAddBtn = document.getElementById('accAddAccountTopBtn');
         if (topAddBtn) {
           topAddBtn.innerHTML = isZone
@@ -2760,6 +2926,15 @@
       if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
         alert('Access Denied: Only District and Zone Admins can view account credentials.');
         return;
+      }
+
+      if (tabId === 'tab-trash' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
+        alert('Access Denied: Only Admins can view Trash.');
+        return;
+      }
+
+      if (tabId === 'tab-trash') {
+        loadTrashData();
       }
 
       if (tabId === 'tab-zone-admins' && sessionUser) {
@@ -3043,6 +3218,9 @@
         // Populate Donated Contacts
         donatedContacts = sysDonatedRecs;
         renderDonatedContacts();
+
+        // Populate Trash Data & Badges
+        loadTrashData();
 
         // Load custom targets from registrations table
         let directTargets = [];
@@ -5568,23 +5746,71 @@
       }
     });
 
-    function deleteStudent(regId) {
-      if (!confirm(`Are you sure you want to delete delegate ${regId}? This will remove all their registration logs permanently.`)) {
+    async function deleteStudent(regId) {
+      const student = registrations.find(r => (r.regId === regId || r["Registration ID"] === regId || r.reg_id === regId));
+      const sName = student ? (student["Student Name"] || student.name || regId) : regId;
+
+      if (!confirm(`Are you sure you want to move delegate "${sName}" (${regId}) to Trash?`)) {
         return;
       }
-      
-      supabase
-        .from('registrations')
-        .delete()
-        .eq('reg_id', regId)
-        .then(({ error }) => {
-          if (!error) {
-            alert('Delegate deleted successfully.');
-            loadData();
-          } else {
-            alert('Error deleting delegate: ' + error.message);
+
+      try {
+        // Fetch complete current row from registrations
+        let fullRecord = student || {};
+        try {
+          const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', regId);
+          if (dbRows && dbRows.length > 0) {
+            fullRecord = dbRows[0];
           }
-        });
+        } catch(e) {}
+
+        const trashItem = {
+          item_type: 'student',
+          reg_id: regId,
+          name: fullRecord.name || fullRecord["Student Name"] || '',
+          phone: fullRecord.phone || fullRecord["Student Mobile Number"] || '',
+          parent_phone: fullRecord.parent_phone || fullRecord["Parent Mobile Number"] || '',
+          student_class: fullRecord.student_class || fullRecord.Class || '',
+          school: fullRecord.school || fullRecord.School || '',
+          place: fullRecord.place || fullRecord.Place || '',
+          panchayath: fullRecord.panchayath || fullRecord.Panchayath || '',
+          ward: fullRecord.ward || fullRecord.Ward || '',
+          unit: fullRecord.unit || fullRecord["Organization Unit"] || '',
+          zone: fullRecord.zone || fullRecord["Organization Zone"] || '',
+          assigned_vehicle: fullRecord.assigned_vehicle || fullRecord["Assigned Vehicle"] || null,
+          pickup_order: fullRecord.pickup_order || null,
+          picked_up: !!(fullRecord.picked_up || fullRecord["Picked Up"]),
+          deleted_at: new Date().toISOString(),
+          deleted_by: (sessionUser ? sessionUser.username : 'Admin') + ' (' + (sessionUser ? sessionUser.role : 'District') + ')',
+          original_timestamp: fullRecord.timestamp || fullRecord.Timestamp || null,
+          raw_data: fullRecord
+        };
+
+        // 1. Insert into trash table
+        const { error: trashErr } = await supabase.from('trash').insert([trashItem]);
+        if (trashErr) {
+          console.warn("Notice: inserting into trash table (saving fallback backup in registrations):", trashErr);
+          try {
+            await supabase.from('registrations').insert([{
+              ...fullRecord,
+              reg_id: 'SYS_TRASH_' + regId,
+              place: 'TRASH_BACKUP',
+              student_class: 'TRASH_STUDENT'
+            }]);
+          } catch(bErr) {}
+        }
+
+        // 2. Delete from active registrations table
+        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', regId);
+        if (delErr) throw delErr;
+
+        alert(`Delegate "${sName}" moved to Trash successfully.`);
+        await loadData();
+        await loadTrashData();
+      } catch (err) {
+        console.error('Error moving delegate to trash:', err);
+        alert('Failed to delete delegate: ' + err.message);
+      }
     }
 
     // ========================================================
@@ -8262,13 +8488,60 @@ _Note: Please keep your login credentials secure._`;
     }
 
     async function deleteDonatedContact(regId, studentName) {
-      if (!confirm(`Are you sure you want to remove the donated contact for "${studentName}"?`)) return;
+      if (!confirm(`Are you sure you want to remove the donated contact for "${studentName}"? It will be moved to Trash.`)) return;
       try {
-        const { error } = await supabase.from('registrations').delete().eq('reg_id', regId);
-        if (error) throw error;
+        let fullRecord = donatedContacts.find(d => d.reg_id === regId) || {};
+        try {
+          const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', regId);
+          if (dbRows && dbRows.length > 0) {
+            fullRecord = dbRows[0];
+          }
+        } catch(e) {}
+
+        const trashItem = {
+          item_type: 'donated_contact',
+          reg_id: regId,
+          name: fullRecord.name || studentName || '',
+          phone: fullRecord.phone || '',
+          parent_phone: fullRecord.parent_phone || '',
+          student_class: fullRecord.student_class || '',
+          school: fullRecord.school || '',
+          place: fullRecord.place || '',
+          panchayath: fullRecord.panchayath || '',
+          ward: fullRecord.ward || '',
+          unit: fullRecord.unit || '',
+          zone: fullRecord.zone || 'Donated',
+          assigned_vehicle: null,
+          pickup_order: null,
+          picked_up: false,
+          deleted_at: new Date().toISOString(),
+          deleted_by: (sessionUser ? sessionUser.username : 'Admin') + ' (' + (sessionUser ? sessionUser.role : 'District') + ')',
+          original_timestamp: fullRecord.timestamp || null,
+          raw_data: fullRecord
+        };
+
+        // 1. Move to trash table
+        const { error: trashErr } = await supabase.from('trash').insert([trashItem]);
+        if (trashErr) {
+          console.warn("Notice: inserting into trash table (saving fallback backup in registrations):", trashErr);
+          try {
+            await supabase.from('registrations').insert([{
+              ...fullRecord,
+              reg_id: 'SYS_TRASH_' + regId,
+              place: 'TRASH_BACKUP',
+              student_class: 'TRASH_DONATED'
+            }]);
+          } catch(bErr) {}
+        }
+
+        // 2. Delete from registrations table
+        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', regId);
+        if (delErr) throw delErr;
+
         donatedContacts = donatedContacts.filter(d => d.reg_id !== regId);
         renderDonatedContacts();
-        alert(`Donated contact for "${studentName}" removed successfully.`);
+        await loadTrashData();
+        alert(`Donated contact for "${studentName}" moved to Trash.`);
       } catch (err) {
         console.error('Error deleting donated contact:', err);
         alert('Failed to delete contact: ' + err.message);
@@ -8292,6 +8565,435 @@ _Note: Please keep your login credentials secure._`;
       text += `------------------------------------\n`;
       text += `🔗 Register online: https://teenspace.in`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // ========================================================
+    // TRASH & RECYCLE BIN MANAGEMENT FUNCTIONS
+    // ========================================================
+    let trashDataList = [];
+    let trashFilterType = 'all';
+    let trashSearchText = '';
+    let trashFilterZone = '';
+
+    const TRASH_SQL_SCRIPT = `-- SUPABASE TRASH TABLE
+CREATE TABLE IF NOT EXISTS public.trash (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    deleted_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
+    deleted_by TEXT,
+    item_type TEXT NOT NULL,
+    reg_id TEXT,
+    name TEXT,
+    phone TEXT,
+    parent_phone TEXT,
+    student_class TEXT,
+    school TEXT,
+    place TEXT,
+    panchayath TEXT,
+    ward TEXT,
+    unit TEXT,
+    zone TEXT,
+    assigned_vehicle TEXT,
+    pickup_order INTEGER,
+    picked_up BOOLEAN DEFAULT false,
+    original_timestamp TIMESTAMPTZ,
+    raw_data JSONB
+);
+
+ALTER TABLE public.trash ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow anon select on trash" ON public.trash FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow anon insert on trash" ON public.trash FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow anon update on trash" ON public.trash FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon delete on trash" ON public.trash FOR DELETE TO anon USING (true);`;
+
+    function toggleTrashSqlModal() {
+      const modal = document.getElementById('trashSqlModal');
+      if (!modal) return;
+      modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+      const codeBlock = document.getElementById('trashSqlCodeBlock');
+      if (codeBlock) codeBlock.textContent = TRASH_SQL_SCRIPT;
+    }
+
+    function closeTrashSqlModal() {
+      const modal = document.getElementById('trashSqlModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function copyTrashSqlCode(btn) {
+      navigator.clipboard.writeText(TRASH_SQL_SCRIPT).then(() => {
+        const orig = btn ? btn.innerHTML : '';
+        if (btn) btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => { if (btn) btn.innerHTML = orig; }, 2000);
+      }).catch(err => {
+        alert('Could not copy automatically. Please select the SQL and copy manually.');
+      });
+    }
+
+    async function loadTrashData() {
+      try {
+        let items = [];
+        const { data, error } = await supabase
+          .from('trash')
+          .select('*')
+          .order('deleted_at', { ascending: false });
+
+        if (!error && data) {
+          items = data;
+          const banner = document.getElementById('trashSqlSetupBanner');
+          if (banner) banner.style.display = 'none';
+        } else {
+          const banner = document.getElementById('trashSqlSetupBanner');
+          if (banner) banner.style.display = 'block';
+        }
+
+        // Also merge any fallback SYS_TRASH_ entries stored in registrations
+        try {
+          const { data: backupRows } = await supabase
+            .from('registrations')
+            .select('*')
+            .ilike('reg_id', 'SYS_TRASH_%');
+          if (backupRows && backupRows.length > 0) {
+            backupRows.forEach(b => {
+              const origId = b.reg_id.replace('SYS_TRASH_', '');
+              if (!items.some(it => it.reg_id === origId)) {
+                items.push({
+                  id: 'backup_' + b.id,
+                  is_backup: true,
+                  deleted_at: b.timestamp || new Date().toISOString(),
+                  deleted_by: 'Admin (System Backup)',
+                  item_type: b.student_class === 'TRASH_DONATED' ? 'donated_contact' : 'student',
+                  reg_id: origId,
+                  name: b.name,
+                  phone: b.phone,
+                  parent_phone: b.parent_phone,
+                  student_class: b.student_class === 'TRASH_DONATED' ? 'Donated' : (b.place || ''),
+                  school: b.school,
+                  place: b.place === 'TRASH_BACKUP' ? '' : b.place,
+                  panchayath: b.panchayath,
+                  ward: b.ward,
+                  unit: b.unit,
+                  zone: b.zone,
+                  raw_data: b
+                });
+              }
+            });
+          }
+        } catch(e) {}
+
+        trashDataList = items;
+        updateTrashBadges();
+        renderTrashTable();
+      } catch (err) {
+        console.warn("Notice loading trash items:", err);
+      }
+    }
+
+    function updateTrashBadges() {
+      const count = trashDataList.length;
+      const navBadge = document.getElementById('trashCountNavBadge');
+      if (navBadge) navBadge.textContent = count;
+      const totalCount = document.getElementById('trashTotalCount');
+      if (totalCount) totalCount.textContent = count;
+
+      const studentCount = trashDataList.filter(d => d.item_type === 'student').length;
+      const donatedCount = trashDataList.filter(d => d.item_type === 'donated_contact').length;
+      const sCountEl = document.getElementById('trashStudentCount');
+      if (sCountEl) sCountEl.textContent = studentCount;
+      const dCountEl = document.getElementById('trashDonatedCount');
+      if (dCountEl) dCountEl.textContent = donatedCount;
+    }
+
+    function handleTrashFilterChange() {
+      const searchInput = document.getElementById('trashSearchInput');
+      const typeSelect = document.getElementById('trashTypeFilter');
+      const zoneSelect = document.getElementById('trashZoneFilter');
+
+      trashSearchText = searchInput ? (searchInput.value || '').toLowerCase().trim() : '';
+      trashFilterType = typeSelect ? typeSelect.value : 'all';
+      trashFilterZone = zoneSelect ? zoneSelect.value : '';
+
+      renderTrashTable();
+    }
+
+    function renderTrashTable() {
+      const tbody = document.getElementById('trashTableBody');
+      const mobileContainer = document.getElementById('trashMobileCards');
+      const emptyState = document.getElementById('trashEmptyState');
+      if (!tbody || !mobileContainer) return;
+
+      tbody.innerHTML = '';
+      mobileContainer.innerHTML = '';
+
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZoneClean = isZoneUser ? (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '') : null;
+
+      let filtered = trashDataList.filter(item => {
+        // Zone Admin permission filter
+        if (isZoneUser) {
+          const itemZone = (item.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+          if (itemZone !== userZoneClean) return false;
+        }
+
+        // Type filter
+        if (trashFilterType !== 'all' && item.item_type !== trashFilterType) {
+          return false;
+        }
+
+        // Zone filter
+        if (trashFilterZone) {
+          const zClean = trashFilterZone.trim().toLowerCase().replace(/ zone$/i, '');
+          const itemZClean = (item.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+          if (zClean !== itemZClean) return false;
+        }
+
+        // Search text
+        if (trashSearchText) {
+          const hay = [
+            item.name,
+            item.reg_id,
+            item.phone,
+            item.parent_phone,
+            item.school,
+            item.place,
+            item.unit,
+            item.zone,
+            item.deleted_by
+          ].filter(Boolean).join(' ').toLowerCase();
+
+          if (!hay.includes(trashSearchText)) return false;
+        }
+
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        if (emptyState) emptyState.style.display = 'block';
+        return;
+      }
+      if (emptyState) emptyState.style.display = 'none';
+
+      filtered.forEach(item => {
+        const isStudent = item.item_type === 'student';
+        const typeBadge = isStudent 
+          ? `<span class="badge" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); font-weight:700; font-size:0.75rem;"><i class="fas fa-user-graduate"></i> Delegate</span>`
+          : `<span class="badge" style="background: rgba(230, 0, 103, 0.1); color: var(--magenta); font-weight:700; font-size:0.75rem;"><i class="fas fa-hand-holding-heart"></i> Donated</span>`;
+
+        const delDate = item.deleted_at ? new Date(item.deleted_at).toLocaleString('en-IN', {
+          day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '-';
+
+        const safeName = (item.name || '').replace(/'/g, "\\'");
+        const safeRegId = (item.reg_id || '').replace(/'/g, "\\'");
+
+        // Desktop Row
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${typeBadge}</td>
+          <td>
+            <strong>${escapeHtml(item.name || 'Untitled')}</strong><br>
+            <span class="badge-reg" style="font-size:0.75rem;">${escapeHtml(item.reg_id || '-')}</span>
+          </td>
+          <td>
+            <div><i class="fas fa-phone-alt text-cyan" style="font-size:0.75rem;"></i> <strong>${escapeHtml(item.phone || '-')}</strong></div>
+            ${item.parent_phone ? `<div style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-user-friends" style="font-size:0.7rem;"></i> ${escapeHtml(item.parent_phone)}</div>` : ''}
+          </td>
+          <td>
+            ${isStudent ? `
+              <div><strong>Class:</strong> ${escapeHtml(item.student_class || '-')}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-school" style="font-size:0.7rem;"></i> ${escapeHtml(item.school || '-')}</div>
+            ` : `
+              <div><strong>Donor:</strong> ${escapeHtml(item.unit || 'Referral')}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted);"><i class="fas fa-map-marker-alt" style="font-size:0.7rem;"></i> ${escapeHtml(item.place || '-')}</div>
+            `}
+          </td>
+          <td>
+            <div><strong>${escapeHtml(item.zone || '-')}</strong></div>
+            <div style="font-size:0.78rem; color:var(--text-muted);">${escapeHtml(item.unit || '-')}</div>
+          </td>
+          <td>
+            <div style="font-size:0.8rem; font-weight:600;"><i class="far fa-clock" style="font-size:0.75rem;"></i> ${delDate}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(item.deleted_by || '-')}</div>
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <button class="btn btn-sm btn-outline" style="color: #10B981; border-color: rgba(16, 185, 129, 0.35); font-size: 0.78rem; padding: 0.35rem 0.65rem;" onclick="restoreFromTrash('${item.id}', '${safeRegId}', '${item.item_type}', '${safeName}')" title="Restore this record back to active database">
+              <i class="fas fa-undo"></i> Restore
+            </button>
+            <button class="btn btn-sm btn-outline" style="color: #EF4444; border-color: rgba(239, 68, 68, 0.3); font-size: 0.78rem; padding: 0.35rem 0.6rem; margin-left: 0.3rem;" onclick="permanentlyDeleteTrash('${item.id}', '${safeRegId}', '${safeName}')" title="Permanently delete forever">
+              <i class="fas fa-trash-alt"></i> Purge
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+
+        // Mobile Card
+        const mCard = document.createElement('div');
+        mCard.className = 'table-container';
+        mCard.style.cssText = 'padding: 1rem 1.15rem; margin-bottom: 0.75rem; border-radius: 14px; border: 1px solid rgba(15, 23, 42, 0.08);';
+        mCard.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.6rem;">
+            <div>
+              <div style="font-size:1rem; font-weight:800;">${escapeHtml(item.name || 'Untitled')}</div>
+              <span class="badge-reg" style="font-size:0.75rem;">${escapeHtml(item.reg_id || '-')}</span>
+            </div>
+            ${typeBadge}
+          </div>
+          <div style="font-size:0.83rem; line-height:1.6; color:var(--text-main); margin-bottom:0.75rem; background:#F8FAFC; padding:0.65rem; border-radius:10px;">
+            <div>📞 <strong>${escapeHtml(item.phone || '-')}</strong> ${item.parent_phone ? `(Parent: ${escapeHtml(item.parent_phone)})` : ''}</div>
+            <div>📍 <strong>${escapeHtml(item.zone || '-')}</strong> / ${escapeHtml(item.unit || '-')}</div>
+            ${isStudent ? `<div>🏫 ${escapeHtml(item.school || '-')} (Class: ${escapeHtml(item.student_class || '-')})</div>` : `<div>🤝 Donor: ${escapeHtml(item.unit || '-')}</div>`}
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.3rem; border-top:1px dashed #E2E8F0; padding-top:0.3rem;">
+              🗑️ Deleted: ${delDate} by ${escapeHtml(item.deleted_by || '-')}
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+            <button class="btn btn-sm btn-outline" style="color: #10B981; border-color: rgba(16, 185, 129, 0.35); font-size: 0.8rem; flex: 1;" onclick="restoreFromTrash('${item.id}', '${safeRegId}', '${item.item_type}', '${safeName}')">
+              <i class="fas fa-undo"></i> Restore
+            </button>
+            <button class="btn btn-sm btn-outline" style="color: #EF4444; border-color: rgba(239, 68, 68, 0.3); font-size: 0.8rem; flex: 1;" onclick="permanentlyDeleteTrash('${item.id}', '${safeRegId}', '${safeName}')">
+              <i class="fas fa-trash-alt"></i> Purge
+            </button>
+          </div>
+        `;
+        mobileContainer.appendChild(mCard);
+      });
+    }
+
+    async function restoreFromTrash(trashId, regId, itemType, name) {
+      if (!confirm(`Are you sure you want to restore "${name}" back to ${itemType === 'donated_contact' ? 'Donated Contacts' : 'Delegates Directory'}?`)) {
+        return;
+      }
+
+      try {
+        let recordToRestore = null;
+        let originalItem = null;
+
+        // Try getting from trash table
+        if (!String(trashId).startsWith('backup_')) {
+          const { data, error } = await supabase.from('trash').select('*').eq('id', trashId);
+          if (data && data.length > 0) {
+            originalItem = data[0];
+            const raw = originalItem.raw_data || {};
+            recordToRestore = {
+              reg_id: originalItem.reg_id || raw.reg_id || regId,
+              name: originalItem.name || raw.name || '',
+              phone: originalItem.phone || raw.phone || '',
+              parent_phone: originalItem.parent_phone || raw.parent_phone || '',
+              student_class: originalItem.student_class || raw.student_class || '',
+              school: originalItem.school || raw.school || '',
+              place: originalItem.place || raw.place || '',
+              panchayath: originalItem.panchayath || raw.panchayath || '',
+              ward: originalItem.ward || raw.ward || '',
+              unit: originalItem.unit || raw.unit || '',
+              zone: originalItem.zone || raw.zone || '',
+              assigned_vehicle: originalItem.assigned_vehicle || raw.assigned_vehicle || null,
+              pickup_order: originalItem.pickup_order || raw.pickup_order || null,
+              picked_up: originalItem.picked_up !== undefined ? originalItem.picked_up : (raw.picked_up || false)
+            };
+            if (originalItem.original_timestamp) {
+              recordToRestore.timestamp = originalItem.original_timestamp;
+            }
+          }
+        }
+
+        // Fallback if backup item
+        if (!recordToRestore) {
+          const bMatch = trashDataList.find(d => d.id == trashId || d.reg_id === regId);
+          if (bMatch && bMatch.raw_data) {
+            const raw = bMatch.raw_data;
+            recordToRestore = {
+              reg_id: regId,
+              name: raw.name || bMatch.name || '',
+              phone: raw.phone || bMatch.phone || '',
+              parent_phone: raw.parent_phone || bMatch.parent_phone || '',
+              student_class: bMatch.item_type === 'donated_contact' ? '' : (raw.student_class || ''),
+              school: raw.school || '',
+              place: raw.place === 'TRASH_BACKUP' ? '' : (raw.place || ''),
+              panchayath: raw.panchayath || '',
+              ward: raw.ward || '',
+              unit: raw.unit || '',
+              zone: raw.zone || '',
+              assigned_vehicle: raw.assigned_vehicle || null,
+              pickup_order: raw.pickup_order || null,
+              picked_up: !!raw.picked_up
+            };
+          }
+        }
+
+        if (!recordToRestore) {
+          throw new Error('Unable to reconstruct record for restoration.');
+        }
+
+        // 1. Re-insert into registrations table
+        const { error: insErr } = await supabase.from('registrations').insert([recordToRestore]);
+        if (insErr) throw insErr;
+
+        // 2. Remove from trash table
+        if (!String(trashId).startsWith('backup_')) {
+          await supabase.from('trash').delete().eq('id', trashId);
+        }
+        // Also remove any backup row if exists
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_TRASH_' + regId);
+        } catch(e) {}
+
+        alert(`"${name}" has been successfully restored!`);
+        await loadData();
+        await loadTrashData();
+      } catch (err) {
+        console.error('Error restoring record:', err);
+        alert('Failed to restore record: ' + err.message);
+      }
+    }
+
+    async function permanentlyDeleteTrash(trashId, regId, name) {
+      if (!confirm(`PERMANENT DELETION WARNING:\nAre you sure you want to permanently delete "${name}"? This action cannot be undone!`)) {
+        return;
+      }
+
+      try {
+        if (!String(trashId).startsWith('backup_')) {
+          const { error } = await supabase.from('trash').delete().eq('id', trashId);
+          if (error) throw error;
+        }
+
+        // Also clean up any backup row
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_TRASH_' + regId);
+        } catch(e) {}
+
+        trashDataList = trashDataList.filter(it => it.id != trashId && it.reg_id !== regId);
+        updateTrashBadges();
+        renderTrashTable();
+        alert(`"${name}" has been permanently purged.`);
+      } catch (err) {
+        console.error('Error permanently deleting:', err);
+        alert('Failed to delete permanently: ' + err.message);
+      }
+    }
+
+    async function emptyTrash() {
+      if (!trashDataList || trashDataList.length === 0) {
+        alert('Trash is already empty.');
+        return;
+      }
+
+      if (!confirm(`DANGER: Are you sure you want to permanently purge all ${trashDataList.length} items from Trash?\nThis action CANNOT be undone!`)) {
+        return;
+      }
+
+      try {
+        await supabase.from('trash').delete().neq('id', 0);
+        try {
+          await supabase.from('registrations').delete().ilike('reg_id', 'SYS_TRASH_%');
+        } catch(e) {}
+
+        trashDataList = [];
+        updateTrashBadges();
+        renderTrashTable();
+        alert('Trash has been completely emptied.');
+      } catch (err) {
+        console.error('Error emptying trash:', err);
+        alert('Failed to empty trash: ' + err.message);
+      }
     }
   </script>
 
@@ -8320,6 +9022,10 @@ _Note: Please keep your login credentials secure._`;
     <button class="bottom-nav-item" id="bottomTabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;">
       <i class="fas fa-user-shield"></i>
       <span>Zones</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabTrashLink" onclick="switchTab('tab-trash')" style="display: none;">
+      <i class="fas fa-trash-alt"></i>
+      <span>Trash</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
