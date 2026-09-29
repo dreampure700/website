@@ -1735,9 +1735,14 @@
         <div class="table-container">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
             <h3 style="font-family: var(--font-heading); font-size: 1.25rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
               <button class="btn btn-primary btn-sm" onclick="openStudentModal()"><i class="fas fa-plus"></i> Add Delegate</button>
-              <button class="btn btn-cyan btn-sm" onclick="exportToCSV()"><i class="fas fa-file-csv"></i> Export to CSV</button>
+              <button class="btn btn-outline btn-sm" id="btnViewExportData" onclick="openExportModal('preview')" title="View delegate data preview before downloading">
+                <i class="fas fa-eye text-cyan"></i> View Data
+              </button>
+              <button class="btn btn-cyan btn-sm" id="btnExportCsv" onclick="openExportModal('download')" title="Preview and export delegates to CSV">
+                <i class="fas fa-file-csv"></i> Export to CSV
+              </button>
               <button class="btn btn-outline btn-sm" onclick="loadData()"><i class="fas fa-sync-alt"></i> Refresh</button>
             </div>
           </div>
@@ -2050,6 +2055,95 @@
       <div style="display:flex; gap:1rem; justify-content:flex-end;">
         <button id="shareWhatsAppPassengerListBtn" class="btn btn-primary" style="background:#25D366; border-color:#25D366; height: 40px; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fab fa-whatsapp"></i> Share List on WhatsApp</button>
         <button class="btn btn-outline" style="height: 40px;" onclick="closePassengerListModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXPORT & VIEW PREVIEW MODAL -->
+  <div class="modal-overlay" id="exportPreviewModal">
+    <div class="modal-content" style="max-width: 950px; width: 95%; padding: 2rem; border-radius: 20px; max-height: 90vh; display: flex; flex-direction: column;">
+      <button class="modal-close" onclick="closeExportModal()"><i class="fas fa-times"></i></button>
+      
+      <!-- Modal Header -->
+      <div style="margin-bottom: 1.25rem;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin: 0 0 0.35rem 0; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-file-csv text-cyan"></i> Export Delegates &amp; Preview
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+          Inspect and verify delegate records before downloading the CSV spreadsheet.
+        </p>
+      </div>
+
+      <!-- Scope Selector & Quick Search -->
+      <div style="background: #F8FAFC; border: 1px solid rgba(15,23,42,0.06); padding: 0.85rem 1.1rem; border-radius: 12px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Export Scope:</span>
+          <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; font-weight: 600;">
+            <input type="radio" name="exportScope" id="exportScopeFiltered" value="filtered" checked onchange="handleExportScopeChange()">
+            <span>Active Filters (<span id="exportFilteredCount" class="text-cyan">0</span>)</span>
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; font-weight: 600;">
+            <input type="radio" name="exportScope" id="exportScopeAll" value="all" onchange="handleExportScopeChange()">
+            <span>All Records (<span id="exportAllCount" class="text-magenta">0</span>)</span>
+          </label>
+        </div>
+
+        <div style="position: relative; min-width: 220px; flex-grow: 0.4;">
+          <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem;"></i>
+          <input type="text" id="exportSearchInput" class="form-input" placeholder="Search in preview..." oninput="filterExportPreviewTable()" style="padding: 0.4rem 0.5rem 0.4rem 2.2rem; font-size: 0.82rem; height: 36px; border-radius: 8px;">
+        </div>
+      </div>
+
+      <!-- Preview Summary Banner -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem; font-size: 0.82rem;">
+        <span style="color: var(--text-muted);">
+          Displaying <strong id="exportPreviewVisibleCount" style="color: var(--text-main);">0</strong> records ready for export:
+        </span>
+        <div style="display: flex; gap: 0.5rem;">
+          <span class="badge" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); font-size: 0.75rem; border-radius: 6px;">
+            <i class="fas fa-table"></i> 14 CSV Columns
+          </span>
+        </div>
+      </div>
+
+      <!-- Scrollable Preview Table -->
+      <div style="overflow-x: auto; overflow-y: auto; flex-grow: 1; border: 1px solid #E2E8F0; border-radius: 12px; max-height: 400px; margin-bottom: 1.25rem; background: #ffffff;">
+        <table class="data-table" style="font-size: 0.82rem; margin: 0; min-width: 860px; width: 100%;">
+          <thead style="position: sticky; top: 0; background: #F8FAFC; z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <tr>
+              <th style="width: 40px; padding: 0.6rem 0.5rem; text-align: center;">#</th>
+              <th style="padding: 0.6rem 0.5rem;">Reg ID</th>
+              <th style="padding: 0.6rem 0.5rem;">Student Name</th>
+              <th style="padding: 0.6rem 0.5rem;">Class</th>
+              <th style="padding: 0.6rem 0.5rem;">Mobile</th>
+              <th style="padding: 0.6rem 0.5rem;">Parent Mobile</th>
+              <th style="padding: 0.6rem 0.5rem;">Panchayath / Ward</th>
+              <th style="padding: 0.6rem 0.5rem;">Zone / Unit</th>
+              <th style="padding: 0.6rem 0.5rem;">Assigned Vehicle</th>
+            </tr>
+          </thead>
+          <tbody id="exportPreviewTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(15,23,42,0.08);">
+        <div style="font-size: 0.82rem; color: var(--text-muted);" id="exportPreviewSummaryText">
+          0 records selected
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeExportModal()">
+            Cancel
+          </button>
+          <button type="button" id="copyExportCsvBtn" class="btn btn-outline btn-sm" onclick="copyExportedCsvText(this)" title="Copy CSV to clipboard">
+            <i class="fas fa-copy"></i> Copy CSV
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="triggerActualCsvDownload()" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; font-weight: 700;">
+            <i class="fas fa-download"></i> Download CSV File
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -4920,39 +5014,317 @@
         });
     });
 
-    // Export to CSV
-    function exportToCSV() {
-      let filtered = registrations;
+    // ==========================================
+    // DELEGATE EXPORT & PREVIEW LOGIC
+    // ==========================================
+    let currentExportFullItems = [];
+    let currentExportFilteredItems = [];
+    let currentExportScope = 'filtered'; // 'filtered' or 'all'
+    let currentExportDisplayItems = [];
+
+    // Helper: get registrations scoped to logged-in user role
+    function getRoleScopedRegistrations() {
+      let list = Array.isArray(registrations) ? [...registrations] : [];
+      if (!sessionUser) return list;
+
       if (sessionUser.role === 'Zone') {
-        filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ zone$/i, '');
+        list = list.filter(r => (r["Organization Zone"] || r.zone || '').trim().toLowerCase().replace(/ zone$/i, '') === uTarget);
       } else if (sessionUser.role === 'Unit') {
-        filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === sessionUser.target);
+        const uTarget = (sessionUser.target || '').trim().toLowerCase().replace(/ unit$/i, '');
+        list = list.filter(r => (r["Organization Unit"] || r.unit || '').trim().toLowerCase().replace(/ unit$/i, '') === uTarget);
+      }
+      return list;
+    }
+
+    // Helper: get registrations matching current directory UI filters
+    function getDirectoryActiveFilteredRegistrations() {
+      let list = getRoleScopedRegistrations();
+      
+      const searchEl = document.getElementById('searchInput');
+      const classEl = document.getElementById('filterClass');
+      const zoneEl = document.getElementById('filterZone');
+      const unitEl = document.getElementById('filterUnit');
+      const pEl = document.getElementById('filterPanchayath');
+
+      const searchStr = searchEl ? searchEl.value.toLowerCase().trim() : '';
+      const classVal = classEl ? classEl.value : '';
+      const zoneVal = zoneEl ? zoneEl.value : '';
+      const unitVal = unitEl ? unitEl.value : '';
+      const pVal = pEl ? pEl.value : '';
+
+      if (classVal) list = list.filter(r => (r.Class || r.student_class) === classVal);
+      if (zoneVal) list = list.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
+      if (unitVal) list = list.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
+      if (pVal) list = list.filter(r => (r.Panchayath || r.panchayath) === pVal);
+
+      if (searchStr) {
+        list = list.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          const regId = (r["Registration ID"] || r.regId || r.reg_id || '').toLowerCase();
+          return name.includes(searchStr) || phone.includes(searchStr) || regId.includes(searchStr);
+        });
       }
 
-      if (filtered.length === 0) {
-        alert('No data available to export.');
+      return list;
+    }
+
+    // Open Export & View Modal
+    function openExportModal(mode = 'preview') {
+      currentExportFullItems = getRoleScopedRegistrations();
+      currentExportFilteredItems = getDirectoryActiveFilteredRegistrations();
+
+      const fCount = currentExportFilteredItems.length;
+      const aCount = currentExportFullItems.length;
+
+      const fCountEl = document.getElementById('exportFilteredCount');
+      if (fCountEl) fCountEl.textContent = fCount;
+      const aCountEl = document.getElementById('exportAllCount');
+      if (aCountEl) aCountEl.textContent = aCount;
+
+      // Check if filters are active
+      const searchEl = document.getElementById('searchInput');
+      const classEl = document.getElementById('filterClass');
+      const zoneEl = document.getElementById('filterZone');
+      const unitEl = document.getElementById('filterUnit');
+      const pEl = document.getElementById('filterPanchayath');
+      const hasActiveFilters = Boolean(
+        (searchEl && searchEl.value.trim()) ||
+        (classEl && classEl.value) ||
+        (zoneEl && zoneEl.value) ||
+        (unitEl && unitEl.value) ||
+        (pEl && pEl.value)
+      );
+
+      // Default scope
+      const radioFiltered = document.getElementById('exportScopeFiltered');
+      const radioAll = document.getElementById('exportScopeAll');
+      if (hasActiveFilters && fCount > 0) {
+        currentExportScope = 'filtered';
+        if (radioFiltered) radioFiltered.checked = true;
+      } else {
+        currentExportScope = 'all';
+        if (radioAll) radioAll.checked = true;
+      }
+
+      // Reset search in modal
+      const sInput = document.getElementById('exportSearchInput');
+      if (sInput) sInput.value = '';
+
+      updateExportActiveList();
+      renderExportPreviewTable();
+
+      const modal = document.getElementById('exportPreviewModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('exportPreviewModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function handleExportScopeChange() {
+      const radioAll = document.getElementById('exportScopeAll');
+      currentExportScope = (radioAll && radioAll.checked) ? 'all' : 'filtered';
+      
+      const sInput = document.getElementById('exportSearchInput');
+      if (sInput) sInput.value = '';
+
+      updateExportActiveList();
+      renderExportPreviewTable();
+    }
+
+    function updateExportActiveList() {
+      const base = currentExportScope === 'all' ? currentExportFullItems : currentExportFilteredItems;
+      const sInput = document.getElementById('exportSearchInput');
+      const term = sInput ? sInput.value.toLowerCase().trim() : '';
+
+      if (!term) {
+        currentExportDisplayItems = [...base];
+      } else {
+        currentExportDisplayItems = base.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          const regId = (r["Registration ID"] || r.regId || r.reg_id || '').toLowerCase();
+          const place = (r.Place || r.place || '').toLowerCase();
+          const p = (r.Panchayath || r.panchayath || '').toLowerCase();
+          const unit = (r["Organization Unit"] || r.unit || '').toLowerCase();
+          return name.includes(term) || phone.includes(term) || regId.includes(term) || place.includes(term) || p.includes(term) || unit.includes(term);
+        });
+      }
+    }
+
+    function filterExportPreviewTable() {
+      updateExportActiveList();
+      renderExportPreviewTable();
+    }
+
+    function renderExportPreviewTable() {
+      const tbody = document.getElementById('exportPreviewTableBody');
+      const countEl = document.getElementById('exportPreviewVisibleCount');
+      const summaryText = document.getElementById('exportPreviewSummaryText');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+      const items = currentExportDisplayItems;
+      if (countEl) countEl.textContent = items.length;
+
+      const scopeLabel = currentExportScope === 'all' ? 'All Records' : 'Active Filtered View';
+      if (summaryText) {
+        summaryText.innerHTML = `<strong>${items.length}</strong> records ready to export (${scopeLabel})`;
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+              <i class="fas fa-search" style="font-size: 1.5rem; color: #CBD5E1; margin-bottom: 0.5rem; display: block;"></i>
+              No delegate records match the selected scope and search criteria.
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      let csvContent = "data:text/csv;charset=utf-8,";
-      const headers = Object.keys(filtered[0]);
-      csvContent += headers.join(",") + "\n";
+      items.forEach((item, idx) => {
+        const regId = item["Registration ID"] || item.regId || item.reg_id || 'N/A';
+        const name = item["Student Name"] || item.name || 'N/A';
+        const studentClass = item.Class || item.student_class || 'N/A';
+        const phone = item["Student Mobile Number"] || item.phone || '-';
+        const parentPhone = item["Parent Mobile Number"] || item.parent_phone || '-';
+        const panchayath = item.Panchayath || item.panchayath || '-';
+        const ward = item.Ward || item.ward || '-';
+        const zone = item["Organization Zone"] || item.zone || '-';
+        const unit = item["Organization Unit"] || item.unit || '-';
+        const vehicle = item["Assigned Vehicle"] || item.assigned_vehicle || '';
 
-      filtered.forEach(row => {
-        const values = headers.map(header => {
-          let val = row[header] ? row[header].toString() : '';
-          return `"${val.replace(/"/g, '""')}"`;
-        });
-        csvContent += values.join(",") + "\n";
+        const vBadge = vehicle 
+          ? `<span class="badge" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); font-weight: 600; font-size: 0.75rem;"><i class="fas fa-bus"></i> ${vehicle}</span>`
+          : `<span style="color: var(--text-muted); font-size: 0.75rem;">Not Assigned</span>`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center; color: var(--text-muted); font-size: 0.75rem;">${idx + 1}</td>
+          <td><span class="badge-reg" style="font-size: 0.75rem;">${regId}</span></td>
+          <td><strong>${name}</strong></td>
+          <td>${studentClass}</td>
+          <td>${phone}</td>
+          <td>${parentPhone}</td>
+          <td>${panchayath}${ward !== '-' ? ` / W:${ward}` : ''}</td>
+          <td>${zone} / ${unit}</td>
+          <td>${vBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Generate CSV string from given array of delegates
+    function generateCsvString(items) {
+      if (!items || items.length === 0) return '';
+      const headers = [
+        "Registration ID",
+        "Student Name",
+        "Class",
+        "Student Mobile Number",
+        "Parent Mobile Number",
+        "School Name",
+        "Place",
+        "Panchayath",
+        "Ward",
+        "Organization Zone",
+        "Organization Unit",
+        "Assigned Vehicle",
+        "Pickup Order",
+        "Registration Timestamp"
+      ];
+
+      let csv = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+
+      items.forEach(r => {
+        const row = [
+          r["Registration ID"] || r.regId || r.reg_id || '',
+          r["Student Name"] || r.name || '',
+          r.Class || r.student_class || '',
+          r["Student Mobile Number"] || r.phone || '',
+          r["Parent Mobile Number"] || r.parent_phone || '',
+          r["School Name"] || r.school || '',
+          r.Place || r.place || '',
+          r.Panchayath || r.panchayath || '',
+          r.Ward || r.ward || '',
+          r["Organization Zone"] || r.zone || '',
+          r["Organization Unit"] || r.unit || '',
+          r["Assigned Vehicle"] || r.assigned_vehicle || '',
+          r.pickup_order || '',
+          r.Timestamp || r.timestamp || ''
+        ];
+
+        csv += row.map(val => {
+          const str = (val === null || val === undefined) ? '' : String(val);
+          return `"${str.replace(/"/g, '""')}"`;
+        }).join(",") + "\r\n";
       });
 
-      const encodedUri = encodeURI(csvContent);
+      return csv;
+    }
+
+    // Trigger actual download of CSV
+    function triggerActualCsvDownload() {
+      const itemsToDownload = currentExportDisplayItems.length > 0 
+        ? currentExportDisplayItems 
+        : (currentExportScope === 'all' ? currentExportFullItems : currentExportFilteredItems);
+
+      if (!itemsToDownload || itemsToDownload.length === 0) {
+        alert('No delegate records available to download.');
+        return;
+      }
+
+      const csvData = generateCsvString(itemsToDownload);
+      const blob = new Blob(["\uFEFF" + csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `TEENSPACE_2026_Delegates_${new Date().toISOString().split('T')[0]}.csv`);
+      
+      const roleStr = sessionUser && sessionUser.target ? `_${sessionUser.target.replace(/\s+/g, '_')}` : '';
+      const scopeStr = currentExportScope === 'filtered' ? '_Filtered' : '_All';
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `TEENSPACE_2026_Delegates${roleStr}${scopeStr}_${dateStr}.csv`;
+
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Copy CSV content to clipboard
+    async function copyExportedCsvText(btn) {
+      const items = currentExportDisplayItems.length > 0 
+        ? currentExportDisplayItems 
+        : (currentExportScope === 'all' ? currentExportFullItems : currentExportFilteredItems);
+
+      if (!items || items.length === 0) {
+        alert('No data to copy.');
+        return;
+      }
+
+      const csvData = generateCsvString(items);
+      try {
+        await navigator.clipboard.writeText(csvData);
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check text-cyan"></i> Copied!';
+        setTimeout(() => {
+          btn.innerHTML = origHtml;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy CSV:', err);
+        alert('Could not copy automatically. You can download the file instead.');
+      }
+    }
+
+    // Backward-compatible entrypoint
+    function exportToCSV() {
+      openExportModal('download');
     }
 
     // Render Admin Media Table
