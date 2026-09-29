@@ -3,683 +3,406 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registration Status | TEENSPACE 2026 - Thrissur District</title>
-  <meta name="description" content="Public real-time registration status and zone/unit scoreboard for TEENSPACE 2026 Higher Secondary Students Conference, Thrissur District.">
-
-  <!-- Open Graph / Meta -->
-  <meta property="og:title" content="TEENSPACE 2026 Registration Status | Thrissur District">
-  <meta property="og:description" content="Live zone and unit registration statistics for TEENSPACE 2026. Wisdom Students Thrissur District.">
-  <meta property="og:image" content="https://www.teenspacetsr.in/assets/images/TEENSPACE%20LOGO.png">
-  <meta property="og:url" content="https://www.teenspacetsr.in/status.html">
+  <title>Registration Numbers | TEENSPACE 2026</title>
+  
+  <!-- Private / Unlisted Page: Prevent search engine indexing -->
+  <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="theme-color" content="#0B132B">
 
-  <!-- Google Fonts -->
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/images/teenspace_app_icon_192.png">
+
+  <!-- Fonts & Icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="css/main.css?v=2.0">
-  <link rel="stylesheet" href="css/components.css?v=2.0">
-  <link rel="stylesheet" href="css/responsive.css?v=2.0">
-
-  <!-- FontAwesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Favicons -->
-  <link rel="icon" type="image/png" href="assets/images/teenspace_app_icon_192.png">
-  <link rel="apple-touch-icon" href="assets/images/teenspace_app_icon_192.png">
 
   <style>
-    /* Status Dashboard Specific Enhancements */
-    .status-hero {
-      background: radial-gradient(circle at top right, rgba(0, 168, 232, 0.12), transparent 45%),
-                  radial-gradient(circle at bottom left, rgba(230, 0, 103, 0.08), transparent 40%),
-                  #F8FAFC;
-      padding: 3rem 0 2rem 0;
-      border-bottom: 1px solid var(--border-light);
+    :root {
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --cyan: #00A8E8;
+      --magenta: #E60067;
+      --dark-navy: #0B132B;
     }
 
-    .live-pulse-dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      background-color: #22C55E;
-      border-radius: 50%;
-      margin-right: 6px;
-      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-      animation: pulseGreen 1.8s infinite;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    @keyframes pulseGreen {
-      0% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
-      }
-      70% {
-        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-      }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 1.5rem 1rem 3rem;
     }
 
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 1.25rem;
-      margin-top: 1.75rem;
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
     }
 
-    @media (max-width: 992px) {
-      .kpi-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .kpi-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .kpi-card {
-      background: #FFFFFF;
-      border-radius: 20px;
-      padding: 1.5rem;
-      border: 1px solid rgba(0, 168, 232, 0.15);
-      box-shadow: 0 8px 30px rgba(11, 19, 43, 0.04);
+    /* Minimal Header */
+    .header-bar {
       display: flex;
-      flex-direction: column;
       justify-content: space-between;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
     }
 
-    .kpi-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 35px rgba(0, 168, 232, 0.12);
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--dark-navy);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
-    .kpi-card.district-grand {
-      background: linear-gradient(135deg, #0B132B 0%, #1C2541 100%);
-      color: #FFFFFF;
-      border: 1px solid rgba(0, 168, 232, 0.3);
-    }
-
-    .kpi-card.district-grand .kpi-label {
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .kpi-card.district-grand .kpi-val {
-      color: #FFFFFF;
-      background: linear-gradient(135deg, #FFFFFF 0%, #00A8E8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .kpi-label {
-      font-size: 0.85rem;
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
       font-weight: 700;
+      color: #16A34A;
+      background: #DCFCE7;
+      padding: 3px 8px;
+      border-radius: 9999px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #16A34A;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Action Buttons */
+    .btn-action {
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.15s;
+    }
+
+    .btn-action:hover {
+      background: #F1F5F9;
+      border-color: #CBD5E1;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      border-color: #25D366;
+      color: #FFFFFF;
+    }
+    .btn-whatsapp:hover {
+      background: #20BD5A;
+      border-color: #20BD5A;
+      color: #FFFFFF;
+    }
+
+    /* Minimal District Hero Card */
+    .district-card {
+      background: linear-gradient(135deg, #0B132B 0%, #1E293B 100%);
+      color: #FFFFFF;
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 15px rgba(11, 19, 43, 0.12);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .district-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94A3B8;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .district-sub {
+      font-size: 0.85rem;
+      color: #CBD5E1;
+    }
+
+    .district-number {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #00A8E8;
+      line-height: 1;
+    }
+
+    /* Section Subhead */
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .kpi-val {
-      font-family: var(--font-heading);
-      font-size: 2.75rem;
-      font-weight: 900;
-      color: var(--text-main);
-      line-height: 1.1;
-      margin-bottom: 0.35rem;
-    }
-
-    .kpi-sub {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-    }
-
-    /* Zone Sections */
-    .zone-card {
-      background: #FFFFFF;
-      border-radius: 20px;
-      border: 1px solid var(--border-light);
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.03);
-      margin-bottom: 1.75rem;
-      overflow: hidden;
-      transition: all 0.25s ease;
-    }
-
-    .zone-card:hover {
-      box-shadow: 0 12px 35px rgba(0, 168, 232, 0.08);
-      border-color: rgba(0, 168, 232, 0.25);
-    }
-
-    .zone-header {
-      padding: 1.35rem 1.75rem;
-      background: #FFFFFF;
-      border-bottom: 1px solid var(--border-light);
+      margin-bottom: 0.75rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
     }
 
-    .zone-title-wrap {
+    /* Minimal Zone Card */
+    .zone-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .zone-head {
+      padding: 0.85rem 1.15rem;
+      background: #FFFFFF;
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 0.85rem;
-    }
-
-    .zone-rank-badge {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-heading);
-      font-weight: 900;
-      font-size: 1.15rem;
-    }
-
-    .rank-gold {
-      background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-      color: #7A4100;
-      box-shadow: 0 4px 15px rgba(255, 165, 0, 0.35);
-    }
-
-    .rank-silver {
-      background: linear-gradient(135deg, #E2E8F0 0%, #94A3B8 100%);
-      color: #1E293B;
-      box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
-    }
-
-    .rank-bronze {
-      background: linear-gradient(135deg, #FDBA74 0%, #C2410C 100%);
-      color: #FFFFFF;
-      box-shadow: 0 4px 12px rgba(194, 65, 12, 0.25);
-    }
-
-    .rank-standard {
-      background: #F1F5F9;
-      color: #475569;
+      border-bottom: 1px solid #F1F5F9;
     }
 
     .zone-name {
-      font-family: var(--font-heading);
-      font-size: 1.35rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
       font-weight: 800;
       color: var(--text-main);
-      margin: 0;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .zone-stat-pill {
-      background: rgba(0, 168, 232, 0.08);
-      color: var(--cyan);
-      font-family: var(--font-heading);
-      font-size: 1.1rem;
+    .zone-count-badge {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
       font-weight: 800;
-      padding: 0.4rem 1rem;
+      background: #F0F9FF;
+      color: var(--cyan);
+      padding: 0.2rem 0.65rem;
       border-radius: 9999px;
-      border: 1px solid rgba(0, 168, 232, 0.2);
-      display: inline-flex;
+      border: 1px solid rgba(0, 168, 232, 0.25);
+    }
+
+    /* Unit List inside Zone */
+    .unit-list {
+      list-style: none;
+    }
+
+    .unit-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 1.15rem;
+      border-bottom: 1px solid #F8FAFC;
+      font-size: 0.9rem;
+    }
+
+    .unit-item:last-child {
+      border-bottom: none;
+    }
+
+    .unit-name {
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .unit-count {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      display: flex;
       align-items: center;
       gap: 0.4rem;
     }
 
-    /* Unit Table / Cards */
-    .unit-table {
+    .unit-zero {
+      color: #94A3B8;
+      font-weight: 500;
+    }
+
+    /* Final District Consolidated Summary Block */
+    .grand-summary-block {
+      background: #FFFFFF;
+      border: 2px solid var(--dark-navy);
+      border-radius: 14px;
+      padding: 1.15rem;
+      margin-top: 1.75rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .grand-table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.9rem;
     }
 
-    .unit-table th {
-      background: #F8FAFC;
-      color: var(--text-muted);
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 0.75rem 1.75rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .unit-table td {
-      padding: 0.95rem 1.75rem;
+    .grand-table td {
+      padding: 0.5rem 0.25rem;
       border-bottom: 1px solid #F1F5F9;
-      font-size: 0.95rem;
-      vertical-align: middle;
     }
 
-    .unit-table tr:last-child td {
+    .grand-table tr:last-child td {
       border-bottom: none;
     }
 
-    .unit-table tr:hover td {
-      background-color: #FAFCFF;
-    }
-
-    .unit-name-cell {
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .unit-badge {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: rgba(0, 168, 232, 0.1);
-      color: var(--cyan);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
+    .grand-total-row {
+      border-top: 2px solid var(--text-main);
+      font-family: 'Outfit', sans-serif;
       font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--dark-navy);
     }
 
-    .unit-bar-wrap {
-      width: 100%;
-      max-width: 180px;
-      background: #EEF2F6;
-      border-radius: 9999px;
-      height: 7px;
-      overflow: hidden;
-      margin-top: 5px;
+    .grand-total-row td {
+      padding-top: 0.75rem;
+      padding-bottom: 0.25rem;
     }
 
-    .unit-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #00A8E8, #0077B6);
-      border-radius: 9999px;
-      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    /* District Consolidated Footer Summary */
-    .district-grand-summary {
-      background: linear-gradient(135deg, #0B132B 0%, #152238 100%);
-      border-radius: 24px;
-      color: #FFFFFF;
-      padding: 2.25rem 2rem;
-      box-shadow: 0 15px 45px rgba(11, 19, 43, 0.25);
-      border: 1px solid rgba(0, 168, 232, 0.35);
-      margin-top: 3rem;
-      margin-bottom: 3rem;
-    }
-
-    /* Pill buttons */
-    .pill-filter {
-      padding: 0.4rem 0.9rem;
-      font-size: 0.85rem;
-      font-weight: 700;
-      border-radius: 9999px;
-      border: 1px solid var(--border-light);
-      background: #FFFFFF;
+    .footer-note {
+      text-align: center;
+      font-size: 0.75rem;
       color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.2s;
+      margin-top: 1.5rem;
     }
 
-    .pill-filter.active, .pill-filter:hover {
-      background: var(--cyan);
-      color: #FFFFFF;
-      border-color: var(--cyan);
-    }
-
-    /* Jump Pills */
-    .jump-pills-bar {
-      display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding: 0.25rem 0 0.75rem 0;
-      scrollbar-width: none;
-    }
-    .jump-pills-bar::-webkit-scrollbar {
-      display: none;
-    }
-
-    .jump-pill {
-      white-space: nowrap;
-      padding: 0.35rem 0.85rem;
-      border-radius: 9999px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      background: #F1F5F9;
-      color: var(--text-main);
-      text-decoration: none;
-      transition: all 0.2s;
-      border: 1px solid transparent;
-    }
-
-    .jump-pill:hover {
-      background: rgba(0, 168, 232, 0.12);
-      color: var(--cyan);
-      border-color: rgba(0, 168, 232, 0.3);
-    }
-
-    /* Toast Notification */
-    #statusToast {
+    /* Toast */
+    #toast {
       position: fixed;
-      bottom: 25px;
-      right: 25px;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
       background: #0B132B;
       color: #FFFFFF;
-      padding: 0.85rem 1.5rem;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      z-index: 9999;
-      transform: translateY(100px);
-      opacity: 0;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      border-left: 4px solid var(--cyan);
-    }
-
-    #statusToast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    /* Skeleton Loading Animation */
-    .skeleton {
-      background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
-      background-size: 200% 100%;
-      animation: skeletonLoading 1.5s infinite;
+      padding: 0.6rem 1.2rem;
       border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 1000;
+      pointer-events: none;
     }
 
-    @keyframes skeletonLoading {
-      0% { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
   </style>
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <header class="navbar">
-    <div class="container navbar-container">
-      <a href="index.html" class="brand-logo">
-        <img src="assets/images/TEENSPACE LOGO.png" alt="Teenspace Logo" class="brand-logo-img">
-        <div class="brand-logo-text">
-          <span class="brand-logo-main">t<span class="brand-text-pink">e</span><span class="brand-text-cyan">e</span>nspace</span>
-          <span class="brand-logo-sub">Higher Secondary Students Conference</span>
+  <div class="container">
+    
+    <!-- MINIMAL HEADER -->
+    <header class="header-bar">
+      <div>
+        <div class="brand-title">
+          <span>TEENSPACE 2026</span>
+          <span class="live-indicator"><span class="live-dot"></span> Live</span>
         </div>
-      </a>
-
-      <ul class="nav-links" id="navLinks">
-        <li><a href="index.html" class="nav-link">Home</a></li>
-        <li><a href="status.html" class="nav-link active" style="color:var(--cyan); font-weight:800;"><i class="fas fa-chart-line"></i> Status</a></li>
-        <li><a href="schedule.html" class="nav-link">Schedule</a></li>
-        <li><a href="media.html" class="nav-link">Media</a></li>
-        <li><a href="donate.html" class="nav-link"><i class="fas fa-hand-holding-heart text-cyan"></i> Donate Contact</a></li>
-        <li class="mobile-only"><a href="admin.html" class="nav-link"><i class="fas fa-lock text-cyan"></i> Admin Login</a></li>
-        <li class="mobile-only"><a href="index.html#regModal" class="nav-link" style="color:var(--magenta); font-weight:700;"><i class="fas fa-edit"></i> Register Student</a></li>
-      </ul>
-
-      <div class="nav-actions">
-        <a href="admin.html" class="btn btn-outline" style="border-color: var(--border-light); margin-right: 0.5rem; display: inline-flex; align-items: center; justify-content: center; height: 42px; padding: 0 1rem;">
-          <i class="fas fa-lock text-cyan" style="margin-right: 0.4rem;"></i> Admin
-        </a>
-        <a href="index.html#regModal" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.4rem;">
-          <i class="fas fa-user-plus"></i> Register Student
-        </a>
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+          Thrissur District Registration Numbers
+        </div>
       </div>
 
-      <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
-      </button>
+      <div style="display: flex; gap: 0.4rem;">
+        <button class="btn-action" onclick="loadData(true)" title="Refresh Data">
+          <i class="fas fa-sync-alt" id="refreshIcon"></i>
+        </button>
+        <button class="btn-action btn-whatsapp" onclick="shareWhatsApp()" title="Share on WhatsApp">
+          <i class="fab fa-whatsapp"></i> <span>Share</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- DISTRICT TOTAL OVERVIEW -->
+    <div class="district-card">
+      <div>
+        <div class="district-label">Thrissur District Total</div>
+        <div class="district-sub">7 Zones • 32 Units</div>
+      </div>
+      <div class="district-number" id="districtTotalDisplay">--</div>
     </div>
-  </header>
 
-  <!-- HERO SECTION -->
-  <section class="status-hero">
-    <div class="container">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.65rem; flex-wrap: wrap;">
-            <span class="section-tag cyan-tag" style="margin-bottom: 0;">
-              <i class="fas fa-chart-pie"></i> Official Registration Status
-            </span>
-            <span style="display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 700; color: #16A34A; background: rgba(34, 197, 94, 0.1); padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid rgba(34, 197, 94, 0.25);">
-              <span class="live-pulse-dot"></span> Live Data
-            </span>
-          </div>
-
-          <h1 style="font-family: var(--font-heading); font-size: clamp(1.85rem, 3.5vw, 2.75rem); font-weight: 900; color: var(--text-main); margin-bottom: 0.4rem; line-height: 1.2;">
-            TEENSPACE 2026 Status
-          </h1>
-          <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 0.25rem;">
-            Wisdom Islamic Organisation • <strong>Wisdom Students Thrissur District Committee</strong>
-          </p>
-          <div style="font-size: 0.82rem; color: var(--text-dim); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.4rem;">
-            <i class="fas fa-clock text-cyan"></i> Last Synced: <span id="lastSyncedTime" style="font-weight: 700;">Loading...</span>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center;">
-          <button type="button" class="btn btn-outline" id="refreshBtn" onclick="loadStatusData(true)" style="border-color: rgba(0, 168, 232, 0.3); color: var(--cyan); background: #FFFFFF; font-weight: 700; font-size: 0.88rem; padding: 0.65rem 1rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.45rem;">
-            <i class="fas fa-sync-alt" id="refreshIcon"></i> Refresh
-          </button>
-          <button type="button" class="btn btn-outline" onclick="copyPublicLink()" style="border-color: var(--border-light); background: #FFFFFF; font-weight: 700; font-size: 0.88rem; padding: 0.65rem 1rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.45rem;">
-            <i class="fas fa-link text-magenta"></i> Copy Link
-          </button>
-          <button type="button" class="btn btn-primary" onclick="shareStatusWhatsApp()" style="background: #25D366; border-color: #25D366; font-weight: 700; font-size: 0.88rem; padding: 0.65rem 1.15rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 0.45rem;">
-            <i class="fab fa-whatsapp" style="font-size: 1.1rem;"></i> Share on WhatsApp
-          </button>
-        </div>
-      </div>
-
-      <!-- KPI METRIC CARDS -->
-      <div class="kpi-grid">
-        <!-- 1. Total District Count (Hero Card) -->
-        <div class="kpi-card district-grand">
-          <div>
-            <div class="kpi-label"><i class="fas fa-trophy" style="color: #FFD700;"></i> Thrissur District Total</div>
-            <div class="kpi-val" id="kpiDistrictTotal">--</div>
-          </div>
-          <div class="kpi-sub" style="color: rgba(255, 255, 255, 0.7); display: flex; justify-content: space-between; align-items: center;">
-            <span>Total Verified Students</span>
-            <span style="color: #00A8E8; font-weight: 800;">7 Zones</span>
-          </div>
-        </div>
-
-        <!-- 2. Leading Zone -->
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label"><i class="fas fa-crown text-magenta"></i> Leading Zone</div>
-            <div class="kpi-val" id="kpiTopZone" style="font-size: 1.85rem; color: var(--magenta);">--</div>
-          </div>
-          <div class="kpi-sub" id="kpiTopZoneCount">Ranked #1 by registrations</div>
-        </div>
-
-        <!-- 3. Active Units Count -->
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label"><i class="fas fa-sitemap text-cyan"></i> Monitored Units</div>
-            <div class="kpi-val" id="kpiActiveUnits" style="font-size: 2.2rem; color: var(--cyan);">32</div>
-          </div>
-          <div class="kpi-sub">Across 7 District Zones</div>
-        </div>
-
-        <!-- 4. Average Per Zone -->
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label"><i class="fas fa-calculator" style="color: #8B5CF6;"></i> Zone Average</div>
-            <div class="kpi-val" id="kpiZoneAvg" style="font-size: 2.2rem; color: #8B5CF6;">--</div>
-          </div>
-          <div class="kpi-sub">Students per Zone</div>
-        </div>
-      </div>
-
+    <!-- ZONES AND UNITS SECTION -->
+    <div class="section-title">
+      <span>Zone & Unit Breakdown</span>
+      <span style="font-size: 0.75rem; font-weight: 600;" id="lastUpdatedTime">Syncing...</span>
     </div>
-  </section>
 
-  <!-- MAIN STATUS CONTENT -->
-  <main style="padding: 2.5rem 0;">
-    <div class="container">
-
-      <!-- TOOLBAR: SEARCH & CONTROLS -->
-      <div style="background: #FFFFFF; border: 1px solid var(--border-light); border-radius: 18px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);">
-        
-        <!-- Search Input -->
-        <div style="position: relative; flex: 1; min-width: 240px; max-width: 380px;">
-          <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 0.9rem;"></i>
-          <input type="text" id="statusSearchInput" oninput="filterStatusData()" placeholder="Search Zone or Unit name..." style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.4rem; border-radius: 12px; border: 1px solid var(--border-light); font-size: 0.9rem; background: #F8FAFC; outline: none; transition: border-color 0.2s;">
-        </div>
-
-        <!-- Sort Filter Buttons -->
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-right: 0.25rem;">Sort Zones:</span>
-          <button type="button" class="pill-filter active" id="sortRankBtn" onclick="setStatusSort('rank')">
-            <i class="fas fa-sort-numeric-down"></i> Highest First
-          </button>
-          <button type="button" class="pill-filter" id="sortOrderBtn" onclick="setStatusSort('standard')">
-            <i class="fas fa-map-marker-alt"></i> Standard Order
-          </button>
-        </div>
-
+    <!-- ZONE CARDS CONTAINER -->
+    <div id="zonesContainer">
+      <!-- Loading Placeholder -->
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--cyan); margin-bottom: 0.5rem; display: block;"></i>
+        Loading registration numbers...
       </div>
+    </div>
 
-      <!-- QUICK JUMP PILLS -->
-      <div style="margin-bottom: 1.75rem;">
-        <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
-          <i class="fas fa-bolt text-magenta"></i> Jump Directly to Zone:
-        </div>
-        <div class="jump-pills-bar" id="jumpPillsContainer">
+    <!-- FINAL SECTION: DISTRICT CONSOLIDATED TOTAL -->
+    <div class="grand-summary-block">
+      <div style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 800; color: var(--dark-navy); margin-bottom: 0.65rem;">
+        <i class="fas fa-list-check" style="color: var(--cyan); margin-right: 0.35rem;"></i> Total District Summary
+      </div>
+      <table class="grand-table">
+        <tbody id="summaryTableBody">
           <!-- Populated dynamically -->
-        </div>
-      </div>
-
-      <!-- ZONE SECTIONS CONTAINER -->
-      <div id="zonesContainer">
-        <!-- Loading Skeletons -->
-        <div class="zone-card" style="padding: 2rem;">
-          <div class="skeleton" style="height: 35px; width: 40%; margin-bottom: 1.5rem;"></div>
-          <div class="skeleton" style="height: 25px; width: 100%; margin-bottom: 0.75rem;"></div>
-          <div class="skeleton" style="height: 25px; width: 100%; margin-bottom: 0.75rem;"></div>
-          <div class="skeleton" style="height: 25px; width: 100%;"></div>
-        </div>
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- FINAL SECTION: DISTRICT CONSOLIDATED GRAND TOTAL             -->
-      <!-- ============================================================ -->
-      <div class="district-grand-summary" id="districtConsolidatedSection">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding-bottom: 1.25rem;">
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--cyan); display: flex; align-items: center; gap: 0.5rem;">
-              <i class="fas fa-flag-checkered"></i> Consolidated District Summary
-            </div>
-            <h2 style="font-family: var(--font-heading); font-size: 1.85rem; font-weight: 900; margin: 0.25rem 0 0 0; color: #FFFFFF;">
-              Total District Registration
-            </h2>
-            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.88rem; margin: 0.2rem 0 0 0;">
-              Wisdom Students Thrissur District • TEENSPACE 2026 Higher Secondary Students Conference
-            </p>
-          </div>
-
-          <div style="text-align: right;">
-            <div style="font-size: 0.8rem; text-transform: uppercase; color: rgba(255,255,255,0.6); font-weight: 700;">Grand Total District</div>
-            <div style="font-family: var(--font-heading); font-size: 2.75rem; font-weight: 900; color: #00A8E8; line-height: 1;" id="finalDistrictTotal">
-              --
-            </div>
-          </div>
-        </div>
-
-        <!-- Table Summary of all Zones -->
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; color: #FFFFFF; font-size: 0.95rem;">
-            <thead>
-              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.65); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.05em;">
-                <th style="padding: 0.75rem 0.5rem; text-align: left;">Rank</th>
-                <th style="padding: 0.75rem 0.5rem; text-align: left;">Zone (Mandalam)</th>
-                <th style="padding: 0.75rem 0.5rem; text-align: center;">Total Units</th>
-                <th style="padding: 0.75rem 0.5rem; text-align: right;">Registrations</th>
-                <th style="padding: 0.75rem 0.5rem; text-align: right;">District Share</th>
-              </tr>
-            </thead>
-            <tbody id="districtSummaryTableBody">
-              <!-- Populated dynamically -->
-            </tbody>
-            <tfoot>
-              <tr style="border-top: 2px solid rgba(0, 168, 232, 0.5); font-weight: 900; font-size: 1.1rem; background: rgba(0, 168, 232, 0.1);">
-                <td style="padding: 1rem 0.5rem; text-align: left;" colspan="2">
-                  <i class="fas fa-check-double text-cyan"></i> THRISSUR DISTRICT TOTAL
-                </td>
-                <td style="padding: 1rem 0.5rem; text-align: center;" id="footTotalUnits">32 Units</td>
-                <td style="padding: 1rem 0.5rem; text-align: right; color: #FFD700; font-size: 1.35rem;" id="footTotalRegistrations">--</td>
-                <td style="padding: 1rem 0.5rem; text-align: right; color: var(--cyan);">100%</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <!-- Call to Action inside Summary -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.75rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.12);">
-          <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.7);">
-            <i class="fas fa-info-circle text-cyan"></i> Only aggregated registration counts are shown publicly. Student personal details remain strictly confidential.
-          </div>
-          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-            <button class="btn btn-sm" onclick="shareStatusWhatsApp()" style="background: #25D366; color: #FFF; border: none; font-weight: 700; border-radius: 10px; padding: 0.5rem 1rem;">
-              <i class="fab fa-whatsapp"></i> Share Summary
-            </button>
-            <a href="index.html#regModal" class="btn btn-sm btn-primary" style="background: var(--grad-primary); border-radius: 10px; font-weight: 700; padding: 0.5rem 1rem;">
-              <i class="fas fa-plus-circle"></i> Register Student
-            </a>
-          </div>
-        </div>
-
-      </div>
-
+        </tbody>
+        <tfoot>
+          <tr class="grand-total-row">
+            <td>TOTAL DISTRICT</td>
+            <td style="text-align: right; color: var(--magenta);" id="summaryGrandTotal">--</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-  </main>
 
-  <!-- TOAST NOTIFICATION -->
-  <div id="statusToast">
-    <i class="fas fa-check-circle text-cyan"></i>
-    <span id="toastMessage">Notification</span>
+    <!-- FOOTER NOTE -->
+    <div class="footer-note">
+      Wisdom Students Thrissur District Committee • Private Link Access
+    </div>
+
   </div>
 
-  <!-- FOOTER -->
-  <footer style="background: #FFFFFF; border-top: 1px solid var(--border-light); padding: 2rem 0; text-align: center;">
-    <div class="container">
-      <div style="display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
-        <a href="index.html" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600;">Home</a>
-        <a href="status.html" style="color: var(--cyan); font-size: 0.9rem; text-decoration: none; font-weight: 700;">Registration Status</a>
-        <a href="schedule.html" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600;">Schedule</a>
-        <a href="media.html" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600;">Media</a>
-        <a href="donate.html" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600;">Donate Contact</a>
-        <a href="admin.html" style="color: var(--text-muted); font-size: 0.9rem; text-decoration: none; font-weight: 600;">Admin Login</a>
-      </div>
-      <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
-        &copy; 2026 Wisdom Students Thrissur District Committee • <strong>TEENSPACE 2026</strong> • Dream Palace, Paroor
-      </p>
-    </div>
-  </footer>
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast">Copied to clipboard</div>
 
-  <!-- Supabase Client & Status Scripts -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
-    // Supabase Configuration
     const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
     let supabase = null;
@@ -687,7 +410,6 @@
       supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
-    // Official 7 Zones and Units Structure
     const ORGANIZATIONAL_MAP = {
       'Chavakkad': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
       'Pavaratty': ['Orumanayoor', 'Padoor', 'Venkidang', 'Pavaratty'],
@@ -701,58 +423,6 @@
     const ZONES_ORDER = [
       'Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'
     ];
-
-    let rawRegistrations = [];
-    let currentSortMode = 'rank'; // 'rank' (highest count) or 'standard'
-    let currentSearchTerm = '';
-
-    // Mobile Navbar Toggle
-    const mobileToggle = document.getElementById('mobileToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (mobileToggle && navLinks) {
-      mobileToggle.addEventListener('click', () => {
-        navLinks.classList.toggle('active');
-      });
-    }
-
-    // Toast Function
-    function showToast(msg) {
-      const toast = document.getElementById('statusToast');
-      const toastMsg = document.getElementById('toastMessage');
-      if (toast && toastMsg) {
-        toastMsg.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3200);
-      }
-    }
-
-    // Copy Public Link
-    function copyPublicLink() {
-      const url = window.location.href.split('#')[0];
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(() => {
-          showToast('🔗 Public status link copied to clipboard!');
-        }).catch(() => {
-          prompt('Copy status link:', url);
-        });
-      } else {
-        prompt('Copy status link:', url);
-      }
-    }
-
-    // Set Sort Mode
-    function setStatusSort(mode) {
-      currentSortMode = mode;
-      document.getElementById('sortRankBtn').classList.toggle('active', mode === 'rank');
-      document.getElementById('sortOrderBtn').classList.toggle('active', mode === 'standard');
-      renderStatusUI();
-    }
-
-    // Search Filter
-    function filterStatusData() {
-      currentSearchTerm = (document.getElementById('statusSearchInput').value || '').trim().toLowerCase();
-      renderStatusUI();
-    }
 
     const UNIT_ALIASES = {
       'punnayoorkulam': 'punnayurkulam',
@@ -768,383 +438,176 @@
       'karupadanna': 'karupadanna'
     };
 
-    // Clean String Helper
     function cleanStr(s) {
       let c = (s || '').trim().toLowerCase().replace(/ zone$/i, '').replace(/[^a-z0-9]/g, '');
       return UNIT_ALIASES[c] || c;
     }
 
-    // Fetch Registration Data from Supabase
-    async function loadStatusData(isManualRefresh = false) {
-      const refreshIcon = document.getElementById('refreshIcon');
-      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+    let registrations = [];
+
+    function showToast(text) {
+      const t = document.getElementById('toast');
+      t.textContent = text;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    async function loadData(manual = false) {
+      const icon = document.getElementById('refreshIcon');
+      if (icon) icon.classList.add('fa-spin');
 
       try {
-        if (!supabase) throw new Error("Supabase client not initialized");
-
-        // Fetch student registrations (paginated for performance)
+        if (!supabase) return;
         const [r1, r2, r3, r4] = await Promise.all([
-          supabase.from('registrations').select('reg_id, zone, unit, place, school').range(0, 999),
-          supabase.from('registrations').select('reg_id, zone, unit, place, school').range(1000, 1999),
-          supabase.from('registrations').select('reg_id, zone, unit, place, school').range(2000, 2999),
-          supabase.from('registrations').select('reg_id, zone, unit, place, school').range(3000, 3999)
+          supabase.from('registrations').select('reg_id, zone, unit').range(0, 999),
+          supabase.from('registrations').select('reg_id, zone, unit').range(1000, 1999),
+          supabase.from('registrations').select('reg_id, zone, unit').range(2000, 2999),
+          supabase.from('registrations').select('reg_id, zone, unit').range(3000, 3999)
         ]);
 
-        const allRows = [
-          ...(r1.data || []),
-          ...(r2.data || []),
-          ...(r3.data || []),
-          ...(r4.data || [])
-        ];
+        const all = [...(r1.data || []), ...(r2.data || []), ...(r3.data || []), ...(r4.data || [])];
+        registrations = all.filter(r => !r.reg_id || !r.reg_id.startsWith('SYS_'));
 
-        // Filter out system accounts, targets and donated contact records
-        rawRegistrations = allRows.filter(r => !r.reg_id || !r.reg_id.startsWith('SYS_'));
-
-        // Update Last Synced Time
         const now = new Date();
-        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-        document.getElementById('lastSyncedTime').textContent = `${dateStr}, ${timeStr}`;
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        document.getElementById('lastUpdatedTime').textContent = `Updated: ${timeStr}`;
 
-        renderStatusUI();
-
-        if (isManualRefresh) {
-          showToast(`✅ Data refreshed! Total ${rawRegistrations.length} registrations.`);
-        }
+        renderUI();
+        if (manual) showToast('Data refreshed');
       } catch (err) {
-        console.error("Failed to load status data:", err);
-        showToast("⚠️ Unable to load latest data. Please check connection.");
+        console.error(err);
       } finally {
-        if (refreshIcon) {
-          setTimeout(() => refreshIcon.classList.remove('fa-spin'), 600);
-        }
+        if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 500);
       }
     }
 
-    // Compute stats grouped by Zone & Units
-    function computeAggregations() {
-      const totalDistrict = rawRegistrations.length;
+    function calculateStats() {
+      const totalDistrict = registrations.length;
 
-      // Group per Zone
       const zoneStats = ZONES_ORDER.map(zoneName => {
         const zoneClean = cleanStr(zoneName);
-        const officialUnits = ORGANIZATIONAL_MAP[zoneName] || [];
+        const units = ORGANIZATIONAL_MAP[zoneName] || [];
 
-        // Registrations belonging to this zone
-        const zoneRegs = rawRegistrations.filter(r => {
-          const rZoneClean = cleanStr(r.zone);
-          return rZoneClean === zoneClean || 
-                 (zoneClean === 'thrissurcity' && (rZoneClean === 'thrissur' || rZoneClean === 'tsr')) ||
-                 (zoneClean === 'kaipamangalam' && rZoneClean === 'kpm');
+        const zoneRegs = registrations.filter(r => {
+          const rz = cleanStr(r.zone);
+          return rz === zoneClean ||
+                 (zoneClean === 'thrissurcity' && (rz === 'thrissur' || rz === 'tsr')) ||
+                 (zoneClean === 'kaipamangalam' && rz === 'kpm');
         });
 
-        // Tally each official Unit
-        const unitStats = officialUnits.map(unitName => {
-          const uClean = cleanStr(unitName);
-          const matchedRegs = zoneRegs.filter(r => {
-            const ruClean = cleanStr(r.unit);
-            return ruClean === uClean || ruClean.includes(uClean) || uClean.includes(ruClean);
-          });
+        const unitList = units.map(uName => {
+          const uClean = cleanStr(uName);
+          const count = zoneRegs.filter(r => {
+            const ru = cleanStr(r.unit);
+            return ru === uClean || ru.includes(uClean) || uClean.includes(ru);
+          }).length;
 
-          return {
-            name: unitName,
-            count: matchedRegs.length,
-            shareInZone: zoneRegs.length > 0 ? ((matchedRegs.length / zoneRegs.length) * 100).toFixed(1) : 0,
-            shareInDistrict: totalDistrict > 0 ? ((matchedRegs.length / totalDistrict) * 100).toFixed(1) : 0
-          };
+          return { name: uName, count };
         });
 
-        // Calculate unassigned or other units in this zone
-        let matchedUnitsCount = 0;
-        unitStats.forEach(u => matchedUnitsCount += u.count);
-        const unassignedInZone = Math.max(0, zoneRegs.length - matchedUnitsCount);
+        const matchedTotal = unitList.reduce((acc, u) => acc + u.count, 0);
+        const unassigned = Math.max(0, zoneRegs.length - matchedTotal);
 
         return {
           zone: zoneName,
           total: zoneRegs.length,
-          units: unitStats,
-          unassigned: unassignedInZone,
-          shareInDistrict: totalDistrict > 0 ? ((zoneRegs.length / totalDistrict) * 100).toFixed(1) : 0
+          units: unitList,
+          unassigned
         };
       });
 
-      // Also track any completely unmapped zones
-      let allMappedZoneCount = 0;
-      zoneStats.forEach(z => allMappedZoneCount += z.total);
-      const districtUnmapped = Math.max(0, totalDistrict - allMappedZoneCount);
-
-      return {
-        totalDistrict,
-        zoneStats,
-        districtUnmapped
-      };
+      return { totalDistrict, zoneStats };
     }
 
-    // Main Render Function
-    function renderStatusUI() {
-      const { totalDistrict, zoneStats, districtUnmapped } = computeAggregations();
+    function renderUI() {
+      const { totalDistrict, zoneStats } = calculateStats();
 
-      // 1. Update Hero KPI Cards
-      document.getElementById('kpiDistrictTotal').textContent = totalDistrict.toLocaleString();
-      document.getElementById('finalDistrictTotal').textContent = totalDistrict.toLocaleString();
-      document.getElementById('footTotalRegistrations').textContent = totalDistrict.toLocaleString();
+      // District Total Card
+      document.getElementById('districtTotalDisplay').textContent = totalDistrict;
+      document.getElementById('summaryGrandTotal').textContent = totalDistrict;
 
-      // Top Zone
-      const sortedByCount = [...zoneStats].sort((a, b) => b.total - a.total);
-      const topZone = sortedByCount[0];
-      if (topZone) {
-        document.getElementById('kpiTopZone').textContent = topZone.zone.replace(' City', '');
-        document.getElementById('kpiTopZoneCount').textContent = `${topZone.total} registrations (${topZone.shareInDistrict}% of District)`;
-      }
-
-      // Zone Average
-      const avg = (totalDistrict / 7).toFixed(1);
-      document.getElementById('kpiZoneAvg').textContent = avg;
-
-      // 2. Render Quick Jump Pills
-      const jumpPillsEl = document.getElementById('jumpPillsContainer');
-      jumpPillsEl.innerHTML = ZONES_ORDER.map(z => {
-        const stat = zoneStats.find(s => s.zone === z);
-        const count = stat ? stat.total : 0;
-        return `<a href="#zone-${cleanStr(z)}" class="jump-pill">
-          ${z} <span style="color:var(--cyan); font-weight:800;">(${count})</span>
-        </a>`;
-      }).join('');
-
-      // 3. Sort Zones based on mode
-      let displayZones = [...zoneStats];
-      if (currentSortMode === 'rank') {
-        displayZones.sort((a, b) => b.total - a.total);
-      }
-
-      // Filter by search term
-      if (currentSearchTerm) {
-        displayZones = displayZones.filter(z => {
-          const zoneMatches = z.zone.toLowerCase().includes(currentSearchTerm);
-          const unitMatches = z.units.some(u => u.name.toLowerCase().includes(currentSearchTerm));
-          return zoneMatches || unitMatches;
-        });
-      }
-
-      // 4. Render Zone Breakdown Cards (Zone -> Units)
+      // Render Zone Blocks
       const container = document.getElementById('zonesContainer');
-      if (displayZones.length === 0) {
-        container.innerHTML = `
-          <div style="background: #FFFFFF; border-radius: 18px; padding: 3rem 1.5rem; text-align: center; border: 1px dashed var(--border-light);">
-            <i class="fas fa-search" style="font-size: 2.5rem; color: var(--text-dim); margin-bottom: 1rem;"></i>
-            <h3 style="font-family: var(--font-heading); color: var(--text-main); margin-bottom: 0.4rem;">No matching Zone or Unit found</h3>
-            <p style="color: var(--text-muted); font-size: 0.9rem;">Try searching for a different name like "Chavakkad" or "Vadanappally".</p>
-          </div>
-        `;
-      } else {
-        container.innerHTML = displayZones.map((zStat, index) => {
-          // Rank assignment based on overall performance
-          const rank = sortedByCount.findIndex(s => s.zone === zStat.zone) + 1;
-          let rankBadgeClass = 'rank-standard';
-          let rankIcon = `#${rank}`;
-          if (rank === 1) { rankBadgeClass = 'rank-gold'; rankIcon = '🥇'; }
-          else if (rank === 2) { rankBadgeClass = 'rank-silver'; rankIcon = '🥈'; }
-          else if (rank === 3) { rankBadgeClass = 'rank-bronze'; rankIcon = '🥉'; }
+      container.innerHTML = zoneStats.map(z => {
+        const unitsHtml = z.units.map(u => `
+          <li class="unit-item">
+            <span class="unit-name">${u.name}</span>
+            <span class="unit-count ${u.count === 0 ? 'unit-zero' : ''}">${u.count}</span>
+          </li>
+        `).join('');
 
-          // Sort units under this zone by highest count
-          const sortedUnits = [...zStat.units].sort((a, b) => b.count - a.count);
-
-          const unitsRowsHtml = sortedUnits.map((u, uIdx) => {
-            const isMatch = currentSearchTerm && u.name.toLowerCase().includes(currentSearchTerm);
-            const rowHighlight = isMatch ? 'background-color: rgba(0, 168, 232, 0.08);' : '';
-
-            return `
-              <tr style="${rowHighlight}">
-                <td style="width: 50px;">
-                  <span class="unit-badge">${uIdx + 1}</span>
-                </td>
-                <td>
-                  <div class="unit-name-cell">
-                    <span>${u.name}</span>
-                    ${uIdx === 0 && u.count > 0 ? '<span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-size:0.7rem; padding:0.15rem 0.4rem; border-radius:4px;"><i class="fas fa-star"></i> Zone Leader</span>' : ''}
-                  </div>
-                </td>
-                <td style="width: 200px;">
-                  <div style="display: flex; align-items: center; gap: 0.65rem;">
-                    <div class="unit-bar-wrap">
-                      <div class="unit-bar-fill" style="width: ${Math.min(100, Math.max(u.shareInZone, u.count > 0 ? 8 : 0))}%;"></div>
-                    </div>
-                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-dim);">${u.shareInZone}%</span>
-                  </div>
-                </td>
-                <td style="text-align: right; width: 140px;">
-                  <strong style="font-family: var(--font-heading); font-size: 1.15rem; color: var(--text-main);">${u.count}</strong>
-                  <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">students</span>
-                </td>
-              </tr>
-            `;
-          }).join('');
-
-          // Optional unassigned row
-          const unassignedRow = zStat.unassigned > 0 ? `
-            <tr style="background: rgba(241, 245, 249, 0.5);">
-              <td style="width: 50px;"><span class="unit-badge" style="background:#E2E8F0; color:#64748B;">•</span></td>
-              <td>
-                <div class="unit-name-cell" style="color: var(--text-muted);">
-                  <em>Other / Direct Zone Registrations</em>
-                </div>
-              </td>
-              <td style="width: 200px;">
-                <div style="font-size: 0.75rem; color: var(--text-dim);">Direct / Pending Unit Allocation</div>
-              </td>
-              <td style="text-align: right; width: 140px;">
-                <strong style="font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-muted);">${zStat.unassigned}</strong>
-                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">students</span>
-              </td>
-            </tr>
-          ` : '';
-
-          return `
-            <div class="zone-card" id="zone-${cleanStr(zStat.zone)}">
-              <!-- Zone Header -->
-              <div class="zone-header">
-                <div class="zone-title-wrap">
-                  <div class="zone-rank-badge ${rankBadgeClass}">${rankIcon}</div>
-                  <div>
-                    <h3 class="zone-name">
-                      ${zStat.zone} Zone
-                    </h3>
-                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
-                      ${zStat.units.length} Units Monitored • <strong>${zStat.shareInDistrict}%</strong> of District Registrations
-                    </div>
-                  </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <div class="zone-stat-pill">
-                    <i class="fas fa-users"></i>
-                    <span>${zStat.total} Registered</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Zone Overall Progress Bar -->
-              <div style="height: 4px; width: 100%; background: #F1F5F9; overflow: hidden;">
-                <div style="height: 100%; width: ${zStat.shareInDistrict}%; background: linear-gradient(90deg, #00A8E8, #E60067); transition: width 0.6s ease;"></div>
-              </div>
-
-              <!-- Units Table Under this Zone -->
-              <div style="overflow-x: auto;">
-                <table class="unit-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Unit Name</th>
-                      <th>Zone Share</th>
-                      <th style="text-align: right;">Registrations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${unitsRowsHtml}
-                    ${unassignedRow}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      // 5. Render District Consolidated Summary Table
-      const summaryTbody = document.getElementById('districtSummaryTableBody');
-      summaryTbody.innerHTML = sortedByCount.map((z, idx) => {
-        let rankBadge = `#${idx + 1}`;
-        if (idx === 0) rankBadge = '🥇 #1';
-        else if (idx === 1) rankBadge = '🥈 #2';
-        else if (idx === 2) rankBadge = '🥉 #3';
+        const unassignedHtml = z.unassigned > 0 ? `
+          <li class="unit-item" style="background:#F8FAFC; color:#64748B;">
+            <span class="unit-name" style="font-style:italic;">Other / Direct</span>
+            <span class="unit-count">${z.unassigned}</span>
+          </li>
+        ` : '';
 
         return `
-          <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); transition: background 0.2s;">
-            <td style="padding: 0.85rem 0.5rem; font-weight: 700; color: #FFD700;">${rankBadge}</td>
-            <td style="padding: 0.85rem 0.5rem; font-weight: 700;">
-              <a href="#zone-${cleanStr(z.zone)}" style="color: #FFFFFF; text-decoration: none; border-bottom: 1px dotted rgba(255, 255, 255, 0.4);">
-                ${z.zone} Zone
-              </a>
-            </td>
-            <td style="padding: 0.85rem 0.5rem; text-align: center; color: rgba(255, 255, 255, 0.75);">${z.units.length} Units</td>
-            <td style="padding: 0.85rem 0.5rem; text-align: right; font-family: var(--font-heading); font-size: 1.15rem; font-weight: 800; color: #FFFFFF;">
-              ${z.total}
-            </td>
-            <td style="padding: 0.85rem 0.5rem; text-align: right; color: var(--cyan); font-weight: 700;">
-              ${z.shareInDistrict}%
-            </td>
-          </tr>
+          <div class="zone-block">
+            <div class="zone-head">
+              <div class="zone-name">
+                <i class="fas fa-folder-open" style="color:var(--cyan); font-size:0.9rem;"></i>
+                <span>${z.zone} Zone</span>
+              </div>
+              <div class="zone-count-badge">${z.total}</div>
+            </div>
+            <ul class="unit-list">
+              ${unitsHtml}
+              ${unassignedHtml}
+            </ul>
+          </div>
         `;
       }).join('');
 
-      // Add unmapped row if any exist
-      if (districtUnmapped > 0) {
-        summaryTbody.innerHTML += `
-          <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.65);">
-            <td style="padding: 0.85rem 0.5rem;">•</td>
-            <td style="padding: 0.85rem 0.5rem;"><em>Direct District Registrations</em></td>
-            <td style="padding: 0.85rem 0.5rem; text-align: center;">-</td>
-            <td style="padding: 0.85rem 0.5rem; text-align: right; font-family: var(--font-heading); font-weight: 800;">${districtUnmapped}</td>
-            <td style="padding: 0.85rem 0.5rem; text-align: right;">${((districtUnmapped / totalDistrict) * 100).toFixed(1)}%</td>
-          </tr>
-        `;
-      }
+      // Render Summary Table Rows
+      const summaryTbody = document.getElementById('summaryTableBody');
+      summaryTbody.innerHTML = zoneStats.map(z => `
+        <tr>
+          <td style="color:#334155; font-weight:600;">${z.zone} Zone</td>
+          <td style="text-align:right; font-family:'Outfit',sans-serif; font-weight:700;">${z.total}</td>
+        </tr>
+      `).join('');
     }
 
-    // Build WhatsApp Share Message
-    function buildWhatsAppSummary() {
-      const { totalDistrict, zoneStats } = computeAggregations();
+    function buildWhatsAppText() {
+      const { totalDistrict, zoneStats } = calculateStats();
       const now = new Date();
       const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-      const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-      // Sort zones by highest count
-      const sorted = [...zoneStats].sort((a, b) => b.total - a.total);
+      let text = `📊 *TEENSPACE 2026 - REGISTRATION STATUS* 📊\n`;
+      text += `*Wisdom Students Thrissur District*\n`;
+      text += `_As of: ${timeStr}_\n`;
+      text += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-      let msg = `📊 *TEENSPACE 2026 - REGISTRATION STATUS* 📊\n`;
-      msg += `*Wisdom Students Thrissur District*\n`;
-      msg += `🗓️ _Status as of: ${dateStr}, ${timeStr}_\n`;
-      msg += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-      msg += `🏆 *THRISSUR DISTRICT TOTAL:* *${totalDistrict}* Students\n\n`;
-
-      msg += `📍 *ZONE & UNIT BREAKDOWN:*\n`;
-      sorted.forEach((z, idx) => {
-        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : '🔹'));
-        msg += `\n${medal} *${z.zone.toUpperCase()} ZONE: ${z.total}*\n`;
-        
-        // List units under this zone
-        const sUnits = [...z.units].sort((a, b) => b.count - a.count);
-        sUnits.forEach(u => {
-          msg += `   • ${u.name}: ${u.count}\n`;
+      zoneStats.forEach(z => {
+        text += `📍 *${z.zone.toUpperCase()} ZONE: ${z.total}*\n`;
+        z.units.forEach(u => {
+          text += `  • ${u.name}: ${u.count}\n`;
         });
         if (z.unassigned > 0) {
-          msg += `   • Others: ${z.unassigned}\n`;
+          text += `  • Other/Direct: ${z.unassigned}\n`;
         }
+        text += `\n`;
       });
 
-      msg += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-      msg += `🌐 *View Live Registration Dashboard:*\n`;
-      msg += `https://www.teenspacetsr.in/status.html\n\n`;
-      msg += `✨ *TEENSPACE 2026* | Higher Secondary Students Conference`;
+      text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+      text += `🏆 *TOTAL DISTRICT: ${totalDistrict}*\n`;
+      text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+      text += `🔗 *Live Status Link:*\nhttps://www.teenspacetsr.in/status.html`;
 
-      return msg;
+      return text;
     }
 
-    // WhatsApp Share Handler
-    function shareStatusWhatsApp() {
-      const text = buildWhatsAppSummary();
-      const encoded = encodeURIComponent(text);
-      const url = `https://api.whatsapp.com/send?text=${encoded}`;
+    function shareWhatsApp() {
+      const text = buildWhatsAppText();
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
     }
 
-    // Initialize on load & Auto-refresh every 60 seconds
     document.addEventListener('DOMContentLoaded', () => {
-      loadStatusData();
-      setInterval(() => {
-        loadStatusData(false);
-      }, 60000);
+      loadData();
+      setInterval(() => loadData(false), 45000);
     });
   </script>
 </body>
