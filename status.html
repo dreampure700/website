@@ -115,17 +115,6 @@
       border-color: #CBD5E1;
     }
 
-    .btn-whatsapp {
-      background: #25D366;
-      border-color: #25D366;
-      color: #FFFFFF;
-    }
-    .btn-whatsapp:hover {
-      background: #20BD5A;
-      border-color: #20BD5A;
-      color: #FFFFFF;
-    }
-
     /* Minimal District Hero Card */
     .district-card {
       background: linear-gradient(135deg, #0B132B 0%, #1E293B 100%);
@@ -338,12 +327,9 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 0.4rem;">
+      <div>
         <button class="btn-action" onclick="loadData(true)" title="Refresh Data">
-          <i class="fas fa-sync-alt" id="refreshIcon"></i>
-        </button>
-        <button class="btn-action btn-whatsapp" onclick="shareWhatsApp()" title="Share on WhatsApp">
-          <i class="fab fa-whatsapp"></i> <span>Share</span>
+          <i class="fas fa-sync-alt" id="refreshIcon"></i> <span>Refresh</span>
         </button>
       </div>
     </header>
@@ -583,41 +569,6 @@
           <td style="text-align:right; font-family:'Outfit',sans-serif; font-weight:700;">${z.total}</td>
         </tr>
       `).join('');
-    }
-
-    function buildWhatsAppText() {
-      const { totalDistrict, zoneStats } = calculateStats();
-      const now = new Date();
-      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-      let text = `📊 *TEENSPACE 2026 - REGISTRATION STATUS* 📊\n`;
-      text += `*Wisdom Students Thrissur District*\n`;
-      text += `_As of: ${timeStr}_\n`;
-      text += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-      zoneStats.forEach(z => {
-        text += `📍 *${z.zone.toUpperCase()} ZONE: ${z.total}*\n`;
-        z.units.forEach(u => {
-          text += `  • ${u.name}: ${u.count}\n`;
-        });
-        if (z.unassigned > 0) {
-          text += `  • Other/Direct: ${z.unassigned}\n`;
-        }
-        text += `\n`;
-      });
-
-      text += `━━━━━━━━━━━━━━━━━━━━━\n`;
-      text += `🏆 *TOTAL DISTRICT: ${totalDistrict}*\n`;
-      text += `━━━━━━━━━━━━━━━━━━━━━\n`;
-      text += `🔗 *Live Status Link:*\nhttps://www.teenspacetsr.in/status.html`;
-
-      return text;
-    }
-
-    function shareWhatsApp() {
-      const text = buildWhatsAppText();
-      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
