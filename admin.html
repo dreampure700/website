@@ -1404,40 +1404,9 @@
       <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
       <!-- ================= SECTION 2: SYSTEM SETTINGS & MAPPINGS ================= -->
       <div id="tab-panchayath" class="dashboard-section">
-        <!-- Settings Header Option Panel Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-          
-          <!-- Card 1: System Configurations -->
-          <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-              <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-sliders-h text-magenta"></i> System Controls
-              </h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                Configure dynamic visibility rules and backend system integrations for active zones.
-              </p>
-            </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-              <!-- Mapping Visibility Toggle Switch -->
-              <div id="mappingVisibilityToggleContainer" style="display:none; align-items:center; gap:0.75rem; background:#F8FAFC; padding:0.75rem 1rem; border-radius:12px; border:1px solid #E2E8F0;">
-                <label style="display:inline-flex; align-items:center; gap:0.75rem; font-size:0.85rem; font-weight:700; color:#475569; cursor:pointer; margin:0; width:100%;">
-                  <input type="checkbox" id="toggleMappingVisibility" onchange="handleMappingVisibilityToggle(this.checked)" style="width:18px; height:18px; accent-color:var(--cyan); cursor:pointer;">
-                  <span>Show Wards to Zone & Unit Admins</span>
-                </label>
-              </div>
-              
-              <!-- One-Click Supabase Data Migrator -->
-              <div id="supabaseMigratorContainer" style="display:none; align-items:center; width: 100%;">
-                <button class="btn btn-sm" id="runMigrationBtn" style="background:#EF4444; color:white; border:none; box-shadow:0 3px 8px rgba(239,68,68,0.25); width: 100%; padding: 0.75rem; font-weight: 700; border-radius: 12px;" onclick="runGoogleSheetsToSupabaseMigration()">
-                  <i class="fas fa-database"></i> Force Copy Google Sheets to Supabase
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Card 2: Panchayath & Ward Registrations Summary -->
-          <div class="card" style="padding: 1.5rem; max-height: 250px; display: flex; flex-direction: column;">
+        <!-- Settings Header: Panchayath & Ward Registrations Summary -->
+        <div style="margin-bottom: 2rem;">
+          <div class="card" style="padding: 1.5rem; max-height: 280px; display: flex; flex-direction: column;">
             <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
               <i class="fas fa-city text-cyan"></i> Registration Summary by Area
             </h3>
