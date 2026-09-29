@@ -1128,11 +1128,10 @@
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
           <button class="tab-link" id="tabDonatedLink" onclick="switchTab('tab-donated')"><i class="fas fa-hand-holding-heart text-cyan"></i> Donated Contacts <span id="donatedCountNavBadge" class="badge" style="background: rgba(0, 168, 232, 0.15); color: var(--cyan); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
-          <button class="tab-link" id="tabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;"><i class="fas fa-user-shield text-cyan"></i> Zone Admins</button>
           <button class="tab-link" id="tabTrashLink" onclick="switchTab('tab-trash')" style="display: none;"><i class="fas fa-trash-alt" style="color:#ef4444;"></i> Trash <span id="trashCountNavBadge" class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
-          <i class="fas fa-cog" style="margin: 0; font-size: 1.1rem;"></i>
+          <i class="fas fa-cog"></i> Settings
         </button>
       </nav>
     </div>
@@ -1402,12 +1401,108 @@
         </div>
       </div>
 
-      <!-- ================= SECTION 2: PANCHAYATH & WARD breakdown ================= -->
-      <!-- ================= SECTION 2: SYSTEM SETTINGS & MAPPINGS ================= -->
+      <!-- ================= SECTION 2: SYSTEM SETTINGS ================= -->
       <div id="tab-panchayath" class="dashboard-section">
-        <!-- Settings Header: Panchayath & Ward Registrations Summary -->
-        <div style="margin-bottom: 2rem;">
-          <div class="card" style="padding: 1.5rem; max-height: 280px; display: flex; flex-direction: column;">
+        <!-- Settings Header & Sub-Tab Navigation -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.45rem; margin:0; display:flex; align-items:center; gap:0.6rem;">
+              <i class="fas fa-cog text-cyan"></i> System Settings
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+              Manage coordinator accounts & passwords, geographic mappings, and local body registration distribution.
+            </p>
+          </div>
+        </div>
+
+        <!-- Settings Sub-Navigation Pill Bar -->
+        <div class="settings-subtabs" style="display:flex; gap:0.5rem; margin-bottom:1.5rem; border-bottom:1px solid rgba(15,23,42,0.08); padding-bottom:0.75rem; flex-wrap:wrap;">
+          <button type="button" class="tab-link active" id="subtabBtnAccounts" onclick="switchSettingsSubTab('accounts')">
+            <i class="fas fa-user-shield text-cyan"></i> Zone & Unit Accounts (Logins)
+          </button>
+          <button type="button" class="tab-link" id="subtabBtnMapping" onclick="switchSettingsSubTab('mapping')">
+            <i class="fas fa-network-wired text-magenta"></i> Panchayath & Ward Mappings
+          </button>
+          <button type="button" class="tab-link" id="subtabBtnAreaSummary" onclick="switchSettingsSubTab('areasummary')">
+            <i class="fas fa-city text-cyan"></i> Area Registration Summary
+          </button>
+        </div>
+
+        <!-- SUBPANEL 1: Zone & Unit Accounts (Logins & Passwords) -->
+        <div id="settingsSubPanelAccounts" class="settings-subpanel">
+          <div class="table-container accounts-container" style="padding: 1.5rem 1.75rem;">
+            <!-- Top Control Header -->
+            <div class="accounts-top-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0; display:flex; align-items:center; gap:0.5rem;" id="accountsSectionTitle">
+                  <i class="fas fa-users-shield text-cyan"></i> Zone & Unit Admin Accounts
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;" id="accountsSectionSubtitle">
+                  Click any Zone arrow (<i class="fas fa-chevron-down text-cyan"></i>) to view its Units. Manage credentials and share via WhatsApp in 1-click.
+                </p>
+              </div>
+              <div class="accounts-top-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="toggleAllAccordions()">
+                  <i class="fas fa-expand-alt" id="toggleAllAccIcon"></i> <span id="toggleAllAccText">Expand All</span>
+                </button>
+                <button id="accAddAccountTopBtn" class="btn btn-primary btn-sm" onclick="openAccountModal('add')">
+                  <i class="fas fa-plus"></i> Add Account
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Search Filter Bar -->
+            <div class="accounts-search-bar" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:center;">
+              <div style="flex-grow:1; position:relative;">
+                <i class="fas fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:0.9rem;"></i>
+                <input type="text" id="accountSearchInput" class="form-input" style="padding-left:2.5rem; font-size:0.85rem;" placeholder="Search Zone, Unit, or Username..." oninput="filterAccountsList()">
+              </div>
+              <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;" id="accountsCountSummary">
+                7 Zones · 31 Units
+              </span>
+            </div>
+
+            <!-- Zone & Unit Accordion Container -->
+            <div id="zoneUnitAccordionContainer">
+              <!-- Dynamically populated with Zone cards and Unit lists -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBPANEL 2: Panchayath & Ward Mappings -->
+        <div id="settingsSubPanelMapping" class="settings-subpanel" style="display: none;">
+          <div class="table-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Panchayath & Ward Mappings</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
+                  Currently managing <strong id="settingsTotalPanchayaths" style="color:var(--magenta)">0</strong> unique Panchayaths and <strong id="settingsTotalWards" style="color:var(--cyan)">0</strong> active Wards.
+                </p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping Option</button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Panchayath / Municipality</th>
+                    <th>Ward</th>
+                    <th>Organization Unit</th>
+                    <th>Organization Zone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="masterMappingTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBPANEL 3: Area Registration Summary -->
+        <div id="settingsSubPanelAreaSummary" class="settings-subpanel" style="display: none;">
+          <div class="card" style="padding: 1.5rem; max-height: 500px; display: flex; flex-direction: column;">
             <h3 style="font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
               <i class="fas fa-city text-cyan"></i> Registration Summary by Area
             </h3>
@@ -1429,37 +1524,8 @@
               </table>
             </div>
           </div>
-          
         </div>
 
-        <!-- Section 3: Master Directory Mapping -->
-        <div class="table-container">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-            <div>
-              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-network-wired text-cyan"></i> Panchayath & Ward Mappings</h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.25rem 0 0 0;">
-                Currently managing <strong id="settingsTotalPanchayaths" style="color:var(--magenta)">0</strong> unique Panchayaths and <strong id="settingsTotalWards" style="color:var(--cyan)">0</strong> active Wards.
-              </p>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="openMappingModal()"><i class="fas fa-plus"></i> Add New Mapping Option</button>
-          </div>
-          <div style="overflow-x: auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Panchayath / Municipality</th>
-                  <th>Ward</th>
-                  <th>Organization Unit</th>
-                  <th>Organization Zone</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="masterMappingTableBody">
-                <!-- Populated dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
 
       <!-- ================= SECTION 3: TRANSPORTATION ================= -->
@@ -1724,47 +1790,6 @@
                 <!-- Dynamically populated from spreadsheet -->
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= SECTION 6: ZONE & UNIT ADMINS ACCOUNTS MANAGEMENT ================= -->
-      <div id="tab-zone-admins" class="dashboard-section" style="display: none;">
-        <div class="table-container accounts-container" style="padding: 1.5rem 1.75rem;">
-          <!-- Top Control Header -->
-          <div class="accounts-top-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-            <div>
-              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;" id="accountsSectionTitle">
-                <i class="fas fa-users-shield text-cyan"></i> Zone & Unit Admin Accounts
-              </h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;" id="accountsSectionSubtitle">
-                Click any Zone arrow (<i class="fas fa-chevron-down text-cyan"></i>) to view its Units. Manage credentials and share via WhatsApp in 1-click.
-              </p>
-            </div>
-            <div class="accounts-top-actions" style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-              <button class="btn btn-outline btn-sm" onclick="toggleAllAccordions()">
-                <i class="fas fa-expand-alt" id="toggleAllAccIcon"></i> <span id="toggleAllAccText">Expand All</span>
-              </button>
-              <button id="accAddAccountTopBtn" class="btn btn-primary btn-sm" onclick="openAccountModal('add')">
-                <i class="fas fa-plus"></i> Add Account
-              </button>
-            </div>
-          </div>
-
-          <!-- Quick Search Filter Bar -->
-          <div class="accounts-search-bar" style="display:flex; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; align-items:center;">
-            <div style="flex-grow:1; position:relative;">
-              <i class="fas fa-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:0.9rem;"></i>
-              <input type="text" id="accountSearchInput" class="form-input" style="padding-left:2.5rem; font-size:0.85rem;" placeholder="Search Zone, Unit, or Username..." oninput="filterAccountsList()">
-            </div>
-            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;" id="accountsCountSummary">
-              7 Zones · 31 Units
-            </span>
-          </div>
-
-          <!-- Zone & Unit Accordion Container -->
-          <div id="zoneUnitAccordionContainer">
-            <!-- Dynamically populated with Zone cards and Unit lists -->
           </div>
         </div>
       </div>
@@ -2879,26 +2904,15 @@
         const bottomMediaTab = document.getElementById('bottomTabMediaLink');
         if (bottomMediaTab) bottomMediaTab.style.display = isDistrict ? 'flex' : 'none';
 
-        const zoneAdminsTab = document.getElementById('tabZoneAdminsLink');
-        if (zoneAdminsTab) {
-          zoneAdminsTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
-          zoneAdminsTab.innerHTML = isZone 
-            ? '<i class="fas fa-users-cog text-cyan"></i> Unit Accounts'
-            : '<i class="fas fa-user-shield text-cyan"></i> Zone & Unit Admins';
-        }
-
-        const bottomZoneAdmins = document.getElementById('bottomTabZoneAdminsLink');
-        if (bottomZoneAdmins) {
-          bottomZoneAdmins.style.display = canAccessAccounts ? 'flex' : 'none';
-          bottomZoneAdmins.innerHTML = isZone
-            ? '<i class="fas fa-users-cog"></i><span>Unit Accs</span>'
-            : '<i class="fas fa-user-shield"></i><span>Accounts</span>';
-        }
-
         const trashTab = document.getElementById('tabTrashLink');
         if (trashTab) trashTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
         const bottomTrashTab = document.getElementById('bottomTabTrashLink');
         if (bottomTrashTab) bottomTrashTab.style.display = canAccessAccounts ? 'flex' : 'none';
+
+        const settingsTab = document.getElementById('tabPanchayathLink');
+        if (settingsTab) settingsTab.style.display = canAccessAccounts ? 'inline-flex' : 'none';
+        const bottomSettings = document.getElementById('bottomTabPanchayathLink');
+        if (bottomSettings) bottomSettings.style.display = canAccessAccounts ? 'flex' : 'none';
 
         const topAddBtn = document.getElementById('accAddAccountTopBtn');
         if (topAddBtn) {
@@ -2911,10 +2925,44 @@
       loadData();
     }
 
+    let currentSettingsSubTab = 'accounts';
+
+    function switchSettingsSubTab(subId) {
+      currentSettingsSubTab = subId;
+      document.querySelectorAll('.settings-subpanel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.settings-subtabs .tab-link').forEach(b => b.classList.remove('active'));
+
+      if (subId === 'accounts') {
+        const p = document.getElementById('settingsSubPanelAccounts');
+        if (p) p.style.display = 'block';
+        const b = document.getElementById('subtabBtnAccounts');
+        if (b) b.classList.add('active');
+        renderAccountsAccordion();
+      } else if (subId === 'mapping') {
+        const p = document.getElementById('settingsSubPanelMapping');
+        if (p) p.style.display = 'block';
+        const b = document.getElementById('subtabBtnMapping');
+        if (b) b.classList.add('active');
+        renderMasterMapping();
+      } else if (subId === 'areasummary') {
+        const p = document.getElementById('settingsSubPanelAreaSummary');
+        if (p) p.style.display = 'block';
+        const b = document.getElementById('subtabBtnAreaSummary');
+        if (b) b.classList.add('active');
+      }
+    }
+
     // Switch Dashboard Tabs
     function switchTab(tabId) {
       if (sessionUser && (sessionUser.role === 'Bus Coordinator' || sessionUser.role === 'Asst Bus Coordinator')) {
         return; // Coordinators are restricted to their dedicated view only
+      }
+
+      // If user calls zone admins tab, redirect to Settings accounts subtab
+      if (tabId === 'tab-zone-admins') {
+        switchTab('tab-panchayath');
+        switchSettingsSubTab('accounts');
+        return;
       }
 
       // Media Management: District Admin only
@@ -2923,8 +2971,8 @@
         return;
       }
 
-      if (tabId === 'tab-zone-admins' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
-        alert('Access Denied: Only District and Zone Admins can view account credentials.');
+      if (tabId === 'tab-panchayath' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
+        alert('Access Denied: Only District and Zone Admins can view Settings.');
         return;
       }
 
@@ -2937,7 +2985,7 @@
         loadTrashData();
       }
 
-      if (tabId === 'tab-zone-admins' && sessionUser) {
+      if (tabId === 'tab-panchayath' && sessionUser) {
         const isZone = sessionUser.role === 'Zone';
         const secTitle = document.getElementById('accountsSectionTitle');
         const secSubtitle = document.getElementById('accountsSectionSubtitle');
@@ -2951,6 +2999,7 @@
             ? `Manage login credentials for ${sessionUser.target} Zone and your Units. Share directly via WhatsApp.`
             : `Click any Zone arrow (<i class="fas fa-chevron-down text-cyan"></i>) to view its Units. Manage credentials and share via WhatsApp in 1-click.`;
         }
+        switchSettingsSubTab(currentSettingsSubTab);
       }
       
       document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
@@ -3214,6 +3263,9 @@
 
         // Populate Zone Admins Management
         populateZoneAdminsFromDb(sysAccs);
+
+        // Render Active Settings Sub-tab
+        switchSettingsSubTab(currentSettingsSubTab);
 
         // Populate Donated Contacts
         donatedContacts = sysDonatedRecs;
@@ -9018,10 +9070,6 @@ CREATE POLICY "Allow anon delete on trash" ON public.trash FOR DELETE TO anon US
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')" style="display: none;">
       <i class="fas fa-images"></i>
       <span>Media</span>
-    </button>
-    <button class="bottom-nav-item" id="bottomTabZoneAdminsLink" onclick="switchTab('tab-zone-admins')" style="display: none;">
-      <i class="fas fa-user-shield"></i>
-      <span>Zones</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabTrashLink" onclick="switchTab('tab-trash')" style="display: none;">
       <i class="fas fa-trash-alt"></i>
