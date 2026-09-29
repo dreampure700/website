@@ -1128,7 +1128,6 @@
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
           <button class="tab-link" id="tabDonatedLink" onclick="switchTab('tab-donated')"><i class="fas fa-hand-holding-heart text-cyan"></i> Donated Contacts <span id="donatedCountNavBadge" class="badge" style="background: rgba(0, 168, 232, 0.15); color: var(--cyan); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
-          <button class="tab-link" id="tabTrashLink" onclick="switchTab('tab-trash')" style="display: none;"><i class="fas fa-trash-alt" style="color:#ef4444;"></i> Trash <span id="trashCountNavBadge" class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
         </div>
         <button class="tab-link" id="tabPanchayathLink" onclick="switchTab('tab-panchayath')" style="margin-left: auto;" title="Settings">
           <i class="fas fa-cog"></i> Settings
@@ -1426,6 +1425,9 @@
           <button type="button" class="tab-link" id="subtabBtnAreaSummary" onclick="switchSettingsSubTab('areasummary')">
             <i class="fas fa-city text-cyan"></i> Area Registration Summary
           </button>
+          <button type="button" class="tab-link" id="subtabBtnTrash" onclick="switchSettingsSubTab('trash')">
+            <i class="fas fa-trash-alt" style="color: #ef4444;"></i> Trash &amp; Recycle Bin <span id="trashCountSettingsBadge" class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span>
+          </button>
         </div>
 
         <!-- SUBPANEL 1: Zone & Unit Accounts (Logins & Passwords) -->
@@ -1522,6 +1524,145 @@
                   <!-- Populated dynamically -->
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBPANEL 4: Trash & Recycle Bin -->
+        <div id="settingsSubPanelTrash" class="settings-subpanel" style="display: none;">
+          <div class="table-container" style="padding: 1.5rem 1.75rem;">
+            <!-- Top Control Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                  <i class="fas fa-trash-alt" style="color: #ef4444;"></i> Trash &amp; Recycle Bin
+                </h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
+                  All deleted delegates and donated contacts are archived here. You can safely restore them back or permanently purge them.
+                </p>
+              </div>
+              <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
+                <button class="btn btn-outline btn-sm" onclick="loadTrashData()">
+                  <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="toggleTrashSqlModal()">
+                  <i class="fas fa-database text-cyan"></i> Supabase SQL Setup
+                </button>
+                <button class="btn btn-outline btn-sm" style="color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="emptyTrash()">
+                  <i class="fas fa-fire-alt"></i> Empty Trash
+                </button>
+              </div>
+            </div>
+
+            <!-- Supabase SQL Banner (Shown if table not created yet) -->
+            <div id="trashSqlSetupBanner" style="display:none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <div>
+                  <h4 style="margin:0 0 0.25rem 0; color:#B45309; font-size:1rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fas fa-info-circle"></i> Supabase "trash" Table Setup Recommended
+                  </h4>
+                  <p style="margin:0; font-size:0.85rem; color:#92400E; line-height:1.5;">
+                    To archive deleted students directly in a dedicated Supabase table, run the SQL script in your Supabase SQL Editor.
+                  </p>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="copyTrashSqlCode(this)">
+                  <i class="fas fa-copy"></i> Copy SQL Script
+                </button>
+              </div>
+            </div>
+
+            <!-- Trash Stats Cards -->
+            <div class="stats-grid" style="margin-bottom: 1.5rem;">
+              <div class="stat-card" style="padding: 1rem 1.25rem;">
+                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 44px; height: 44px; font-size: 1.2rem;">
+                  <i class="fas fa-trash-alt"></i>
+                </div>
+                <div>
+                  <div class="stat-val" id="trashTotalCount" style="font-size: 1.5rem;">0</div>
+                  <div class="stat-label">Total in Trash</div>
+                </div>
+              </div>
+              <div class="stat-card" style="padding: 1rem 1.25rem;">
+                <div class="stat-icon" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); width: 44px; height: 44px; font-size: 1.2rem;">
+                  <i class="fas fa-user-graduate"></i>
+                </div>
+                <div>
+                  <div class="stat-val" id="trashStudentCount" style="font-size: 1.5rem;">0</div>
+                  <div class="stat-label">Deleted Delegates</div>
+                </div>
+              </div>
+              <div class="stat-card" style="padding: 1rem 1.25rem;">
+                <div class="stat-icon" style="background: rgba(230, 0, 103, 0.1); color: var(--magenta); width: 44px; height: 44px; font-size: 1.2rem;">
+                  <i class="fas fa-hand-holding-heart"></i>
+                </div>
+                <div>
+                  <div class="stat-val" id="trashDonatedCount" style="font-size: 1.5rem;">0</div>
+                  <div class="stat-label">Deleted Donated Contacts</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search & Filters Grid -->
+            <div class="filter-grid" style="margin-bottom: 1.5rem;">
+              <div>
+                <label class="form-label" style="font-size:0.8rem;">Search</label>
+                <input type="text" id="trashSearchInput" class="form-input" placeholder="Search name, phone, reg id..." oninput="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.8rem;">Category</label>
+                <select id="trashTypeFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+                  <option value="all">All Items</option>
+                  <option value="student">Delegates Directory (Students)</option>
+                  <option value="donated_contact">Donated Contacts (Referrals)</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:0.8rem;">Zone</label>
+                <select id="trashZoneFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
+                  <option value="">All Zones</option>
+                  <option value="Chavakkad">Chavakkad</option>
+                  <option value="Pavaratty">Pavaratty</option>
+                  <option value="Kunnamkulam">Kunnamkulam</option>
+                  <option value="Guruvayoor">Guruvayoor</option>
+                  <option value="Thrissur City">Thrissur City</option>
+                  <option value="Kodungallur">Kodungallur</option>
+                  <option value="Kaipamangalam">Kaipamangalam</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Trash Table (Desktop) -->
+            <div style="overflow-x: auto;">
+              <table class="data-table" style="font-size: 0.88rem;">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name &amp; Reg ID</th>
+                    <th>Phone Numbers</th>
+                    <th>Details / Donor</th>
+                    <th>Zone / Unit</th>
+                    <th>Deleted At &amp; By</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="trashTableBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Trash Mobile Cards -->
+            <div id="trashMobileCards" class="mobile-only" style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem;">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="trashEmptyState" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+              <div style="font-size: 3rem; margin-bottom: 0.75rem; color: #CBD5E1;">
+                <i class="fas fa-trash-alt"></i>
+              </div>
+              <h4 style="margin: 0 0 0.5rem 0; color: var(--text-main);">Trash is empty</h4>
+              <p style="margin: 0; font-size: 0.9rem;">Deleted students and donated contacts will appear here.</p>
             </div>
           </div>
         </div>
@@ -1790,145 +1931,6 @@
                 <!-- Dynamically populated from spreadsheet -->
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ================= SECTION 7: TRASH & RECYCLE BIN ================= -->
-      <div id="tab-trash" class="dashboard-section" style="display: none;">
-        <div class="table-container" style="padding: 1.5rem 1.75rem;">
-          <!-- Top Control Header -->
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-            <div>
-              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
-                <i class="fas fa-trash-alt" style="color: #ef4444;"></i> Trash & Recycle Bin
-              </h3>
-              <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.35rem 0 0 0;">
-                All deleted delegates and donated contacts are archived here. You can safely restore them back or permanently purge them.
-              </p>
-            </div>
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; align-items:center;">
-              <button class="btn btn-outline btn-sm" onclick="loadTrashData()">
-                <i class="fas fa-sync-alt"></i> Refresh
-              </button>
-              <button class="btn btn-outline btn-sm" onclick="toggleTrashSqlModal()">
-                <i class="fas fa-database text-cyan"></i> Supabase SQL Setup
-              </button>
-              <button class="btn btn-outline btn-sm" style="color: #ef4444; border-color: rgba(239,68,68,0.3);" onclick="emptyTrash()">
-                <i class="fas fa-fire-alt"></i> Empty Trash
-              </button>
-            </div>
-          </div>
-
-          <!-- Supabase SQL Banner (Shown if table not created yet) -->
-          <div id="trashSqlSetupBanner" style="display:none; background: #FFFBEB; border: 1.5px solid #FDE68A; border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-              <div>
-                <h4 style="margin:0 0 0.25rem 0; color:#B45309; font-size:1rem; display:flex; align-items:center; gap:0.5rem;">
-                  <i class="fas fa-info-circle"></i> Supabase "trash" Table Setup Recommended
-                </h4>
-                <p style="margin:0; font-size:0.85rem; color:#92400E; line-height:1.5;">
-                  To archive deleted students directly in a dedicated Supabase table, run the SQL script in your Supabase SQL Editor.
-                </p>
-              </div>
-              <button class="btn btn-sm btn-primary" onclick="copyTrashSqlCode(this)">
-                <i class="fas fa-copy"></i> Copy SQL Script
-              </button>
-            </div>
-          </div>
-
-          <!-- Trash Stats Cards -->
-          <div class="stats-grid" style="margin-bottom: 1.5rem;">
-            <div class="stat-card" style="padding: 1rem 1.25rem;">
-              <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; width: 44px; height: 44px; font-size: 1.2rem;">
-                <i class="fas fa-trash-alt"></i>
-              </div>
-              <div>
-                <div class="stat-val" id="trashTotalCount" style="font-size: 1.5rem;">0</div>
-                <div class="stat-label">Total in Trash</div>
-              </div>
-            </div>
-            <div class="stat-card" style="padding: 1rem 1.25rem;">
-              <div class="stat-icon" style="background: rgba(0, 168, 232, 0.1); color: var(--cyan); width: 44px; height: 44px; font-size: 1.2rem;">
-                <i class="fas fa-user-graduate"></i>
-              </div>
-              <div>
-                <div class="stat-val" id="trashStudentCount" style="font-size: 1.5rem;">0</div>
-                <div class="stat-label">Deleted Delegates</div>
-              </div>
-            </div>
-            <div class="stat-card" style="padding: 1rem 1.25rem;">
-              <div class="stat-icon" style="background: rgba(230, 0, 103, 0.1); color: var(--magenta); width: 44px; height: 44px; font-size: 1.2rem;">
-                <i class="fas fa-hand-holding-heart"></i>
-              </div>
-              <div>
-                <div class="stat-val" id="trashDonatedCount" style="font-size: 1.5rem;">0</div>
-                <div class="stat-label">Deleted Donated Contacts</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Search & Filters Grid -->
-          <div class="filter-grid" style="margin-bottom: 1.5rem;">
-            <div>
-              <label class="form-label" style="font-size:0.8rem;">Search</label>
-              <input type="text" id="trashSearchInput" class="form-input" placeholder="Search name, phone, reg id..." oninput="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.8rem;">Category</label>
-              <select id="trashTypeFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
-                <option value="all">All Items</option>
-                <option value="student">Delegates Directory (Students)</option>
-                <option value="donated_contact">Donated Contacts (Referrals)</option>
-              </select>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:0.8rem;">Zone</label>
-              <select id="trashZoneFilter" class="form-select" onchange="handleTrashFilterChange()" style="padding:0.5rem; font-size:0.85rem;">
-                <option value="">All Zones</option>
-                <option value="Chavakkad">Chavakkad</option>
-                <option value="Pavaratty">Pavaratty</option>
-                <option value="Kunnamkulam">Kunnamkulam</option>
-                <option value="Guruvayoor">Guruvayoor</option>
-                <option value="Thrissur City">Thrissur City</option>
-                <option value="Kodungallur">Kodungallur</option>
-                <option value="Kaipamangalam">Kaipamangalam</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Trash Table (Desktop) -->
-          <div style="overflow-x: auto;">
-            <table class="data-table" style="font-size: 0.88rem;">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Name & Reg ID</th>
-                  <th>Phone Numbers</th>
-                  <th>Details / Donor</th>
-                  <th>Zone / Unit</th>
-                  <th>Deleted At & By</th>
-                  <th style="text-align: right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="trashTableBody">
-                <!-- Dynamically populated -->
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Trash Mobile Cards -->
-          <div id="trashMobileCards" class="mobile-only" style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 1rem;">
-            <!-- Dynamically populated -->
-          </div>
-
-          <!-- Empty State -->
-          <div id="trashEmptyState" style="display:none; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
-            <div style="font-size: 3rem; margin-bottom: 0.75rem; color: #CBD5E1;">
-              <i class="fas fa-trash-alt"></i>
-            </div>
-            <h4 style="margin: 0 0 0.5rem 0; color: var(--text-main);">Trash is empty</h4>
-            <p style="margin: 0; font-size: 0.9rem;">Deleted students and donated contacts will appear here.</p>
           </div>
         </div>
       </div>
@@ -2949,6 +2951,12 @@
         if (p) p.style.display = 'block';
         const b = document.getElementById('subtabBtnAreaSummary');
         if (b) b.classList.add('active');
+      } else if (subId === 'trash') {
+        const p = document.getElementById('settingsSubPanelTrash');
+        if (p) p.style.display = 'block';
+        const b = document.getElementById('subtabBtnTrash');
+        if (b) b.classList.add('active');
+        loadTrashData();
       }
     }
 
@@ -2965,6 +2973,13 @@
         return;
       }
 
+      // If user calls trash tab, redirect to Settings trash subtab
+      if (tabId === 'tab-trash') {
+        switchTab('tab-panchayath');
+        switchSettingsSubTab('trash');
+        return;
+      }
+
       // Media Management: District Admin only
       if (tabId === 'tab-media' && sessionUser && sessionUser.role !== 'District') {
         alert('Access Denied: Media Management is only accessible to District Admins.');
@@ -2974,15 +2989,6 @@
       if (tabId === 'tab-panchayath' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
         alert('Access Denied: Only District and Zone Admins can view Settings.');
         return;
-      }
-
-      if (tabId === 'tab-trash' && sessionUser && sessionUser.role !== 'District' && sessionUser.role !== 'Zone') {
-        alert('Access Denied: Only Admins can view Trash.');
-        return;
-      }
-
-      if (tabId === 'tab-trash') {
-        loadTrashData();
       }
 
       if (tabId === 'tab-panchayath' && sessionUser) {
@@ -8743,6 +8749,8 @@ CREATE POLICY "Allow anon delete on trash" ON public.trash FOR DELETE TO anon US
       const count = trashDataList.length;
       const navBadge = document.getElementById('trashCountNavBadge');
       if (navBadge) navBadge.textContent = count;
+      const settingsBadge = document.getElementById('trashCountSettingsBadge');
+      if (settingsBadge) settingsBadge.textContent = count;
       const totalCount = document.getElementById('trashTotalCount');
       if (totalCount) totalCount.textContent = count;
 
@@ -9070,10 +9078,6 @@ CREATE POLICY "Allow anon delete on trash" ON public.trash FOR DELETE TO anon US
     <button class="bottom-nav-item" id="bottomTabMediaLink" onclick="switchTab('tab-media')" style="display: none;">
       <i class="fas fa-images"></i>
       <span>Media</span>
-    </button>
-    <button class="bottom-nav-item" id="bottomTabTrashLink" onclick="switchTab('tab-trash')" style="display: none;">
-      <i class="fas fa-trash-alt"></i>
-      <span>Trash</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabPanchayathLink" onclick="switchTab('tab-panchayath')">
       <i class="fas fa-cog"></i>
