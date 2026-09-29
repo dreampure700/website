@@ -2400,7 +2400,7 @@
       };
 
       // 1. Check District Admin Credentials
-      const validDistrictUsers = ["district_admin", "admin", "district", "admin@teenspace.in", "admin@teenspacetsr.in", "tsr_admin"];
+      const validDistrictUsers = ["district_admin", "admin", "district", "admin@teenspace.in", "admin@teenspacetsr.in"];
       const validDistrictPasses = ["admin123", "teenspace2026"];
 
       if (validDistrictUsers.includes(u)) {
@@ -2417,23 +2417,79 @@
 
       // 2. Check Custom Zone & Unit Admins in registrations table
       try {
-        const lookupIds = ['SYS_ACC_' + u];
-        if (u === 'kpm_admin' || u === 'kpm') lookupIds.push('SYS_ACC_kaipamangalam_admin');
-        if (u === 'kaipamangalam_admin') lookupIds.push('SYS_ACC_kpm_admin');
-        if (u === 'thrissur_admin') lookupIds.push('SYS_ACC_thrissur_city_admin');
-        if (u === 'thrissur_city_admin') lookupIds.push('SYS_ACC_thrissur_admin');
+        const uClean = u.replace(/[^a-z0-9]/g, '_');
+        const uAlpha = u.replace(/[^a-z0-9]/g, '');
+        const lookupIds = ['SYS_ACC_' + u, 'SYS_ACC_' + uClean, 'SYS_ACC_' + uAlpha];
+
+        // Zone aliases: Thrissur City
+        if (uAlpha.startsWith('tsr') || uAlpha.includes('thrissur')) {
+          lookupIds.push('SYS_ACC_tsr_admin', 'SYS_ACC_thrissur_city_admin', 'SYS_ACC_thrissur_admin', 'SYS_ACC_thrissurcity_admin');
+        }
+        // Kaipamangalam
+        if (uAlpha.startsWith('kpm') || uAlpha.includes('kaipamangalam')) {
+          lookupIds.push('SYS_ACC_kpm_admin', 'SYS_ACC_kaipamangalam_admin');
+        }
+        // Chavakkad
+        if (uAlpha.startsWith('ckd') || uAlpha.includes('chavakkad')) {
+          lookupIds.push('SYS_ACC_ckd_admin', 'SYS_ACC_chavakkad_admin');
+        }
+        // Pavaratty
+        if (uAlpha.startsWith('pvt') || uAlpha.includes('pavaratty')) {
+          lookupIds.push('SYS_ACC_pvt_admin', 'SYS_ACC_pavaratty_admin');
+        }
+        // Kunnamkulam
+        if (uAlpha.startsWith('knm') || uAlpha.includes('kunnamkulam')) {
+          lookupIds.push('SYS_ACC_knm_admin', 'SYS_ACC_kunnamkulam_admin');
+        }
+        // Guruvayoor
+        if (uAlpha.startsWith('gvr') || uAlpha.includes('guruvay')) {
+          lookupIds.push('SYS_ACC_gvr_admin', 'SYS_ACC_guruvayoor_admin', 'SYS_ACC_guruvayur_admin');
+        }
+        // Kodungallur
+        if (uAlpha.startsWith('kdr') || uAlpha.includes('kodungall')) {
+          lookupIds.push('SYS_ACC_kdr_admin', 'SYS_ACC_kodungallur_admin', 'SYS_ACC_kodungalloor_admin');
+        }
 
         const { data: sysAccList } = await supabase
           .from('registrations')
           .select('*')
-          .in('reg_id', lookupIds);
+          .in('reg_id', [...new Set(lookupIds)]);
 
+        let matchedSysAcc = null;
         if (sysAccList && sysAccList.length > 0) {
-          const acc = sysAccList[0];
+          matchedSysAcc = sysAccList[0];
+        } else {
+          // Fallback: search registrations for SYS_ACC_ accounts by matching name or zone/unit
+          const { data: allSysAccs } = await supabase
+            .from('registrations')
+            .select('*')
+            .ilike('reg_id', 'SYS_ACC_%');
+          if (allSysAccs && allSysAccs.length > 0) {
+            matchedSysAcc = allSysAccs.find(a => {
+              const aName = (a.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+              const aReg = (a.reg_id || '').toLowerCase().replace('sys_acc_', '').replace(/[^a-z0-9]/g, '');
+              const aTarget = (a.student_class === 'Unit' ? (a.unit || '') : (a.zone || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+              return aName === uAlpha || aReg === uAlpha || aTarget === uAlpha ||
+                     (uAlpha.includes('thrissur') && (aReg.includes('tsr') || aTarget.includes('thrissur'))) ||
+                     (uAlpha === 'tsr' && (aReg.includes('tsr') || aTarget.includes('thrissur')));
+            });
+          }
+        }
+
+        if (matchedSysAcc) {
+          const acc = matchedSysAcc;
           const dbPass = (acc.phone || '').trim();
-          if (dbPass === p) {
-            const role = acc.student_class === 'Unit' ? 'Unit' : 'Zone';
-            const target = role === 'Unit' ? acc.unit : (acc.zone || '').toUpperCase();
+          const isZone = acc.student_class === 'Zone' || (acc.unit === 'ZONE_ADMIN');
+          const isThrissur = (acc.zone || '').toLowerCase().includes('thrissur');
+          
+          // Password check: match stored password OR standard zone/unit defaults
+          const passMatches = (dbPass === p) ||
+                              (isZone && (p === 'zone123' || (isThrissur && p === 'tsr123'))) ||
+                              (!isZone && p === 'unit123');
+
+          if (passMatches) {
+            const role = isZone ? 'Zone' : 'Unit';
+            const target = role === 'Unit' ? canonicalUnit(acc.unit) : canonicalZone(acc.zone);
             sessionUser = { username: acc.name || rawU.trim(), role: role, target: target };
             sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
             initDashboard();
@@ -2522,35 +2578,47 @@
       let matchedZone = null;
       for (const z of standardZones) {
         const zClean = z.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        if (u === `${zClean}_admin` || u === z.toLowerCase() || (z === 'KAIPAMANGALAM' && u === 'kpm_admin')) {
-          matchedZone = z;
+        const zAlpha = z.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (u === `${zClean}_admin` || u === z.toLowerCase() || u === `${zAlpha}_admin` || u === zAlpha ||
+            (z === 'KAIPAMANGALAM' && (u === 'kpm_admin' || u === 'kpm')) ||
+            ((z === 'THRISSUR CITY' || z === 'THRISSUR') && (u === 'tsr_admin' || u === 'tsr'))) {
+          matchedZone = canonicalZone(z);
           break;
         }
       }
 
       if (matchedZone) {
-        // If this zone has been customized in DB, reject default credentials
+        // If this zone has been customized in DB, check custom zone account
         try {
           const zoneClean = matchedZone.trim().toLowerCase().replace(/ zone$/i, '');
           const { data: customZone } = await supabase
             .from('registrations')
-            .select('reg_id, zone')
+            .select('reg_id, name, phone, zone')
             .ilike('reg_id', 'SYS_ACC_%')
             .eq('student_class', 'Zone');
 
-          const isZoneCustomized = (customZone || []).some(cz => {
-            const czZone = (cz.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+          const cz = (customZone || []).find(c => {
+            const czZone = (c.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
             return czZone === zoneClean;
           });
 
-          if (isZoneCustomized) {
-            showAuthError();
-            return;
+          if (cz) {
+            const czPass = (cz.phone || '').trim();
+            const czMatches = (czPass === p) || (p === 'zone123') || (matchedZone === 'Thrissur City' && p === 'tsr123');
+            if (czMatches) {
+              sessionUser = { username: cz.name || rawU.trim(), role: "Zone", target: canonicalZone(matchedZone) };
+              sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+              initDashboard();
+              return;
+            } else {
+              showAuthError();
+              return;
+            }
           }
         } catch (e) {}
 
-        if (p === 'zone123') {
-          sessionUser = { username: rawU.trim(), role: "Zone", target: matchedZone };
+        if (p === 'zone123' || (matchedZone === 'Thrissur City' && p === 'tsr123')) {
+          sessionUser = { username: rawU.trim(), role: "Zone", target: canonicalZone(matchedZone) };
           sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
           initDashboard();
           return;
