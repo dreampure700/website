@@ -2843,31 +2843,59 @@
           mapping = merged;
         }
 
-        registrations = studentRegData.map(d => ({
-          Timestamp: d.timestamp,
-          "Registration ID": d.reg_id,
-          regId: d.reg_id,
-          "Student Name": d.name,
-          name: d.name,
-          "Student Mobile Number": d.phone,
-          phone: d.phone,
-          "Parent Mobile Number": d.parent_phone || "",
-          Class: d.student_class || "",
-          School: d.school || "",
-          Place: d.place || "",
-          Panchayath: d.panchayath || "",
-          Ward: d.ward || "",
-          "Organization Unit": canonicalUnit(d.unit),
-          unit: canonicalUnit(d.unit),
-          "Organization Zone": canonicalZone(d.zone),
-          zone: canonicalZone(d.zone),
-          "Assigned Vehicle": d.assigned_vehicle || "",
-          assignedVehicle: d.assigned_vehicle || "",
-          "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
-          pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
-          "Picked Up": d.picked_up ? "true" : "false",
-          pickedUp: d.picked_up ? "true" : "false"
-        }));
+        // Build fast lookup map for Panchayath + Ward -> { Unit, Zone }
+        const mappingLookup = new Map();
+        mapping.forEach(m => {
+          if (m.Panchayath && m.Ward) {
+            const key = (m.Panchayath || '').trim().toUpperCase() + '__' + (m.Ward || '').trim().toUpperCase();
+            mappingLookup.set(key, { unit: canonicalUnit(m.Unit), zone: canonicalZone(m.Zone) });
+          }
+        });
+
+        registrations = studentRegData.map(d => {
+          let resolvedUnit = canonicalUnit(d.unit);
+          let resolvedZone = canonicalZone(d.zone);
+
+          // If unit is missing or N/A, dynamically resolve from master mapping
+          if (!resolvedUnit || resolvedUnit === 'N/A' || resolvedUnit === '') {
+            const key = (d.panchayath || '').trim().toUpperCase() + '__' + (d.ward || '').trim().toUpperCase();
+            if (mappingLookup.has(key)) {
+              const mapped = mappingLookup.get(key);
+              if (mapped.unit && mapped.unit !== 'N/A') {
+                resolvedUnit = mapped.unit;
+              }
+              if (mapped.zone && mapped.zone !== 'N/A' && (!resolvedZone || resolvedZone === 'N/A')) {
+                resolvedZone = mapped.zone;
+              }
+            }
+          }
+
+          return {
+            Timestamp: d.timestamp,
+            "Registration ID": d.reg_id,
+            regId: d.reg_id,
+            "Student Name": d.name,
+            name: d.name,
+            "Student Mobile Number": d.phone,
+            phone: d.phone,
+            "Parent Mobile Number": d.parent_phone || "",
+            Class: d.student_class || "",
+            School: d.school || "",
+            Place: d.place || "",
+            Panchayath: d.panchayath || "",
+            Ward: d.ward || "",
+            "Organization Unit": resolvedUnit,
+            unit: resolvedUnit,
+            "Organization Zone": resolvedZone,
+            zone: resolvedZone,
+            "Assigned Vehicle": d.assigned_vehicle || "",
+            assignedVehicle: d.assigned_vehicle || "",
+            "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
+            pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
+            "Picked Up": d.picked_up ? "true" : "false",
+            pickedUp: d.picked_up ? "true" : "false"
+          };
+        });
 
         // 6. Fetch Media
         try {
@@ -7071,11 +7099,24 @@
         // Also attempt direct update on mapping table in background
         try {
           if (mode === 'add') {
-            await supabase.from('mapping').insert([{ panchayath, ward, unit, zone }]);
+            await supabase.from('mapping').insert([{ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }]);
           } else {
-            await supabase.from('mapping').update({ panchayath, ward, unit, zone }).eq('panchayath', origP).eq('ward', origW);
+            await supabase.from('mapping').update({ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }).eq('panchayath', origP).eq('ward', origW);
           }
         } catch(ignore) {}
+
+        // Cascade update to all existing registered students with this Panchayath & Ward
+        try {
+          if (unit && unit !== 'N/A') {
+            await supabase.from('registrations')
+              .update({ unit: canonicalUnit(unit), zone: canonicalZone(zone) })
+              .ilike('panchayath', panchayath)
+              .ilike('ward', ward)
+              .not('reg_id', 'like', 'SYS_%');
+          }
+        } catch(cErr) {
+          console.warn("Notice cascading registrations update:", cErr);
+        }
 
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Mapping';
