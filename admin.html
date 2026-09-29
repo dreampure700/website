@@ -2108,12 +2108,12 @@
           <label class="form-label" for="mapZoneInput">Organization Zone *</label>
           <select id="mapZoneInput" class="form-select" required>
             <option value="Chavakkad">Chavakkad</option>
-            <option value="Guruvayur">Guruvayur</option>
-            <option value="Kaipamangalam">Kaipamangalam</option>
-            <option value="Kodungallur">Kodungallur</option>
-            <option value="Kunnamkulam">Kunnamkulam</option>
             <option value="Pavaratty">Pavaratty</option>
-            <option value="Thrissur">Thrissur</option>
+            <option value="Kunnamkulam">Kunnamkulam</option>
+            <option value="Guruvayoor">Guruvayoor</option>
+            <option value="Thrissur City">Thrissur City</option>
+            <option value="Kodungallur">Kodungallur</option>
+            <option value="Kaipamangalam">Kaipamangalam</option>
           </select>
         </div>
         
@@ -2744,11 +2744,52 @@
         if (rRes1.error) throw rRes1.error;
         const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
         
-        // Separate custom accounts, targets & donated contacts from student delegate registrations
         const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
         const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
         const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
+        const sysMapRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_MAP_'));
         const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
+
+        // Apply SYS_MAP overrides to mapping table
+        if (sysMapRecs.length > 0) {
+          const mapOverrides = new Map();
+          sysMapRecs.forEach(r => {
+            const key = (r.panchayath || '').trim().toUpperCase() + '__' + (r.ward || '').trim().toUpperCase();
+            mapOverrides.set(key, r);
+          });
+
+          const merged = [];
+          mapping.forEach(m => {
+            const key = (m.Panchayath || '').trim().toUpperCase() + '__' + (m.Ward || '').trim().toUpperCase();
+            if (mapOverrides.has(key)) {
+              const ov = mapOverrides.get(key);
+              if (ov.student_class !== 'DELETED') {
+                merged.push({
+                  Panchayath: ov.panchayath || m.Panchayath,
+                  Ward: ov.ward || m.Ward,
+                  Unit: ov.unit || m.Unit,
+                  Zone: ov.zone || m.Zone
+                });
+              }
+              mapOverrides.delete(key);
+            } else {
+              merged.push(m);
+            }
+          });
+
+          mapOverrides.forEach(ov => {
+            if (ov.student_class !== 'DELETED') {
+              merged.push({
+                Panchayath: ov.panchayath,
+                Ward: ov.ward,
+                Unit: ov.unit,
+                Zone: ov.zone
+              });
+            }
+          });
+
+          mapping = merged;
+        }
 
         registrations = studentRegData.map(d => ({
           Timestamp: d.timestamp,
@@ -6775,16 +6816,42 @@
       });
     }
 
-    function updateMappingUnits() {
+    function updateMappingUnits(selectedUnit = '') {
       const zoneSelect = document.getElementById('mapZoneInput');
       const unitSelect = document.getElementById('mapUnitInput');
-      const zoneVal = zoneSelect.value;
+      const zoneVal = zoneSelect.value || '';
       
-      unitSelect.innerHTML = '<option value="">Select Unit</option>';
+      unitSelect.innerHTML = '<option value="">Select Unit</option><option value="N/A">N/A (No Unit Allocated)</option>';
       if (!zoneVal) return;
 
-      const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+      const cleanZone = zoneVal.trim().toLowerCase().replace(/ zone$/i, '');
+      let zoneUnits = [];
+      for (const [k, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
+        if (k.toLowerCase().replace(/ zone$/i, '') === cleanZone) {
+          zoneUnits = uList;
+          break;
+        }
+      }
+
       zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+      // If existing unit is not in list, dynamically append it so it's selectable
+      if (selectedUnit && selectedUnit !== 'N/A') {
+        const uClean = selectedUnit.trim().toLowerCase();
+        let exists = false;
+        for (let i = 0; i < unitSelect.options.length; i++) {
+          if (unitSelect.options[i].value.trim().toLowerCase() === uClean) {
+            unitSelect.selectedIndex = i;
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          const opt = new Option(selectedUnit, selectedUnit);
+          unitSelect.appendChild(opt);
+          unitSelect.value = selectedUnit;
+        }
+      }
     }
 
     function openMappingModal() {
@@ -6798,7 +6865,7 @@
       const zoneSelect = document.getElementById('mapZoneInput');
       const unitSelect = document.getElementById('mapUnitInput');
 
-      zoneSelect.onchange = updateMappingUnits;
+      zoneSelect.onchange = () => updateMappingUnits();
 
       if (sessionUser.role === 'Zone') {
         zoneSelect.value = sessionUser.target;
@@ -6814,8 +6881,7 @@
         }
         zoneSelect.value = userZone;
         zoneSelect.disabled = true;
-        updateMappingUnits();
-        
+        updateMappingUnits(sessionUser.target);
         unitSelect.value = sessionUser.target;
         unitSelect.disabled = true;
       } else {
@@ -6829,26 +6895,45 @@
 
     function openMappingEditModal(p, w) {
       const modal = document.getElementById('mappingModal');
-      const item = mapping.find(m => m.Panchayath === p && m.Ward === w);
-      if (!item) return;
+      const item = mapping.find(m => m.Panchayath === p && m.Ward === w) ||
+                   mapping.find(m => (m.Panchayath || '').trim().toLowerCase() === (p || '').trim().toLowerCase() && (m.Ward || '').trim().toLowerCase() === (w || '').trim().toLowerCase());
+      if (!item) {
+        alert(`Could not find record for Panchayath: "${p}", Ward: "${w}"`);
+        return;
+      }
 
       document.getElementById('mappingModalTitle').innerHTML = '<i class="fas fa-network-wired text-cyan"></i> Edit Mapping';
       document.getElementById('mappingMode').value = 'edit';
       
-      document.getElementById('origPanchayathInput').value = p;
-      document.getElementById('origWardInput').value = w;
+      document.getElementById('origPanchayathInput').value = item.Panchayath;
+      document.getElementById('origWardInput').value = item.Ward;
       
       document.getElementById('mapPanchayathInput').value = item.Panchayath;
       document.getElementById('mapWardInput').value = item.Ward;
       
       const zoneSelect = document.getElementById('mapZoneInput');
-      zoneSelect.onchange = updateMappingUnits;
-      zoneSelect.value = item.Zone || '';
-      updateMappingUnits();
+      zoneSelect.onchange = () => updateMappingUnits();
+
+      // Case-insensitive match for zone
+      const cleanZone = (item.Zone || '').trim().toLowerCase().replace(/ zone$/i, '');
+      let zoneMatched = false;
+      for (let i = 0; i < zoneSelect.options.length; i++) {
+        const optClean = zoneSelect.options[i].value.trim().toLowerCase().replace(/ zone$/i, '');
+        if (optClean === cleanZone || (cleanZone === 'thrissur' && optClean.includes('thrissur'))) {
+          zoneSelect.selectedIndex = i;
+          zoneMatched = true;
+          break;
+        }
+      }
+      if (!zoneMatched && item.Zone) {
+        zoneSelect.appendChild(new Option(item.Zone, item.Zone));
+        zoneSelect.value = item.Zone;
+      }
+
+      // Populate units with current unit pre-selected
+      updateMappingUnits(item.Unit || '');
 
       const unitSelect = document.getElementById('mapUnitInput');
-      unitSelect.value = item.Unit || '';
-
       if (sessionUser.role === 'Zone') {
         zoneSelect.disabled = true;
       } else if (sessionUser.role === 'Unit') {
@@ -6866,64 +6951,113 @@
       document.getElementById('mappingModal').classList.remove('active');
     }
 
-    document.getElementById('mappingForm').addEventListener('submit', (e) => {
+    document.getElementById('mappingForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const mode = document.getElementById('mappingMode').value;
       const origP = document.getElementById('origPanchayathInput').value;
       const origW = document.getElementById('origWardInput').value;
       const panchayath = document.getElementById('mapPanchayathInput').value.trim();
       const ward = document.getElementById('mapWardInput').value.trim();
-      const unit = document.getElementById('mapUnitInput').value.trim();
-      const zone = document.getElementById('mapZoneInput').value;
+      const unit = document.getElementById('mapUnitInput').value.trim() || 'N/A';
+      const zone = document.getElementById('mapZoneInput').value.trim();
 
       const submitBtn = document.getElementById('mappingSubmitBtn');
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-      let dbQuery;
-      if (mode === 'add') {
-        dbQuery = supabase
-          .from('mapping')
-          .insert([{ panchayath, ward, unit, zone }]);
-      } else {
-        dbQuery = supabase
-          .from('mapping')
-          .update({ panchayath, ward, unit, zone })
-          .eq('panchayath', origP)
-          .eq('ward', origW);
-      }
+      // Build persistent SYS_MAP ID in registrations table
+      const cleanKey = (panchayath + '__' + ward).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+      const regId = 'SYS_MAP_' + cleanKey;
 
-      dbQuery.then(({ error }) => {
+      try {
+        // If editing and Panchayath or Ward changed, clear old key
+        if (mode === 'edit' && (origP !== panchayath || origW !== ward)) {
+          const oldCleanKey = (origP + '__' + origW).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+          const oldRegId = 'SYS_MAP_' + oldCleanKey;
+          await supabase.from('registrations').delete().eq('reg_id', oldRegId);
+          // Also mark old ward deleted if it existed in base mapping
+          await supabase.from('registrations').insert([{
+            reg_id: oldRegId,
+            panchayath: origP,
+            ward: origW,
+            unit: 'N/A',
+            zone: zone,
+            phone: '0000000000',
+            name: 'SYSTEM_MAPPING_OVERRIDE',
+            student_class: 'DELETED',
+            place: 'SYSTEM_CONFIG'
+          }]);
+        }
+
+        // Upsert into registrations table (delete existing first if present to avoid duplicate key)
+        await supabase.from('registrations').delete().eq('reg_id', regId);
+        const { error: insErr } = await supabase.from('registrations').insert([{
+          reg_id: regId,
+          panchayath: panchayath,
+          ward: ward,
+          unit: unit,
+          zone: zone,
+          phone: '0000000000',
+          name: 'SYSTEM_MAPPING_OVERRIDE',
+          student_class: 'ACTIVE',
+          place: 'SYSTEM_CONFIG'
+        }]);
+
+        if (insErr) throw insErr;
+
+        // Also attempt direct update on mapping table in background
+        try {
+          if (mode === 'add') {
+            await supabase.from('mapping').insert([{ panchayath, ward, unit, zone }]);
+          } else {
+            await supabase.from('mapping').update({ panchayath, ward, unit, zone }).eq('panchayath', origP).eq('ward', origW);
+          }
+        } catch(ignore) {}
+
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Mapping';
-        if (!error) {
-          alert('Mapping entry saved successfully!');
-          closeMappingModal();
-          loadData();
-        } else {
-          alert('Error saving mapping: ' + error.message);
-        }
-      });
+        alert('Mapping entry saved successfully!');
+        closeMappingModal();
+        await loadData();
+      } catch (err) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Mapping';
+        alert('Error saving mapping: ' + (err.message || err));
+      }
     });
 
-    function deleteMapping(p, w) {
-      if (!confirm(`Are you sure you want to delete the mapping for Panchayath "${p}", Ward "${w}"? This may impact delegate zone-unit resolution if they register in this ward.`)) {
+    async function deleteMapping(p, w) {
+      if (!confirm(`Are you sure you want to delete the mapping for Panchayath "${p}", Ward "${w}"?`)) {
         return;
       }
       
-      supabase
-        .from('mapping')
-        .delete()
-        .eq('panchayath', p)
-        .eq('ward', w)
-        .then(({ error }) => {
-          if (!error) {
-            alert('Mapping row deleted successfully.');
-            loadData();
-          } else {
-            alert('Error deleting mapping: ' + error.message);
-          }
-        });
+      const cleanKey = (p + '__' + w).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+      const regId = 'SYS_MAP_' + cleanKey;
+
+      try {
+        await supabase.from('registrations').delete().eq('reg_id', regId);
+        // Mark as DELETED override
+        await supabase.from('registrations').insert([{
+          reg_id: regId,
+          panchayath: p,
+          ward: w,
+          unit: 'N/A',
+          zone: 'N/A',
+          phone: '0000000000',
+          name: 'SYSTEM_MAPPING_OVERRIDE',
+          student_class: 'DELETED',
+          place: 'SYSTEM_CONFIG'
+        }]);
+
+        try {
+          await supabase.from('mapping').delete().eq('panchayath', p).eq('ward', w);
+        } catch(ignore) {}
+
+        alert('Mapping row deleted successfully.');
+        await loadData();
+      } catch (err) {
+        alert('Error deleting mapping: ' + (err.message || err));
+      }
     }
 
     // ========================================================

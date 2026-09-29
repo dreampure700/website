@@ -267,15 +267,59 @@ document.addEventListener('DOMContentLoaded', () => {
     Promise.all([
       supabase.from('mapping').select('*').range(0, 999),
       supabase.from('mapping').select('*').range(1000, 1999),
-      supabase.from('registrations').select('school').range(0, 4999)
+      supabase.from('registrations').select('school, reg_id, panchayath, ward, unit, zone, student_class').range(0, 4999)
     ]).then(([m1, m2, regRes]) => {
       const allMappingData = [...(m1.data || []), ...(m2.data || [])];
-      masterMapping = allMappingData.map(m => ({
+      let baseMapping = allMappingData.map(m => ({
         Panchayath: m.panchayath,
         Ward: m.ward,
         Unit: m.unit,
         Zone: m.zone
       }));
+
+      // Apply SYS_MAP overrides from registrations table
+      const sysMapRecs = (regRes.data || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_MAP_'));
+      if (sysMapRecs.length > 0) {
+        const mapOverrides = new Map();
+        sysMapRecs.forEach(r => {
+          const key = (r.panchayath || '').trim().toUpperCase() + '__' + (r.ward || '').trim().toUpperCase();
+          mapOverrides.set(key, r);
+        });
+
+        const merged = [];
+        baseMapping.forEach(m => {
+          const key = (m.Panchayath || '').trim().toUpperCase() + '__' + (m.Ward || '').trim().toUpperCase();
+          if (mapOverrides.has(key)) {
+            const ov = mapOverrides.get(key);
+            if (ov.student_class !== 'DELETED') {
+              merged.push({
+                Panchayath: ov.panchayath || m.Panchayath,
+                Ward: ov.ward || m.Ward,
+                Unit: ov.unit || m.Unit,
+                Zone: ov.zone || m.Zone
+              });
+            }
+            mapOverrides.delete(key);
+          } else {
+            merged.push(m);
+          }
+        });
+
+        mapOverrides.forEach(ov => {
+          if (ov.student_class !== 'DELETED') {
+            merged.push({
+              Panchayath: ov.panchayath,
+              Ward: ov.ward,
+              Unit: ov.unit,
+              Zone: ov.zone
+            });
+          }
+        });
+
+        baseMapping = merged;
+      }
+
+      masterMapping = baseMapping;
 
       const rawSchools = (regRes.data || []).map(r => r.school).filter(Boolean);
       masterSchools = [...new Set(rawSchools)].sort();
