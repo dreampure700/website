@@ -400,15 +400,9 @@
   <!-- TOAST NOTIFICATION -->
   <div id="toast">Copied to clipboard</div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
     const SUPABASE_URL = "https://vnpiylttdjedglsggeea.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_DX7OM5MeL2cTveK0gybXfg_UFUL1Um1";
-    let supabase = null;
-    if (window.supabase) {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
 
     const ORGANIZATIONAL_MAP = {
       'Chavakkad': ['Mannalamkunnu', 'Akalad', 'Thiruvathra', 'Edakazhiyoor'],
@@ -447,6 +441,7 @@
 
     function showToast(text) {
       const t = document.getElementById('toast');
+      if (!t) return;
       t.textContent = text;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2000);
@@ -457,25 +452,45 @@
       if (icon) icon.classList.add('fa-spin');
 
       try {
-        if (!supabase) return;
-        const [r1, r2, r3, r4] = await Promise.all([
-          supabase.from('registrations').select('reg_id, zone, unit').range(0, 999),
-          supabase.from('registrations').select('reg_id, zone, unit').range(1000, 1999),
-          supabase.from('registrations').select('reg_id, zone, unit').range(2000, 2999),
-          supabase.from('registrations').select('reg_id, zone, unit').range(3000, 3999)
-        ]);
+        const url = `${SUPABASE_URL}/rest/v1/registrations?select=reg_id,zone,unit&limit=5000`;
+        const res = await fetch(url, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+          }
+        });
 
-        const all = [...(r1.data || []), ...(r2.data || []), ...(r3.data || []), ...(r4.data || [])];
-        registrations = all.filter(r => !r.reg_id || !r.reg_id.startsWith('SYS_'));
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
+        const data = await res.json();
+        registrations = (data || []).filter(r => !r.reg_id || !r.reg_id.startsWith('SYS_'));
 
         const now = new Date();
         const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        document.getElementById('lastUpdatedTime').textContent = `Updated: ${timeStr}`;
+        const timeEl = document.getElementById('lastUpdatedTime');
+        if (timeEl) timeEl.textContent = `Updated: ${timeStr}`;
 
         renderUI();
         if (manual) showToast('Data refreshed');
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load registrations:', err);
+        const container = document.getElementById('zonesContainer');
+        if (container) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 2rem 1rem; color: #DC2626;">
+              <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block;"></i>
+              <div style="font-weight: 700; margin-bottom: 0.25rem;">Unable to load numbers</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Please check connection or retry below.</div>
+              <button class="btn-action" onclick="loadData(true)">
+                <i class="fas fa-sync-alt"></i> Retry Now
+              </button>
+            </div>
+          `;
+        }
+        const timeEl = document.getElementById('lastUpdatedTime');
+        if (timeEl) timeEl.textContent = 'Sync failed';
       } finally {
         if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 500);
       }
