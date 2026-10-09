@@ -235,6 +235,64 @@
       border: 1px solid rgba(230, 0, 103, 0.15);
     }
     
+    /* Confirmation Status Select & Badges */
+    .status-select {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.32rem 1.65rem 0.32rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-repeat: no-repeat;
+      background-position: right 0.55rem center;
+      background-size: 10px;
+      font-family: inherit;
+    }
+    .status-select.status-confirmed {
+      background-color: #ECFDF5;
+      color: #065F46;
+      border-color: #A7F3D0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23065F46'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    .status-select.status-confirmed:hover {
+      background-color: #D1FAE5;
+      border-color: #6EE7B7;
+    }
+    .status-select.status-pending {
+      background-color: #FFFBEB;
+      color: #92400E;
+      border-color: #FDE68A;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2392400E'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    .status-select.status-pending:hover {
+      background-color: #FEF3C7;
+      border-color: #FCD34D;
+    }
+    .status-select.status-not_coming {
+      background-color: #FEF2F2;
+      color: #991B1B;
+      border-color: #FECACA;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23991B1B'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    .status-select.status-not_coming:hover {
+      background-color: #FEE2E2;
+      border-color: #FCA5A5;
+    }
+    .confirmation-card {
+      transition: all 0.2s ease;
+    }
+    .confirmation-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+
     .dashboard-section {
       display: none;
     }
@@ -1747,8 +1805,50 @@
             </div>
           </div>
 
+          <!-- Student Calling Confirmation Status Cards -->
+          <div class="confirmation-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="stat-card confirmation-card" id="cardStatusConfirmed" style="border-left: 4px solid #10B981; background: #F0FDF4; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('confirmed')" title="Click to filter Confirmed students">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="confirmedCount" style="color: #065F46; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #047857; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Confirmed</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #10B981; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-check-circle"></i></div>
+              </div>
+            </div>
+
+            <div class="stat-card confirmation-card" id="cardStatusPending" style="border-left: 4px solid #F59E0B; background: #FFFBEB; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('pending')" title="Click to filter Pending Calling students">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="pendingCallingCount" style="color: #92400E; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #B45309; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Pending Calling</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-phone-volume"></i></div>
+              </div>
+            </div>
+
+            <div class="stat-card confirmation-card" id="cardStatusNotComing" style="border-left: 4px solid #EF4444; background: #FEF2F2; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('not_coming')" title="Click to filter Not Coming students">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="notComingCount" style="color: #991B1B; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #B91C1C; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Not Coming</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-times-circle"></i></div>
+              </div>
+            </div>
+          </div>
+
           <!-- Advanced Filters Grid -->
           <div class="filter-grid">
+            <div>
+              <label class="form-label" style="font-size:0.8rem;">Calling Status</label>
+              <select id="filterStatus" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
+                <option value="">All Statuses</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="pending">Pending Calling</option>
+                <option value="not_coming">Not Coming</option>
+              </select>
+            </div>
             <div>
               <label class="form-label" style="font-size:0.8rem;">Class</label>
               <select id="filterClass" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
@@ -1794,6 +1894,7 @@
                   <th>Panchayath / Ward</th>
                   <th>Zone / Unit</th>
                   <th>Assigned Vehicle</th>
+                  <th>Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -2309,6 +2410,15 @@
             <select id="studentVehicleInput" class="form-select">
               <option value="">No Vehicle Assigned</option>
               <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="studentStatusInput">Calling Confirmation Status</label>
+            <select id="studentStatusInput" class="form-select">
+              <option value="pending">⏳ Pending Calling</option>
+              <option value="confirmed">✅ Confirmed</option>
+              <option value="not_coming">❌ Not Coming</option>
             </select>
           </div>
         </div>
@@ -3192,6 +3302,7 @@
         const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
         const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
         const sysMapRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_MAP_'));
+        const sysStatusRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_STATUS_'));
         const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
 
         // Apply SYS_MAP overrides to mapping table
@@ -3244,6 +3355,22 @@
           }
         });
 
+        // Build map of student confirmation statuses from SYS_STATUS_ records
+        const studentStatusMap = new Map();
+        sysStatusRecs.forEach(r => {
+          const sId = r.reg_id.replace('SYS_STATUS_', '');
+          studentStatusMap.set(sId, (r.name || 'pending').toLowerCase());
+        });
+        try {
+          const { data: directStatuses } = await supabase.from('registrations').select('reg_id, name').ilike('reg_id', 'SYS_STATUS_%');
+          if (directStatuses) {
+            directStatuses.forEach(ds => {
+              const sId = ds.reg_id.replace('SYS_STATUS_', '');
+              studentStatusMap.set(sId, (ds.name || 'pending').toLowerCase());
+            });
+          }
+        } catch(e) {}
+
         registrations = studentRegData.map(d => {
           let resolvedUnit = canonicalUnit(d.unit);
           let resolvedZone = canonicalZone(d.zone);
@@ -3285,7 +3412,8 @@
             "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
             pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
             "Picked Up": d.picked_up ? "true" : "false",
-            pickedUp: d.picked_up ? "true" : "false"
+            pickedUp: d.picked_up ? "true" : "false",
+            status: studentStatusMap.get(d.reg_id) || "pending"
           };
         });
 
@@ -3471,6 +3599,7 @@
 
       // 7. Render Registrations directory
       renderDirectory(filteredRegs);
+      updateConfirmationCounts();
     }
 
     // Render Unified Zone & Unit Target Progress Report
@@ -4055,6 +4184,8 @@
 
         const studentPhone = item["Student Mobile Number"] || item.phone || '';
         const parentPhone = item["Parent Mobile Number"] || '';
+        const currentStatus = (item.status || 'pending').toLowerCase();
+        const studentId = item["Registration ID"] || item.regId || 'N/A';
 
         const studentPhoneHtml = studentPhone 
           ? `<div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:nowrap;">
@@ -4075,7 +4206,7 @@
         // 1. Desktop View: Append standard table row
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td data-label="Reg ID"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
+          <td data-label="Reg ID"><span class="badge-reg">${studentId}</span></td>
           <td data-label="Name"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
           <td data-label="Class">${item.Class || 'N/A'}</td>
           <td data-label="Student Mobile">${studentPhoneHtml}</td>
@@ -4083,18 +4214,25 @@
           <td data-label="Panchayath / Ward">${item.Panchayath || 'N/A'} / ${item.Ward || 'N/A'}</td>
           <td data-label="Zone / Unit">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
           <td data-label="Vehicle">${vehicleBadge}</td>
+          <td data-label="Status">
+            <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" title="Change calling confirmation status">
+              <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
+              <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+              <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
+            </select>
+          </td>
           <td data-label="Actions">
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${studentId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
               <i class="fas fa-bus"></i> Assign
             </button>
             ${vehicleAssigned ? `
-            <button class="btn btn-primary" style="padding:0.3rem 0.5rem; font-size:0.75rem; background:#10B981; border-color:#10B981; margin-left:0.25rem;" onclick="openTravelTicketModal('${item["Registration ID"] || item.regId}')">
+            <button class="btn btn-primary" style="padding:0.3rem 0.5rem; font-size:0.75rem; background:#10B981; border-color:#10B981; margin-left:0.25rem;" onclick="openTravelTicketModal('${studentId}')">
               <i class="fas fa-ticket-alt"></i> Ticket
             </button>` : ''}
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-left:0.25rem;" onclick="openStudentEditModal('${item["Registration ID"] || item.regId}')">
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; margin-left:0.25rem;" onclick="openStudentEditModal('${studentId}')">
               <i class="fas fa-edit"></i> Edit
             </button>
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteStudent('${item["Registration ID"] || item.regId}')">
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem; color:red; border-color:rgba(255,0,0,0.15); margin-left:0.25rem;" onclick="deleteStudent('${studentId}')">
               <i class="fas fa-trash-alt"></i> Delete
             </button>
           </td>
@@ -4112,7 +4250,7 @@
               ${avatarHtml}
               <div class="student-card-name-id">
                 <div class="student-name">${item["Student Name"] || item.name || 'N/A'}</div>
-                <div class="student-id">ID: ${item["Registration ID"] || item.regId || 'N/A'}</div>
+                <div class="student-id">ID: ${studentId}</div>
               </div>
               <div class="student-card-ward">
                 <div class="ward-circle-badge" title="Ward Number">${item.Ward || '00'}</div>
@@ -4157,6 +4295,18 @@
                 <i class="fas fa-bus detail-icon bus-icon"></i>
                 <div class="detail-text">
                   <span>Assigned Vehicle: ${vehicleBadge}</span>
+                </div>
+              </div>
+
+              <div class="detail-row" style="align-items: center; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-light);">
+                <i class="fas fa-user-check detail-icon" style="color: #6366F1;"></i>
+                <div class="detail-text" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                  <span>Calling Status:</span>
+                  <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" style="font-size:0.78rem; padding:0.35rem 1.6rem 0.35rem 0.7rem;">
+                    <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
+                    <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+                    <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -4397,6 +4547,7 @@
       const zoneVal = document.getElementById('filterZone').value;
       const unitVal = document.getElementById('filterUnit').value;
       const pVal = document.getElementById('filterPanchayath').value;
+      const statusVal = document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : '';
 
       // Filter local registrations list array
       let filtered = registrations;
@@ -4415,6 +4566,7 @@
       if (zoneVal) filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
       if (unitVal) filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
       if (pVal) filtered = filtered.filter(r => r.Panchayath === pVal);
+      if (statusVal) filtered = filtered.filter(r => ((r.status || 'pending').toLowerCase()) === statusVal.toLowerCase());
 
       if (searchStr) {
         filtered = filtered.filter(r => {
@@ -4425,6 +4577,180 @@
       }
 
       renderDirectory(filtered);
+      updateConfirmationCounts();
+    }
+
+    // Quick filter by clicking confirmation summary cards
+    function filterByStatusQuick(status) {
+      const select = document.getElementById('filterStatus');
+      if (!select) return;
+      if (select.value === status) {
+        select.value = ''; // Toggle off
+      } else {
+        select.value = status;
+      }
+      applyFilters();
+    }
+
+    // Update Confirmation Status Summary Counts
+    function updateConfirmationCounts() {
+      let baseList = typeof getRoleScopedRegistrations === 'function' ? getRoleScopedRegistrations() : registrations;
+
+      const classEl = document.getElementById('filterClass');
+      const zoneEl = document.getElementById('filterZone');
+      const unitEl = document.getElementById('filterUnit');
+      const pEl = document.getElementById('filterPanchayath');
+      const searchEl = document.getElementById('searchInput');
+
+      const classVal = classEl ? classEl.value : '';
+      const zoneVal = zoneEl ? zoneEl.value : '';
+      const unitVal = unitEl ? unitEl.value : '';
+      const pVal = pEl ? pEl.value : '';
+      const searchStr = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+      if (classVal) baseList = baseList.filter(r => (r.Class || r.student_class) === classVal);
+      if (zoneVal) baseList = baseList.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
+      if (unitVal) baseList = baseList.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
+      if (pVal) baseList = baseList.filter(r => (r.Panchayath || r.panchayath) === pVal);
+      if (searchStr) {
+        baseList = baseList.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          return name.includes(searchStr) || phone.includes(searchStr);
+        });
+      }
+
+      let confirmed = 0;
+      let pending = 0;
+      let notComing = 0;
+
+      baseList.forEach(r => {
+        const st = (r.status || 'pending').toLowerCase();
+        if (st === 'confirmed') confirmed++;
+        else if (st === 'not_coming') notComing++;
+        else pending++;
+      });
+
+      const confEl = document.getElementById('confirmedCount');
+      const pendEl = document.getElementById('pendingCallingCount');
+      const notComEl = document.getElementById('notComingCount');
+
+      if (confEl) confEl.textContent = confirmed;
+      if (pendEl) pendEl.textContent = pending;
+      if (notComEl) notComEl.textContent = notComing;
+
+      // Highlight active card
+      const curFilter = document.getElementById('filterStatus')?.value || '';
+      const cards = {
+        'confirmed': document.getElementById('cardStatusConfirmed'),
+        'pending': document.getElementById('cardStatusPending'),
+        'not_coming': document.getElementById('cardStatusNotComing')
+      };
+      Object.keys(cards).forEach(key => {
+        const card = cards[key];
+        if (card) {
+          if (curFilter === key) {
+            card.style.outline = '2.5px solid #0F172A';
+            card.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+            card.style.transform = 'translateY(-2px)';
+          } else {
+            card.style.outline = 'none';
+            card.style.boxShadow = 'none';
+            card.style.transform = 'none';
+          }
+        }
+      });
+    }
+
+    // Display non-intrusive floating toast
+    function showToast(message) {
+      let toast = document.getElementById('adminLiveToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'adminLiveToast';
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          background: #0F172A;
+          color: #FFFFFF;
+          padding: 12px 20px;
+          border-radius: 12px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+          font-size: 0.85rem;
+          font-weight: 600;
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          opacity: 0;
+          transform: translateY(20px);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          pointer-events: none;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i class="fas fa-check-circle" style="color: #10B981; font-size: 1rem;"></i> <span>${escapeHtml(message)}</span>`;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
+      
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+      }, 2500);
+    }
+
+    // Update individual student confirmation status
+    async function updateStudentStatus(regId, newStatus, selectEl) {
+      if (!regId) return;
+
+      const normStatus = (newStatus || 'pending').toLowerCase();
+
+      // 1. Optimistic in-memory update
+      const student = registrations.find(r => (r["Registration ID"] || r.regId || r.reg_id) === regId);
+      if (student) {
+        student.status = normStatus;
+      }
+
+      // 2. Update UI selects for this student across desktop table and mobile cards
+      document.querySelectorAll(`select[data-reg-id="${regId}"]`).forEach(el => {
+        el.value = normStatus;
+        el.className = `status-select status-${normStatus}`;
+      });
+      if (selectEl) {
+        selectEl.value = normStatus;
+        selectEl.className = `status-select status-${normStatus}`;
+      }
+
+      // 3. Update summary counters immediately
+      updateConfirmationCounts();
+
+      // 4. Show toast notification
+      const statusLabels = {
+        'confirmed': 'Confirmed',
+        'pending': 'Pending Calling',
+        'not_coming': 'Not Coming'
+      };
+      const label = statusLabels[normStatus] || normStatus;
+      const sName = student ? (student["Student Name"] || student.name || regId) : regId;
+      showToast(`Marked ${label} for ${sName}`);
+
+      // 5. Persist to Supabase registrations table
+      try {
+        const sysRegId = 'SYS_STATUS_' + regId;
+        const { error } = await supabase.from('registrations').upsert([{
+          reg_id: sysRegId,
+          name: normStatus,
+          phone: '0000000000',
+          timestamp: new Date().toISOString()
+        }], { onConflict: 'reg_id' });
+
+        if (error) throw error;
+      } catch (err) {
+        console.error('Error saving status to Supabase:', err);
+        alert('Warning: Could not save status to server: ' + err.message);
+      }
     }
 
     // Open Assign Vehicle Modal
@@ -5052,11 +5378,14 @@
       const zoneVal = zoneEl ? zoneEl.value : '';
       const unitVal = unitEl ? unitEl.value : '';
       const pVal = pEl ? pEl.value : '';
+      const statusEl = document.getElementById('filterStatus');
+      const statusVal = statusEl ? statusEl.value : '';
 
       if (classVal) list = list.filter(r => (r.Class || r.student_class) === classVal);
       if (zoneVal) list = list.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
       if (unitVal) list = list.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
       if (pVal) list = list.filter(r => (r.Panchayath || r.panchayath) === pVal);
+      if (statusVal) list = list.filter(r => (r.status || 'pending').toLowerCase() === statusVal.toLowerCase());
 
       if (searchStr) {
         list = list.filter(r => {
@@ -5089,12 +5418,14 @@
       const zoneEl = document.getElementById('filterZone');
       const unitEl = document.getElementById('filterUnit');
       const pEl = document.getElementById('filterPanchayath');
+      const statusEl = document.getElementById('filterStatus');
       const hasActiveFilters = Boolean(
         (searchEl && searchEl.value.trim()) ||
         (classEl && classEl.value) ||
         (zoneEl && zoneEl.value) ||
         (unitEl && unitEl.value) ||
-        (pEl && pEl.value)
+        (pEl && pEl.value) ||
+        (statusEl && statusEl.value)
       );
 
       // Default scope
@@ -5226,6 +5557,7 @@
         "Registration ID",
         "Student Name",
         "Class",
+        "Calling Status",
         "Student Mobile Number",
         "Parent Mobile Number",
         "School Name",
@@ -5242,10 +5574,13 @@
       let csv = headers.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
 
       items.forEach(r => {
+        const rawStatus = (r.status || 'pending').toLowerCase();
+        const displayStatus = rawStatus === 'confirmed' ? 'Confirmed' : (rawStatus === 'not_coming' ? 'Not Coming' : 'Pending Calling');
         const row = [
           r["Registration ID"] || r.regId || r.reg_id || '',
           r["Student Name"] || r.name || '',
           r.Class || r.student_class || '',
+          displayStatus,
           r["Student Mobile Number"] || r.phone || '',
           r["Parent Mobile Number"] || r.parent_phone || '',
           r["School Name"] || r.school || '',
@@ -5740,6 +6075,7 @@
 
       populateStudentDropdowns();
       populateStudentVehicleDropdown();
+      if (document.getElementById('studentStatusInput')) document.getElementById('studentStatusInput').value = 'pending';
       modal.classList.add('active');
     }
 
@@ -5780,6 +6116,7 @@
       document.getElementById('studentZoneInput').value = student["Organization Zone"] || student.zone || '';
       document.getElementById('studentUnitInput').value = student["Organization Unit"] || student.unit || '';
       document.getElementById('studentVehicleInput').value = student["Assigned Vehicle"] || student.assignedVehicle || '';
+      if (document.getElementById('studentStatusInput')) document.getElementById('studentStatusInput').value = student.status || 'pending';
 
       modal.classList.add('active');
     }
@@ -6159,6 +6496,14 @@
       submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Delegate Profile';
       
       if (!error) {
+        // Save confirmation status
+        const statusInputVal = document.getElementById('studentStatusInput')?.value || 'pending';
+        try {
+          await updateStudentStatus(calculatedRegId, statusInputVal);
+        } catch(stErr) {
+          console.warn("Notice saving status:", stErr);
+        }
+
         if (mode === 'convert' && convertDonatedId) {
           try {
             await supabase.from('registrations').delete().eq('reg_id', convertDonatedId);
@@ -6233,6 +6578,10 @@
         // 2. Delete from active registrations table
         const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', regId);
         if (delErr) throw delErr;
+
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + regId);
+        } catch(sErr) {}
 
         alert(`Delegate "${sName}" moved to Trash successfully.`);
         await loadData();
