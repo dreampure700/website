@@ -293,6 +293,165 @@
       box-shadow: 0 4px 14px rgba(0,0,0,0.06);
     }
 
+    /* A4 Print & PDF Preview Styles */
+    .a4-sheet {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      box-sizing: border-box;
+      background: #FFFFFF;
+      margin: 0 auto;
+    }
+    .a4-landscape {
+      max-width: 1040px !important;
+      min-width: 880px;
+    }
+    .a4-portrait {
+      max-width: 760px !important;
+      min-width: 680px;
+    }
+    .a4-compact table.a4-table {
+      font-size: 8pt !important;
+    }
+    .a4-compact table.a4-table th,
+    .a4-compact table.a4-table td {
+      padding: 3.5px 4px !important;
+    }
+    .a4-normal table.a4-table {
+      font-size: 9pt !important;
+    }
+    .a4-normal table.a4-table th,
+    .a4-normal table.a4-table td {
+      padding: 5px 6px !important;
+    }
+    .a4-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1.5px solid #0F172A;
+    }
+    .a4-table th {
+      background: #F1F5F9;
+      color: #0F172A;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      border: 1px solid #CBD5E1;
+    }
+    .a4-table td {
+      border: 1px solid #CBD5E1;
+      color: #1E293B;
+    }
+    .a4-table tr:nth-child(even) td {
+      background: #F8FAFC;
+    }
+    .a4-status-pill {
+      display: inline-block;
+      padding: 1.5px 5px;
+      border-radius: 4px;
+      font-size: 7pt;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .a4-status-confirmed {
+      background: #DCFCE7;
+      color: #15803D;
+      border: 1px solid #86EFAC;
+    }
+    .a4-status-pending {
+      background: #FEF3C7;
+      color: #B45309;
+      border: 1px solid #FDE68A;
+    }
+    .a4-status-not_coming {
+      background: #FEE2E2;
+      color: #B91C1C;
+      border: 1px solid #FECACA;
+    }
+    .attendance-box {
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid #475569;
+      border-radius: 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* Print media rules */
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 8mm 6mm;
+      }
+      html, body {
+        background: #FFFFFF !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body * {
+        visibility: hidden;
+      }
+      #a4PrintModal,
+      #a4PrintModal .modal-content,
+      #a4DeskContainer,
+      #a4PrintSheet,
+      #a4PrintSheet * {
+        visibility: visible !important;
+      }
+      #a4PrintModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        background: #FFFFFF !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        opacity: 1 !important;
+      }
+      #a4PrintModal .modal-content {
+        max-width: 100% !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        transform: none !important;
+      }
+      #a4DeskContainer {
+        background: #FFFFFF !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        display: block !important;
+      }
+      #a4PrintSheet {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+      }
+      .modal-close,
+      #a4PrintModalToolbarHeader,
+      #a4PrintModalControlsBar,
+      #a4PrintModalFooterActions,
+      .no-print {
+        display: none !important;
+      }
+      .a4-table thead {
+        display: table-header-group !important;
+      }
+      .a4-table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .a4-table td, .a4-table th {
+        border: 1px solid #64748B !important;
+      }
+    }
+
     .dashboard-section {
       display: none;
     }
@@ -1795,6 +1954,9 @@
             <h3 style="font-family: var(--font-heading); font-size: 1.25rem;"><i class="fas fa-list text-magenta"></i> Delegate Directory</h3>
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
               <button class="btn btn-primary btn-sm" onclick="openStudentModal()"><i class="fas fa-plus"></i> Add Delegate</button>
+              <button class="btn btn-outline btn-sm" id="btnA4Print" onclick="openA4PrintModal()" title="View & download/print delegate directory in A4 size layout">
+                <i class="fas fa-print text-magenta"></i> A4 Print / PDF
+              </button>
               <button class="btn btn-outline btn-sm" id="btnViewExportData" onclick="openExportModal('preview')" title="View delegate data preview before downloading">
                 <i class="fas fa-eye text-cyan"></i> View Data
               </button>
@@ -2238,11 +2400,163 @@
           <button type="button" class="btn btn-outline btn-sm" onclick="closeExportModal()">
             Cancel
           </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeExportModal(); openA4PrintModal();" title="View & Print in formatted A4 layout">
+            <i class="fas fa-file-pdf text-magenta"></i> A4 Print View
+          </button>
           <button type="button" id="copyExportCsvBtn" class="btn btn-outline btn-sm" onclick="copyExportedCsvText(this)" title="Copy CSV to clipboard">
             <i class="fas fa-copy"></i> Copy CSV
           </button>
           <button type="button" class="btn btn-primary btn-sm" onclick="triggerActualCsvDownload()" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.1rem; font-weight: 700;">
             <i class="fas fa-download"></i> Download CSV File
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- A4 PRINT & PDF DOWNLOAD PREVIEW MODAL -->
+  <div class="modal-overlay" id="a4PrintModal" style="z-index: 10005;">
+    <div class="modal-content" style="max-width: 1150px; width: 96%; padding: 1.5rem; border-radius: 20px; max-height: 94vh; display: flex; flex-direction: column;">
+      <button class="modal-close" onclick="closeA4PrintModal()"><i class="fas fa-times"></i></button>
+
+      <!-- Modal Header -->
+      <div id="a4PrintModalToolbarHeader" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(15,23,42,0.08);">
+        <div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-file-pdf text-magenta"></i> A4 Delegate Directory Print &amp; PDF View
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.83rem; margin: 0.25rem 0 0 0;">
+            Properly aligned A4 layout with page headers, calling confirmation status, and attendance check boxes.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="downloadA4HtmlDocument()" title="Download offline printable A4 HTML file">
+            <i class="fas fa-file-download text-cyan"></i> Save A4 File
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="openPrintInNewTab()" title="Open clean printable document in a new browser tab">
+            <i class="fas fa-external-link-alt text-cyan"></i> New Tab
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="printA4Document()" style="background: linear-gradient(135deg, #2563EB, #06B6D4); border: none; font-weight: 700; padding: 0.5rem 1.1rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-print"></i> Print / Save as PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls & Layout Options Bar -->
+      <div id="a4PrintModalControlsBar" style="background: #F8FAFC; border: 1px solid rgba(15,23,42,0.06); padding: 0.75rem 1rem; border-radius: 12px; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <!-- Scope -->
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Scope:</span>
+          <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.83rem; cursor: pointer; font-weight: 600;">
+            <input type="radio" name="a4Scope" id="a4ScopeFiltered" value="filtered" checked onchange="updateA4PrintPreview()">
+            <span>Active Filtered (<span id="a4FilteredCount" class="text-cyan">0</span>)</span>
+          </label>
+          <label style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.83rem; cursor: pointer; font-weight: 600;">
+            <input type="radio" name="a4Scope" id="a4ScopeAll" value="all" onchange="updateA4PrintPreview()">
+            <span>All Records (<span id="a4AllCount" class="text-magenta">0</span>)</span>
+          </label>
+        </div>
+
+        <!-- Orientation, Density & Options -->
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-dim);">Orientation:</label>
+            <select id="a4Orientation" class="form-select" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 8px; width: auto;" onchange="updateA4PrintOrientation()">
+              <option value="landscape" selected>Landscape (Wide - Recommended)</option>
+              <option value="portrait">Portrait (Tall)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-dim);">Font &amp; Density:</label>
+            <select id="a4Density" class="form-select" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 8px; width: auto;" onchange="updateA4PrintDensity()">
+              <option value="compact" selected>Compact (Fits ~30/page)</option>
+              <option value="normal">Normal (Fits ~22/page)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <label style="display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; cursor: pointer;">
+              <input type="checkbox" id="a4IncludeAttendance" checked onchange="updateA4PrintPreview()">
+              <span>Attendance Checkbox</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Workspace (Simulates real A4 sheet on a desk) -->
+      <div id="a4DeskContainer" style="overflow-y: auto; overflow-x: auto; flex-grow: 1; background: #E2E8F0; padding: 1.25rem 0.75rem; border-radius: 12px; border: 1px solid #CBD5E1; display: flex; justify-content: center;">
+        
+        <!-- The actual printable A4 Sheet -->
+        <div id="a4PrintSheet" class="a4-sheet a4-landscape a4-compact" style="background: #FFFFFF; width: 100%; max-width: 1040px; min-height: 720px; box-shadow: 0 10px 35px rgba(0,0,0,0.12); padding: 24px 28px; box-sizing: border-box; color: #0F172A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; transition: max-width 0.2s ease;">
+          
+          <!-- Document Header -->
+          <div id="a4DocHeader" style="border-bottom: 2px solid #0F172A; padding-bottom: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 1.45rem; font-weight: 900; letter-spacing: -0.5px; color: #0F172A; line-height: 1.1;">
+                TEENSPACE 2026
+              </div>
+              <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 2px;">
+                Wisdom Students Thrissur District Committee
+              </div>
+              <div style="font-size: 0.95rem; font-weight: 800; color: #0284C7; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Delegate Directory &amp; Attendance Register
+              </div>
+            </div>
+
+            <!-- Header Metadata Info Box -->
+            <div style="text-align: right; font-size: 0.75rem; color: #334155; line-height: 1.45;">
+              <div><strong>Filter Scope:</strong> <span id="a4DocScopeLabel">All Delegates</span></div>
+              <div><strong>Generated Date:</strong> <span id="a4DocGeneratedDate">-</span></div>
+              <div style="margin-top: 3px; display: inline-flex; gap: 8px; font-weight: 700; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #CBD5E1;">
+                <span>Total: <span id="a4DocTotalCount" style="color: #0F172A;">0</span></span>
+                <span>Confirmed: <span id="a4DocConfirmedCount" style="color: #15803D;">0</span></span>
+                <span>Pending: <span id="a4DocPendingCount" style="color: #B45309;">0</span></span>
+                <span>Not Coming: <span id="a4DocNotComingCount" style="color: #B91C1C;">0</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Printable Table -->
+          <table id="a4PrintTable" class="a4-table" style="width: 100%; border-collapse: collapse; font-size: 8pt; line-height: 1.25;">
+            <thead>
+              <tr style="background: #F1F5F9; color: #0F172A; border-top: 1.5px solid #0F172A; border-bottom: 1.5px solid #0F172A;">
+                <th style="width: 28px; text-align: center; padding: 5px 3px; border: 1px solid #CBD5E1;">#</th>
+                <th style="width: 65px; text-align: center; padding: 5px 4px; border: 1px solid #CBD5E1;">Reg ID</th>
+                <th style="text-align: left; padding: 5px 6px; border: 1px solid #CBD5E1;">Student Name</th>
+                <th style="width: 45px; text-align: center; padding: 5px 3px; border: 1px solid #CBD5E1;">Class</th>
+                <th style="width: 88px; text-align: left; padding: 5px 4px; border: 1px solid #CBD5E1;">Mobile</th>
+                <th style="width: 88px; text-align: left; padding: 5px 4px; border: 1px solid #CBD5E1;" class="col-parent-phone">Parent Mobile</th>
+                <th style="text-align: left; padding: 5px 5px; border: 1px solid #CBD5E1;">Panchayath / Ward</th>
+                <th style="text-align: left; padding: 5px 5px; border: 1px solid #CBD5E1;">Zone / Unit</th>
+                <th style="width: 85px; text-align: center; padding: 5px 4px; border: 1px solid #CBD5E1;">Status</th>
+                <th style="width: 80px; text-align: center; padding: 5px 4px; border: 1px solid #CBD5E1;">Vehicle</th>
+                <th style="width: 45px; text-align: center; padding: 5px 3px; border: 1px solid #CBD5E1;" class="col-attendance">Attd</th>
+              </tr>
+            </thead>
+            <tbody id="a4PrintTableBody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+
+          <!-- Document Footer -->
+          <div style="margin-top: 15px; padding-top: 8px; border-top: 1px solid #CBD5E1; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748B;">
+            <div>TEENSPACE 2026 · Official District Delegation Register</div>
+            <div>Printed via Teenspace Admin System</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer Actions -->
+      <div id="a4PrintModalFooterActions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(15,23,42,0.08);">
+        <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fas fa-info-circle text-cyan"></i>
+          <span>To download as PDF: click <strong>Print / Save as PDF</strong> and select <strong>"Save as PDF"</strong> in the destination.</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="closeA4PrintModal()">Close</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="printA4Document()" style="background: linear-gradient(135deg, #2563EB, #06B6D4); border: none; font-weight: 700; padding: 0.5rem 1.1rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="fas fa-print"></i> Print / Save as PDF
           </button>
         </div>
       </div>
@@ -5660,6 +5974,364 @@
     // Backward-compatible entrypoint
     function exportToCSV() {
       openExportModal('download');
+    }
+
+    // ==========================================
+    // A4 PRINT & PDF DIRECTORY PREVIEW LOGIC
+    // ==========================================
+    let currentA4FullItems = [];
+    let currentA4FilteredItems = [];
+    let currentA4DisplayItems = [];
+
+    function openA4PrintModal() {
+      currentA4FullItems = getRoleScopedRegistrations();
+      currentA4FilteredItems = getDirectoryActiveFilteredRegistrations();
+
+      const fCount = currentA4FilteredItems.length;
+      const aCount = currentA4FullItems.length;
+
+      const fCountEl = document.getElementById('a4FilteredCount');
+      if (fCountEl) fCountEl.textContent = fCount;
+      const aCountEl = document.getElementById('a4AllCount');
+      if (aCountEl) aCountEl.textContent = aCount;
+
+      // Select default scope: if filters are active and matched records, default to filtered, else all
+      const searchEl = document.getElementById('searchInput');
+      const classEl = document.getElementById('filterClass');
+      const zoneEl = document.getElementById('filterZone');
+      const unitEl = document.getElementById('filterUnit');
+      const pEl = document.getElementById('filterPanchayath');
+      const statusEl = document.getElementById('filterStatus');
+      const hasActiveFilters = Boolean(
+        (searchEl && searchEl.value.trim()) ||
+        (classEl && classEl.value) ||
+        (zoneEl && zoneEl.value) ||
+        (unitEl && unitEl.value) ||
+        (pEl && pEl.value) ||
+        (statusEl && statusEl.value)
+      );
+
+      const radioFiltered = document.getElementById('a4ScopeFiltered');
+      const radioAll = document.getElementById('a4ScopeAll');
+      if (hasActiveFilters && fCount > 0 && radioFiltered) {
+        radioFiltered.checked = true;
+      } else if (radioAll) {
+        radioAll.checked = true;
+      }
+
+      // Populate preview
+      updateA4PrintPreview();
+      updateA4PrintOrientation();
+      updateA4PrintDensity();
+
+      const modal = document.getElementById('a4PrintModal');
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeA4PrintModal() {
+      const modal = document.getElementById('a4PrintModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function getA4ActiveItems() {
+      const isFiltered = document.getElementById('a4ScopeFiltered')?.checked;
+      return isFiltered ? currentA4FilteredItems : currentA4FullItems;
+    }
+
+    function updateA4PrintOrientation() {
+      const orientation = document.getElementById('a4Orientation')?.value || 'landscape';
+      const sheet = document.getElementById('a4PrintSheet');
+      if (sheet) {
+        sheet.classList.remove('a4-landscape', 'a4-portrait');
+        sheet.classList.add('a4-' + orientation);
+      }
+      setA4PrintPageOrientation(orientation);
+    }
+
+    function updateA4PrintDensity() {
+      const density = document.getElementById('a4Density')?.value || 'compact';
+      const sheet = document.getElementById('a4PrintSheet');
+      if (sheet) {
+        sheet.classList.remove('a4-compact', 'a4-normal');
+        sheet.classList.add('a4-' + density);
+      }
+    }
+
+    function setA4PrintPageOrientation(orientation) {
+      let styleEl = document.getElementById('a4DynamicPageStyle');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'a4DynamicPageStyle';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.innerHTML = `@media print { @page { size: A4 ${orientation}; margin: 8mm 6mm; } }`;
+    }
+
+    function updateA4PrintPreview() {
+      const items = getA4ActiveItems();
+      currentA4DisplayItems = items;
+
+      const isFiltered = document.getElementById('a4ScopeFiltered')?.checked;
+      const includeAttendance = document.getElementById('a4IncludeAttendance')?.checked ?? true;
+
+      // Update Header Info
+      const scopeLabelEl = document.getElementById('a4DocScopeLabel');
+      if (scopeLabelEl) {
+        if (!isFiltered) {
+          scopeLabelEl.textContent = 'All Registered Delegates (' + items.length + ')';
+        } else {
+          // Describe active filters
+          const parts = [];
+          const zoneVal = document.getElementById('filterZone')?.value;
+          const unitVal = document.getElementById('filterUnit')?.value;
+          const classVal = document.getElementById('filterClass')?.value;
+          const statusVal = document.getElementById('filterStatus')?.value;
+          const searchVal = document.getElementById('searchInput')?.value?.trim();
+
+          if (zoneVal) parts.push('Zone: ' + zoneVal);
+          if (unitVal) parts.push('Unit: ' + unitVal);
+          if (classVal) parts.push('Class: ' + classVal);
+          if (statusVal) parts.push('Status: ' + (statusVal === 'not_coming' ? 'Not Coming' : (statusVal === 'confirmed' ? 'Confirmed' : 'Pending Calling')));
+          if (searchVal) parts.push('Search: "' + searchVal + '"');
+
+          scopeLabelEl.textContent = parts.length > 0 ? parts.join(' | ') + ` (${items.length})` : 'Active Filtered View (' + items.length + ')';
+        }
+      }
+
+      const dateEl = document.getElementById('a4DocGeneratedDate');
+      if (dateEl) {
+        const now = new Date();
+        dateEl.textContent = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+      }
+
+      // Count statuses
+      let confCount = 0, pendCount = 0, notCount = 0;
+      items.forEach(r => {
+        const s = (r.status || 'pending').toLowerCase();
+        if (s === 'confirmed') confCount++;
+        else if (s === 'not_coming') notCount++;
+        else pendCount++;
+      });
+
+      const totalCountEl = document.getElementById('a4DocTotalCount');
+      if (totalCountEl) totalCountEl.textContent = items.length;
+      const confEl = document.getElementById('a4DocConfirmedCount');
+      if (confEl) confEl.textContent = confCount;
+      const pendEl = document.getElementById('a4DocPendingCount');
+      if (pendEl) pendEl.textContent = pendCount;
+      const notEl = document.getElementById('a4DocNotComingCount');
+      if (notEl) notEl.textContent = notCount;
+
+      // Toggle attendance header cell
+      document.querySelectorAll('.col-attendance').forEach(el => {
+        el.style.display = includeAttendance ? '' : 'none';
+      });
+
+      // Render table rows
+      const tbody = document.getElementById('a4PrintTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding: 25px; color:#64748B;">No delegate records found for the selected scope.</td></tr>`;
+        return;
+      }
+
+      items.forEach((item, idx) => {
+        const regId = item["Registration ID"] || item.regId || item.reg_id || 'N/A';
+        const name = item["Student Name"] || item.name || 'N/A';
+        const studentClass = item.Class || item.student_class || '-';
+        const phone = item["Student Mobile Number"] || item.phone || '-';
+        const parentPhone = item["Parent Mobile Number"] || item.parent_phone || '-';
+        const panchayath = item.Panchayath || item.panchayath || '-';
+        const ward = item.Ward || item.ward || '';
+        const zone = item["Organization Zone"] || item.zone || '-';
+        const unit = item["Organization Unit"] || item.unit || '-';
+        const vehicle = item["Assigned Vehicle"] || item.assigned_vehicle || '-';
+        const status = (item.status || 'pending').toLowerCase();
+
+        let statusBadge = '<span class="a4-status-pill a4-status-pending">Pending</span>';
+        if (status === 'confirmed') {
+          statusBadge = '<span class="a4-status-pill a4-status-confirmed">Confirmed</span>';
+        } else if (status === 'not_coming') {
+          statusBadge = '<span class="a4-status-pill a4-status-not_coming">Not Coming</span>';
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center; color: #64748B;">${idx + 1}</td>
+          <td style="text-align: center; font-weight: 700; color: #0284C7;">${escapeHtml(regId)}</td>
+          <td style="font-weight: 700; color: #0F172A;">${escapeHtml(name)}</td>
+          <td style="text-align: center; font-weight: 600;">${escapeHtml(studentClass)}</td>
+          <td style="white-space: nowrap;">${escapeHtml(phone)}</td>
+          <td style="white-space: nowrap;" class="col-parent-phone">${escapeHtml(parentPhone)}</td>
+          <td>${escapeHtml(panchayath)}${ward ? ' (W:' + escapeHtml(ward) + ')' : ''}</td>
+          <td>${escapeHtml(zone)} / ${escapeHtml(unit)}</td>
+          <td style="text-align: center;">${statusBadge}</td>
+          <td style="text-align: center; font-size: 7.5pt;">${escapeHtml(vehicle)}</td>
+          <td style="text-align: center;" class="col-attendance"><span class="attendance-box"></span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function printA4Document() {
+      const orientation = document.getElementById('a4Orientation')?.value || 'landscape';
+      setA4PrintPageOrientation(orientation);
+      window.print();
+    }
+
+    function buildA4StandaloneHtmlString() {
+      const items = currentA4DisplayItems.length > 0 ? currentA4DisplayItems : getA4ActiveItems();
+      const orientation = document.getElementById('a4Orientation')?.value || 'landscape';
+      const density = document.getElementById('a4Density')?.value || 'compact';
+      const includeAttendance = document.getElementById('a4IncludeAttendance')?.checked ?? true;
+      const isFiltered = document.getElementById('a4ScopeFiltered')?.checked;
+
+      let scopeText = isFiltered ? 'Active Filtered Directory' : 'All Registered Delegates';
+      const now = new Date();
+      const dateText = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      let conf = 0, pend = 0, notC = 0;
+      items.forEach(r => {
+        const s = (r.status || 'pending').toLowerCase();
+        if (s === 'confirmed') conf++;
+        else if (s === 'not_coming') notC++;
+        else pend++;
+      });
+
+      let rowsHtml = '';
+      items.forEach((item, idx) => {
+        const regId = item["Registration ID"] || item.regId || item.reg_id || 'N/A';
+        const name = item["Student Name"] || item.name || 'N/A';
+        const studentClass = item.Class || item.student_class || '-';
+        const phone = item["Student Mobile Number"] || item.phone || '-';
+        const parentPhone = item["Parent Mobile Number"] || item.parent_phone || '-';
+        const panchayath = item.Panchayath || item.panchayath || '-';
+        const ward = item.Ward || item.ward || '';
+        const zone = item["Organization Zone"] || item.zone || '-';
+        const unit = item["Organization Unit"] || item.unit || '-';
+        const vehicle = item["Assigned Vehicle"] || item.assigned_vehicle || '-';
+        const status = (item.status || 'pending').toLowerCase();
+
+        let statusText = status === 'confirmed' ? 'Confirmed' : (status === 'not_coming' ? 'Not Coming' : 'Pending');
+        let statusStyle = status === 'confirmed' ? 'background:#DCFCE7; color:#15803D;' : (status === 'not_coming' ? 'background:#FEE2E2; color:#B91C1C;' : 'background:#FEF3C7; color:#B45309;');
+
+        rowsHtml += `
+          <tr>
+            <td style="text-align:center; color:#64748B;">${idx + 1}</td>
+            <td style="text-align:center; font-weight:bold; color:#0284C7;">${escapeHtml(regId)}</td>
+            <td style="font-weight:bold; color:#0F172A;">${escapeHtml(name)}</td>
+            <td style="text-align:center;">${escapeHtml(studentClass)}</td>
+            <td style="white-space:nowrap;">${escapeHtml(phone)}</td>
+            <td style="white-space:nowrap;">${escapeHtml(parentPhone)}</td>
+            <td>${escapeHtml(panchayath)}${ward ? ' (W:' + escapeHtml(ward) + ')' : ''}</td>
+            <td>${escapeHtml(zone)} / ${escapeHtml(unit)}</td>
+            <td style="text-align:center;"><span style="display:inline-block; padding:1px 5px; border-radius:3px; font-size:7pt; font-weight:bold; ${statusStyle}">${statusText}</span></td>
+            <td style="text-align:center; font-size:7.5pt;">${escapeHtml(vehicle)}</td>
+            ${includeAttendance ? '<td style="text-align:center;"><span style="display:inline-block; width:13px; height:13px; border:1px solid #475569; border-radius:2px;"></span></td>' : ''}
+          </tr>
+        `;
+      });
+
+      return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TEENSPACE 2026 - Delegate Directory (A4)</title>
+  <style>
+    @page { size: A4 ${orientation}; margin: 8mm 6mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 10px; background: #FFF; color: #0F172A; }
+    .header-box { border-bottom: 2px solid #0F172A; padding-bottom: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .title { font-size: 18pt; font-weight: 900; color: #0F172A; margin: 0; line-height: 1.1; }
+    .subtitle { font-size: 9pt; font-weight: 700; color: #475569; margin: 2px 0 0 0; }
+    .doc-type { font-size: 10.5pt; font-weight: 800; color: #0284C7; text-transform: uppercase; margin: 2px 0 0 0; }
+    .meta-box { text-align: right; font-size: 8pt; color: #334155; line-height: 1.4; }
+    .counts-pill { background: #F1F5F9; border: 1px solid #CBD5E1; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 2px; display: inline-block; }
+    table { width: 100%; border-collapse: collapse; font-size: ${density === 'compact' ? '8pt' : '9pt'}; }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
+    th { background: #F1F5F9; color: #0F172A; font-weight: bold; text-transform: uppercase; font-size: 7.5pt; border: 1px solid #94A3B8; padding: ${density === 'compact' ? '3px 4px' : '5px 6px'}; }
+    td { border: 1px solid #CBD5E1; padding: ${density === 'compact' ? '3px 4px' : '5px 6px'}; color: #1E293B; }
+    tr:nth-child(even) td { background: #F8FAFC; }
+    .footer { margin-top: 10px; padding-top: 6px; border-top: 1px solid #CBD5E1; display: flex; justify-content: space-between; font-size: 7pt; color: #64748B; }
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <div>
+      <div class="title">TEENSPACE 2026</div>
+      <div class="subtitle">Wisdom Students Thrissur District Committee</div>
+      <div class="doc-type">Delegate Directory &amp; Attendance Register</div>
+    </div>
+    <div class="meta-box">
+      <div><strong>Scope:</strong> ${escapeHtml(scopeText)}</div>
+      <div><strong>Date:</strong> ${escapeHtml(dateText)}</div>
+      <div class="counts-pill">Total: ${items.length} | Confirmed: ${conf} | Pending: ${pend} | Not Coming: ${notC}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:26px;">#</th>
+        <th style="width:65px;">Reg ID</th>
+        <th>Student Name</th>
+        <th style="width:40px;">Class</th>
+        <th style="width:85px;">Mobile</th>
+        <th style="width:85px;">Parent Mobile</th>
+        <th>Panchayath / Ward</th>
+        <th>Zone / Unit</th>
+        <th style="width:80px;">Status</th>
+        <th style="width:75px;">Vehicle</th>
+        ${includeAttendance ? '<th style="width:40px;">Attd</th>' : ''}
+      </tr>
+    </thead>
+    <tbody>
+      ${rowsHtml}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <div>TEENSPACE 2026 · Official District Delegation Register</div>
+    <div>Wisdom Students Thrissur</div>
+  </div>
+  <script>
+    window.onload = function() {
+      if (window.location.search.includes('print=true')) {
+        window.print();
+      }
+    };
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function openPrintInNewTab() {
+      const htmlContent = buildA4StandaloneHtmlString();
+      const printWin = window.open('', '_blank');
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(htmlContent);
+        printWin.document.close();
+      } else {
+        alert('Please allow pop-ups for this website to open the print view.');
+      }
+    }
+
+    function downloadA4HtmlDocument() {
+      const htmlContent = buildA4StandaloneHtmlString();
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `TEENSPACE_2026_Delegates_A4_${dateStr}.html`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
 
     // Render Admin Media Table
