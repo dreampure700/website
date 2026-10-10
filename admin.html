@@ -293,6 +293,68 @@
       box-shadow: 0 4px 14px rgba(0,0,0,0.06);
     }
 
+    /* Duplicate Registration Highlight Styles */
+    .badge-duplicate {
+      display: inline-flex;
+      align-items: center;
+      gap: 3.5px;
+      background: #FEF3C7;
+      color: #92400E;
+      border: 1px solid #FCD34D;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      cursor: pointer;
+      white-space: nowrap;
+      vertical-align: middle;
+      transition: all 0.15s ease;
+      line-height: 1.2;
+    }
+    .badge-duplicate:hover {
+      background: #FDE68A;
+      border-color: #F59E0B;
+      color: #78350F;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(245, 158, 11, 0.25);
+    }
+    .badge-duplicate i {
+      font-size: 0.65rem;
+    }
+    tr.row-duplicate {
+      background-color: rgba(245, 158, 11, 0.045) !important;
+    }
+    tr.row-duplicate:hover {
+      background-color: rgba(245, 158, 11, 0.085) !important;
+    }
+    tr.row-duplicate > td:first-child {
+      border-left: 3.5px solid #F59E0B !important;
+    }
+    .student-mobile-card.card-duplicate {
+      border-left: 4px solid #F59E0B !important;
+      background: linear-gradient(to right, rgba(254, 243, 199, 0.14), var(--surface-card)) !important;
+    }
+    .duplicate-matched-list {
+      font-size: 0.72rem;
+      color: #B45309;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: rgba(254, 243, 199, 0.5);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      width: fit-content;
+      transition: all 0.15s ease;
+    }
+    .duplicate-matched-list:hover {
+      background: #FEF3C7;
+      color: #78350F;
+      border-style: solid;
+    }
+
     /* A4 Print & PDF Preview Styles */
     .a4-sheet {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -1998,6 +2060,16 @@
                 <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-times-circle"></i></div>
               </div>
             </div>
+
+            <div class="stat-card confirmation-card" id="cardStatusDuplicates" style="border-left: 4px solid #D97706; background: #FFFBEB; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('duplicates')" title="Click to filter Duplicate registrations">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="duplicatesCount" style="color: #B45309; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #92400E; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Duplicates</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(217, 119, 6, 0.15); color: #D97706; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-clone"></i></div>
+              </div>
+            </div>
           </div>
 
           <!-- Advanced Filters Grid -->
@@ -2009,6 +2081,7 @@
                 <option value="confirmed">Confirmed</option>
                 <option value="pending">Pending Calling</option>
                 <option value="not_coming">Not Coming</option>
+                <option value="duplicates">⚠️ Duplicates Only</option>
               </select>
             </div>
             <div>
@@ -4482,6 +4555,51 @@
       return `<div class="student-avatar" style="background:${colors[index]}; color:${textColors[index]}; font-weight:700; width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">${initial}</div>`;
     }
 
+    // Helper to detect duplicate student registrations based on student mobile numbers
+    function getDuplicatePhoneMap() {
+      const map = new Map();
+      if (!Array.isArray(registrations)) return map;
+
+      registrations.forEach(r => {
+        const rawId = (r["Registration ID"] || r.regId || '').toString();
+        if (rawId.startsWith('SYS_')) return;
+
+        const rawPhone = (r["Student Mobile Number"] || r.phone || '').toString();
+        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+        if (cleanPhone.length === 10) {
+          if (!map.has(cleanPhone)) {
+            map.set(cleanPhone, []);
+          }
+          map.get(cleanPhone).push({
+            regId: rawId,
+            name: r["Student Name"] || r.name || 'Unknown',
+            phone: rawPhone,
+            zone: r["Organization Zone"] || r.zone || '',
+            unit: r["Organization Unit"] || r.unit || '',
+            status: (r.status || 'pending').toLowerCase()
+          });
+        }
+      });
+      return map;
+    }
+
+    // Quick one-click filter to see matching duplicate registrations side-by-side
+    window.filterByPhoneQuick = function(phone, e) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const statusSelect = document.getElementById('filterStatus');
+      if (statusSelect) statusSelect.value = '';
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.value = phone;
+        applyFilters();
+        showToast(`Showing all registrations with mobile: ${phone}`);
+        searchInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    };
+
     // Render registrations directory list
     function renderDirectory(filteredRegs) {
       const tbody = document.getElementById('directoryBody');
@@ -4489,6 +4607,8 @@
       
       tbody.innerHTML = '';
       if (cardList) cardList.innerHTML = '';
+
+      const dupPhoneMap = getDuplicatePhoneMap();
 
       filteredRegs.forEach(item => {
         const vehicleAssigned = item["Assigned Vehicle"] || '';
@@ -4500,6 +4620,19 @@
         const parentPhone = item["Parent Mobile Number"] || '';
         const currentStatus = (item.status || 'pending').toLowerCase();
         const studentId = item["Registration ID"] || item.regId || 'N/A';
+
+        // Duplicate registration detection
+        const cleanPhone = (studentPhone || '').toString().replace(/\D/g, '').slice(-10);
+        const dupGroup = (cleanPhone.length === 10 && dupPhoneMap.get(cleanPhone)) ? dupPhoneMap.get(cleanPhone) : [];
+        const isDuplicate = dupGroup.length > 1;
+        const otherDups = dupGroup.filter(d => d.regId !== studentId);
+        const otherIdsStr = otherDups.map(d => d.regId).join(', ');
+        const dupTooltip = isDuplicate 
+          ? `Duplicate Mobile (${cleanPhone}): Shared with ${otherDups.map(d => `${d.regId} (${d.name})`).join(', ')}. Click to view all matches.` 
+          : '';
+        const dupBadgeHtml = isDuplicate 
+          ? `<span class="badge-duplicate" onclick="filterByPhoneQuick('${cleanPhone}', event)" title="${dupTooltip}"><i class="fas fa-clone"></i> Dup (${dupGroup.length})</span>` 
+          : '';
 
         const studentPhoneHtml = studentPhone 
           ? `<div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:nowrap;">
@@ -4519,11 +4652,22 @@
 
         // 1. Desktop View: Append standard table row
         const row = document.createElement('tr');
+        if (isDuplicate) row.className = 'row-duplicate';
         row.innerHTML = `
-          <td data-label="Reg ID"><span class="badge-reg">${studentId}</span></td>
+          <td data-label="Reg ID">
+            <div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+              <span class="badge-reg">${studentId}</span>
+              ${dupBadgeHtml}
+            </div>
+          </td>
           <td data-label="Name"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
           <td data-label="Class">${item.Class || 'N/A'}</td>
-          <td data-label="Student Mobile">${studentPhoneHtml}</td>
+          <td data-label="Student Mobile">
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              ${studentPhoneHtml}
+              ${isDuplicate ? `<div class="duplicate-matched-list" onclick="filterByPhoneQuick('${cleanPhone}', event)" title="${dupTooltip}"><i class="fas fa-exclamation-triangle"></i> Matches: ${otherIdsStr}</div>` : ''}
+            </div>
+          </td>
           <td data-label="Parent Mobile">${parentPhoneHtml}</td>
           <td data-label="Panchayath / Ward">${item.Panchayath || 'N/A'} / ${item.Ward || 'N/A'}</td>
           <td data-label="Zone / Unit">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
@@ -4556,7 +4700,7 @@
         // 2. Mobile View: Append card element matching mockup
         if (cardList) {
           const card = document.createElement('div');
-          card.className = 'student-mobile-card';
+          card.className = isDuplicate ? 'student-mobile-card card-duplicate' : 'student-mobile-card';
           const avatarHtml = getStudentAvatarHtml(item["Student Name"] || item.name || 'Student');
           
           card.innerHTML = `
@@ -4564,7 +4708,10 @@
               ${avatarHtml}
               <div class="student-card-name-id">
                 <div class="student-name">${item["Student Name"] || item.name || 'N/A'}</div>
-                <div class="student-id">ID: ${studentId}</div>
+                <div class="student-id" style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+                  <span>ID: ${studentId}</span>
+                  ${dupBadgeHtml}
+                </div>
               </div>
               <div class="student-card-ward">
                 <div class="ward-circle-badge" title="Ward Number">${item.Ward || '00'}</div>
@@ -4575,9 +4722,12 @@
               <div class="detail-row">
                 <i class="fas fa-phone-alt detail-icon phone-icon-student"></i>
                 <div class="detail-text">
-                  <span>Student Mobile: <strong>${studentPhone || 'N/A'}</strong></span>
+                  <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                    <span>Student Mobile: <strong>${studentPhone || 'N/A'}</strong></span>
+                  </div>
+                  ${isDuplicate ? `<div class="duplicate-matched-list" onclick="filterByPhoneQuick('${cleanPhone}', event)" title="${dupTooltip}" style="margin-top:2px;"><i class="fas fa-exclamation-triangle"></i> Matches: ${otherIdsStr}</div>` : ''}
                   ${studentPhone ? `
-                    <span class="quick-contact-actions">
+                    <span class="quick-contact-actions" style="margin-top:0.25rem;">
                       <a href="tel:${studentPhone}" title="Call"><i class="fas fa-phone-alt"></i></a>
                       <a href="https://wa.me/91${studentPhone}" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     </span>
@@ -4880,7 +5030,16 @@
       if (zoneVal) filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
       if (unitVal) filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
       if (pVal) filtered = filtered.filter(r => r.Panchayath === pVal);
-      if (statusVal) filtered = filtered.filter(r => ((r.status || 'pending').toLowerCase()) === statusVal.toLowerCase());
+      if (statusVal === 'duplicates') {
+        const dupPhoneMap = getDuplicatePhoneMap();
+        filtered = filtered.filter(r => {
+          const rawPhone = (r["Student Mobile Number"] || r.phone || '').toString();
+          const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+          return cleanPhone.length === 10 && (dupPhoneMap.get(cleanPhone)?.length > 1);
+        });
+      } else if (statusVal) {
+        filtered = filtered.filter(r => ((r.status || 'pending').toLowerCase()) === statusVal.toLowerCase());
+      }
 
       if (searchStr) {
         filtered = filtered.filter(r => {
@@ -4934,31 +5093,42 @@
         });
       }
 
+      const dupPhoneMap = getDuplicatePhoneMap();
       let confirmed = 0;
       let pending = 0;
       let notComing = 0;
+      let duplicates = 0;
 
       baseList.forEach(r => {
         const st = (r.status || 'pending').toLowerCase();
         if (st === 'confirmed') confirmed++;
         else if (st === 'not_coming') notComing++;
         else pending++;
+
+        const rawPhone = (r["Student Mobile Number"] || r.phone || '').toString();
+        const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
+        if (cleanPhone.length === 10 && (dupPhoneMap.get(cleanPhone)?.length > 1)) {
+          duplicates++;
+        }
       });
 
       const confEl = document.getElementById('confirmedCount');
       const pendEl = document.getElementById('pendingCallingCount');
       const notComEl = document.getElementById('notComingCount');
+      const dupEl = document.getElementById('duplicatesCount');
 
       if (confEl) confEl.textContent = confirmed;
       if (pendEl) pendEl.textContent = pending;
       if (notComEl) notComEl.textContent = notComing;
+      if (dupEl) dupEl.textContent = duplicates;
 
       // Highlight active card
       const curFilter = document.getElementById('filterStatus')?.value || '';
       const cards = {
         'confirmed': document.getElementById('cardStatusConfirmed'),
         'pending': document.getElementById('cardStatusPending'),
-        'not_coming': document.getElementById('cardStatusNotComing')
+        'not_coming': document.getElementById('cardStatusNotComing'),
+        'duplicates': document.getElementById('cardStatusDuplicates')
       };
       Object.keys(cards).forEach(key => {
         const card = cards[key];
@@ -7106,6 +7276,23 @@
           'Kaipamangalam': 'KPM'
         };
         return prefixes[zoneName] || 'REG';
+      }
+
+      // Check for duplicate phone warning
+      const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      if (cleanPhone.length === 10) {
+        const dupPhoneMap = getDuplicatePhoneMap();
+        const existingList = dupPhoneMap.get(cleanPhone) || [];
+        const otherMatches = existingList.filter(m => m.regId !== (mode === 'edit' ? regId : ''));
+        if (otherMatches.length > 0) {
+          const names = otherMatches.map(m => `${m.regId} (${m.name})`).join(', ');
+          const proceed = confirm(`⚠️ Warning: Mobile number "${phone}" is already registered to:\n${names}\n\nDo you still want to proceed with saving this registration?`);
+          if (!proceed) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Delegate Profile';
+            return;
+          }
+        }
       }
 
       const convertDonatedId = (document.getElementById('convertFromDonatedRegId')?.value || '').trim();
