@@ -965,13 +965,22 @@
   flex-direction: column;
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
   overflow: hidden;
+  animation: autoDismissSplash 0.5s ease 1.6s forwards; /* Failsafe: auto dismisses in 1.6s even if JS fails */
+}
+
+@keyframes autoDismissSplash {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 .app-splash-screen.hide-splash {
-  opacity: 0;
-  transform: scale(1.03);
-  pointer-events: none;
-  visibility: hidden;
+  opacity: 0 !important;
+  transform: scale(1.03) !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 .splash-content {
