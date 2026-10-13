@@ -424,11 +424,16 @@ document.addEventListener('DOMContentLoaded', () => {
           'Pavaratty': 'PVT',
           'Kunnamkulam': 'KNM',
           'Guruvayoor': 'GVR',
+          'Guruvayur': 'GVR',
           'Thrissur': 'TSR',
           'Thrissur City': 'TSR',
           'Kodungallur': 'KDR',
           'Kaipamangalam': 'KPM'
         };
+        const clean = (zoneName || '').trim();
+        for (const [k, v] of Object.entries(prefixes)) {
+          if (clean.toLowerCase() === k.toLowerCase()) return v;
+        }
         return prefixes[zoneName] || 'REG';
       }
 
@@ -438,33 +443,49 @@ document.addEventListener('DOMContentLoaded', () => {
       const elPhone = document.getElementById('passPhone');
 
       try {
-        // Calculate next sequential registration ID starting from 101
+        // Calculate sequential registration IDs:
+        // District ID starts from REG 101 ordered by count
+        // Mandal ID starts from 101 with prefix code (e.g. KPM 101)
         const prefix = getZonePrefix(zone);
-        let maxNum = 100;
-        
-        const { data: allRegs, error: fetchError } = await supabase.from('registrations').select('reg_id');
-        if (fetchError) throw fetchError;
-        
-        if (allRegs) {
-          allRegs.forEach(r => {
-            const idVal = r.reg_id || '';
-            if (idVal.startsWith(prefix)) {
-              const num = parseInt(idVal.substring(prefix.length), 10);
-              if (!isNaN(num) && num > maxNum) {
-                maxNum = num;
-              }
-            }
-          });
-        }
-        const finalRegId = `${prefix}${maxNum + 1}`;
 
-        if (elRegId) elRegId.textContent = finalRegId;
+        const { data: allRegs, error: fetchError } = await supabase.from('registrations').select('reg_id, zone, timestamp');
+        if (fetchError) throw fetchError;
+
+        const activeRegs = (allRegs || []).filter(r => !r.reg_id || !r.reg_id.startsWith('SYS_'));
+        
+        // Continuous District sequential number (starts from REG 101)
+        const districtNum = 101 + activeRegs.length;
+        const districtRegId = `REG ${districtNum}`;
+
+        // Continuous Mandal sequential number (starts from PREFIX 101)
+        const mandalRegs = activeRegs.filter(r => {
+          const zPref = getZonePrefix(r.zone);
+          return zPref === prefix || (r.reg_id && r.reg_id.toUpperCase().startsWith(prefix));
+        });
+        const mandalNum = 101 + mandalRegs.length;
+        const mandalRegId = `${prefix} ${mandalNum}`;
+
+        // Unique DB ID
+        let maxDbNum = 100;
+        activeRegs.forEach(r => {
+          const idVal = r.reg_id || '';
+          if (idVal.startsWith(prefix)) {
+            const num = parseInt(idVal.substring(prefix.length), 10);
+            if (!isNaN(num) && num > maxDbNum) maxDbNum = num;
+          }
+        });
+        const finalRegId = `${prefix}${Math.max(mandalNum, maxDbNum + 1)}`;
+
+        if (elRegId) {
+          elRegId.innerHTML = `<span style="background:#0F172A; color:#FFFFFF; padding:0.2rem 0.55rem; border-radius:6px; font-weight:800; font-size:0.92rem;" title="District ID">${districtRegId}</span> <span style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); padding:0.18rem 0.5rem; border-radius:6px; font-weight:800; font-size:0.92rem; margin-left:0.35rem;" title="Mandal ID">${mandalRegId}</span>`;
+        }
         if (elName) elName.textContent = name;
         if (elPhone) elPhone.textContent = phone;
-        generatePassQR(finalRegId, name);
+        generatePassQR(districtRegId, name);
 
         // Save in localStorage
-        const regData = { regId: finalRegId, name, phone, timestamp: new Date().toISOString() };
+        const nowIso = new Date().toISOString();
+        const regData = { regId: finalRegId, districtRegId, mandalRegId, name, phone, timestamp: nowIso };
         localStorage.setItem('teenspace_reg_' + finalRegId, JSON.stringify(regData));
 
         // Insert into Supabase registrations table
@@ -481,7 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
             panchayath: panchayath,
             ward: ward,
             unit: unit,
-            zone: zone
+            zone: zone,
+            timestamp: nowIso
           }]);
           
         if (insertError) throw insertError;

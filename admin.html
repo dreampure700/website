@@ -3314,6 +3314,44 @@
       return ORGANIZATIONAL_MAP[zName] || [];
     }
 
+    // Mandal (Zone) Prefix Mapping for Sequential Numbering
+    const ZONE_PREFIXES = {
+      'Chavakkad': 'CKD',
+      'Pavaratty': 'PVT',
+      'Kunnamkulam': 'KNM',
+      'Guruvayoor': 'GVR',
+      'Thrissur': 'TSR',
+      'Thrissur City': 'TSR',
+      'Kodungallur': 'KDR',
+      'Kaipamangalam': 'KPM'
+    };
+
+    function getZonePrefix(zoneName) {
+      if (!zoneName) return 'REG';
+      const c = canonicalZone(zoneName);
+      return ZONE_PREFIXES[c] || 'REG';
+    }
+
+    // Helper: robust lookup of registration by any ID (District ID e.g. "REG 101", Mandal ID e.g. "KPM 101", or DB reg_id)
+    function findRegistration(identifier) {
+      if (!identifier || !Array.isArray(registrations)) return null;
+      const idStr = String(identifier).trim().toLowerCase();
+      const idAlpha = idStr.replace(/[^a-z0-9]/g, '');
+      return registrations.find(r => {
+        if (r.dbRegId && (r.dbRegId.toLowerCase() === idStr || r.dbRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
+        if (r.districtRegId && (r.districtRegId.toLowerCase() === idStr || r.districtRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
+        if (r.mandalRegId && (r.mandalRegId.toLowerCase() === idStr || r.mandalRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
+        if (r.regId && (r.regId.toLowerCase() === idStr || r.regId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
+        if (r["Registration ID"] && (r["Registration ID"].toLowerCase() === idStr || r["Registration ID"].toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
+        return false;
+      }) || null;
+    }
+
+    function getRegistrationDbId(identifier) {
+      const reg = findRegistration(identifier);
+      return (reg && reg.dbRegId) ? reg.dbRegId : identifier;
+    }
+
     // Helper to sanitize inputs from invisible characters, zero-width spaces, and extra whitespace (vital for mobile keyboards & WhatsApp copy-paste)
     function sanitizeAuthInput(str) {
       if (!str) return '';
@@ -3918,7 +3956,18 @@
           }
         } catch(e) {}
 
-        registrations = studentRegData.map(d => {
+        // Sort strictly by registration timestamp (oldest first) so continuous ordering is guaranteed
+        studentRegData.sort((a, b) => {
+          const tA = new Date(a.timestamp || a.created_at || 0).getTime();
+          const tB = new Date(b.timestamp || b.created_at || 0).getTime();
+          if (tA !== tB) return tA - tB;
+          return (a.id || 0) - (b.id || 0);
+        });
+
+        // Initialize Mandal (Zone) sequential counters starting from 100
+        const mandalCounters = {};
+
+        registrations = studentRegData.map((d, index) => {
           let resolvedUnit = canonicalUnit(d.unit);
           let resolvedZone = canonicalZone(d.zone);
 
@@ -3936,10 +3985,35 @@
             }
           }
 
+          // 1. Continuous District Sequential Numbering (starts from REG 101)
+          const distSeq = 101 + index;
+          const districtRegId = `REG ${distSeq}`;
+
+          // 2. Continuous Mandal (Zone) Sequential Numbering (starts from 101 with prefix code, e.g. KPM 101)
+          const zCanon = canonicalZone(resolvedZone);
+          const prefix = getZonePrefix(zCanon);
+          mandalCounters[prefix] = (mandalCounters[prefix] || 100) + 1;
+          const mandalSeq = mandalCounters[prefix];
+          const mandalRegId = `${prefix} ${mandalSeq}`;
+
+          // Default role-focused registration ID
+          const isZoneOrUnit = sessionUser && (sessionUser.role === 'Zone' || sessionUser.role === 'Unit');
+          const primaryRegId = isZoneOrUnit ? mandalRegId : districtRegId;
+          const secondaryRegId = isZoneOrUnit ? districtRegId : mandalRegId;
+
           return {
             Timestamp: d.timestamp,
-            "Registration ID": d.reg_id,
-            regId: d.reg_id,
+            id: d.id,
+            dbRegId: d.reg_id,
+            rawRegId: d.reg_id,
+            "Registration ID": primaryRegId,
+            regId: primaryRegId,
+            districtRegId: districtRegId,
+            districtSeq: distSeq,
+            mandalRegId: mandalRegId,
+            mandalSeq: mandalSeq,
+            mandalPrefix: prefix,
+            secondaryRegId: secondaryRegId,
             "Student Name": d.name,
             name: d.name,
             "Student Mobile Number": d.phone,
@@ -4833,8 +4907,9 @@
         if (isDuplicate) row.className = 'row-duplicate';
         row.innerHTML = `
           <td data-label="Reg ID">
-            <div style="display:inline-flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-              <span class="badge-reg">${studentId}</span>
+            <div style="display:inline-flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
+              <span class="badge-reg" style="background:#0F172A; color:#FFFFFF; font-weight:800; font-size:0.75rem; padding:0.25rem 0.5rem; border-radius:6px; letter-spacing:0.02em;" title="District Registration ID: ${item.districtRegId}">${item.districtRegId}</span>
+              <span class="badge-mandal" style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:6px; letter-spacing:0.02em;" title="Mandal (${item["Organization Zone"] || 'Zone'}) Registration ID: ${item.mandalRegId}">${item.mandalRegId}</span>
               ${dupBadgeHtml}
             </div>
           </td>
@@ -4886,8 +4961,9 @@
               ${avatarHtml}
               <div class="student-card-name-id">
                 <div class="student-name">${item["Student Name"] || item.name || 'N/A'}</div>
-                <div class="student-id" style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
-                  <span>ID: ${studentId}</span>
+                <div class="student-id" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                  <span style="background:#0F172A; color:#FFFFFF; font-weight:800; font-size:0.75rem; padding:0.18rem 0.45rem; border-radius:5px;" title="District ID">${item.districtRegId}</span>
+                  <span style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.15rem 0.4rem; border-radius:5px;" title="Mandal ID">${item.mandalRegId}</span>
                   ${dupBadgeHtml}
                 </div>
               </div>
@@ -5099,7 +5175,7 @@
       const newStatus = isPickedUp ? false : true;
       
       // Update local state immediately for instant feedback
-      const mainReg = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const mainReg = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (mainReg) {
         mainReg["Picked Up"] = newStatus ? "true" : "false";
         mainReg.pickedUp = newStatus ? "true" : "false";
@@ -5109,10 +5185,11 @@
       renderCoordinatorDashboard();
       
       // Call Supabase API
+      const targetDbId = getRegistrationDbId(regId);
       supabase
         .from('registrations')
         .update({ picked_up: newStatus })
-        .eq('reg_id', regId)
+        .eq('reg_id', targetDbId)
         .then(({ error }) => {
           if (error) {
             console.error('Failed to toggle pickup status on Supabase: ', error);
@@ -5220,10 +5297,23 @@
       }
 
       if (searchStr) {
+        const cleanSearch = searchStr.replace(/[^a-z0-9]/g, '');
         filtered = filtered.filter(r => {
           const name = (r["Student Name"] || r.name || '').toLowerCase();
           const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
-          return name.includes(searchStr) || phone.includes(searchStr);
+          const distId = (r.districtRegId || '').toLowerCase();
+          const mandalId = (r.mandalRegId || '').toLowerCase();
+          const dbId = (r.dbRegId || '').toLowerCase();
+          const regId = (r["Registration ID"] || r.regId || '').toLowerCase();
+
+          return name.includes(searchStr) || phone.includes(searchStr) ||
+                 distId.includes(searchStr) || mandalId.includes(searchStr) ||
+                 dbId.includes(searchStr) || regId.includes(searchStr) ||
+                 (cleanSearch && (
+                   distId.replace(/[^a-z0-9]/g, '').includes(cleanSearch) ||
+                   mandalId.replace(/[^a-z0-9]/g, '').includes(cleanSearch) ||
+                   dbId.replace(/[^a-z0-9]/g, '').includes(cleanSearch)
+                 ));
         });
       }
 
@@ -5370,15 +5460,25 @@
       const normStatus = (newStatus || 'pending').toLowerCase();
 
       // 1. Optimistic in-memory update
-      const student = registrations.find(r => (r["Registration ID"] || r.regId || r.reg_id) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId || r.reg_id) === regId);
       if (student) {
         student.status = normStatus;
       }
 
+      const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+
       // 2. Update UI selects for this student across desktop table and mobile cards
-      document.querySelectorAll(`select[data-reg-id="${regId}"]`).forEach(el => {
-        el.value = normStatus;
-        el.className = `status-select status-${normStatus}`;
+      const matchIds = new Set([regId, targetDbId]);
+      if (student) {
+        if (student.districtRegId) matchIds.add(student.districtRegId);
+        if (student.mandalRegId) matchIds.add(student.mandalRegId);
+        if (student.regId) matchIds.add(student.regId);
+      }
+      matchIds.forEach(id => {
+        document.querySelectorAll(`select[data-reg-id="${id}"]`).forEach(el => {
+          el.value = normStatus;
+          el.className = `status-select status-${normStatus}`;
+        });
       });
       if (selectEl) {
         selectEl.value = normStatus;
@@ -5400,7 +5500,7 @@
 
       // 5. Persist to Supabase registrations table
       try {
-        const sysRegId = 'SYS_STATUS_' + regId;
+        const sysRegId = 'SYS_STATUS_' + targetDbId;
         const { error } = await supabase.from('registrations').upsert([{
           reg_id: sysRegId,
           name: normStatus,
@@ -5531,7 +5631,7 @@
     }
 
     function openTravelTicketModal(regId) {
-      const student = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (!student) return;
 
       const vehicleVal = student["Assigned Vehicle"] || student.assignedVehicle || '';
@@ -5611,10 +5711,12 @@
       const displayName = (student["Student Name"] || student.name || 'N/A').toUpperCase();
       ctx.fillText(displayName.length > 22 ? displayName.substring(0, 22) + '...' : displayName, 30, 145);
 
-      // Reg ID
+      // Reg ID (Both District & Mandal Sequential IDs)
+      const distId = student.districtRegId || student["Registration ID"] || student.regId || 'N/A';
+      const mandalId = student.mandalRegId || '';
       ctx.fillStyle = '#00A8E8'; // Cyan
-      ctx.font = '700 14px "Inter", sans-serif';
-      ctx.fillText(`DELEGATE ID: ${student["Registration ID"] || student.regId || 'N/A'}`, 30, 170);
+      ctx.font = '700 13px "Inter", sans-serif';
+      ctx.fillText(`DISTRICT ID: ${distId}${mandalId ? `   ·   MANDAL: ${mandalId}` : ''}`, 30, 170);
 
       // Horizontal separator line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -5696,7 +5798,7 @@
       // Bind Download Image Event
       document.getElementById('downloadTicketBtn').onclick = () => {
         const link = document.createElement('a');
-        link.download = `TEENSPACE_TravelTicket_${student["Registration ID"] || student.regId}.png`;
+        link.download = `TEENSPACE_TravelTicket_${(distId || 'Pass').replace(/\s+/g, '_')}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
       };
@@ -5705,16 +5807,19 @@
       document.getElementById('shareWhatsAppTicketBtn').onclick = () => {
         const phone = student["Student Mobile Number"] || student.phone || '';
         const rawName = student["Student Name"] || student.name || 'Delegate';
-        const regIdVal = student["Registration ID"] || student.regId || '';
         const vCode = vehicle["Vehicle ID"] || 'N/A';
         const vBus = vehicle["Vehicle Name"] || 'Special Bus';
         const zoneVal = student["Organization Zone"] || student.zone || '';
         const unitVal = student["Organization Unit"] || student.unit || '';
 
+        const idInfo = mandalId 
+          ? `*District Reg ID:* ${distId}\n*Mandal Reg ID:* ${mandalId}\n`
+          : `*District Reg ID:* ${distId}\n`;
+
         const text = `*TEENSPACE 2026 - OFFICIAL TRAVEL PASS*\n\n` +
           `Dear *${rawName}*,\n` +
           `Your vehicle assignment for the summit is confirmed!\n\n` +
-          `*Registration ID:* ${regIdVal}\n` +
+          idInfo +
           `*Assigned Bus ID:* *${vCode}*\n` +
           `*Vehicle Name:* ${vBus}\n` +
           `*Organizational Zone:* ${zoneVal}\n` +
@@ -5912,10 +6017,11 @@
 
       // Persist on database
       const updatePromises = passengers.map((p, idx) => {
+        const targetDbId = p.dbRegId || getRegistrationDbId(p["Registration ID"] || p.regId);
         return supabase
           .from('registrations')
           .update({ pickup_order: idx + 1 })
-          .eq('reg_id', p["Registration ID"] || p.regId);
+          .eq('reg_id', targetDbId);
       });
 
       Promise.all(updatePromises)
@@ -5940,10 +6046,11 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
       }
 
+      const targetDbId = getRegistrationDbId(regId);
       supabase
         .from('registrations')
         .update({ assigned_vehicle: null, pickup_order: null })
-        .eq('reg_id', regId)
+        .eq('reg_id', targetDbId)
         .then(({ error }) => {
           if (!error) {
             alert('Passenger removed from vehicle successfully!');
@@ -5989,7 +6096,7 @@
       supabase
         .from('registrations')
         .update({ assigned_vehicle: vehicleId, pickup_order: nextOrder })
-        .eq('reg_id', regId)
+        .eq('reg_id', getRegistrationDbId(regId))
         .then(({ error }) => {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
@@ -6050,11 +6157,23 @@
       if (statusVal) list = list.filter(r => (r.status || 'pending').toLowerCase() === statusVal.toLowerCase());
 
       if (searchStr) {
+        const cleanSearch = searchStr.replace(/[^a-z0-9]/g, '');
         list = list.filter(r => {
           const name = (r["Student Name"] || r.name || '').toLowerCase();
           const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
-          const regId = (r["Registration ID"] || r.regId || r.reg_id || '').toLowerCase();
-          return name.includes(searchStr) || phone.includes(searchStr) || regId.includes(searchStr);
+          const distId = (r.districtRegId || '').toLowerCase();
+          const mandalId = (r.mandalRegId || '').toLowerCase();
+          const dbId = (r.dbRegId || '').toLowerCase();
+          const regId = (r["Registration ID"] || r.regId || '').toLowerCase();
+
+          return name.includes(searchStr) || phone.includes(searchStr) ||
+                 distId.includes(searchStr) || mandalId.includes(searchStr) ||
+                 dbId.includes(searchStr) || regId.includes(searchStr) ||
+                 (cleanSearch && (
+                   distId.replace(/[^a-z0-9]/g, '').includes(cleanSearch) ||
+                   mandalId.replace(/[^a-z0-9]/g, '').includes(cleanSearch) ||
+                   dbId.replace(/[^a-z0-9]/g, '').includes(cleanSearch)
+                 ));
         });
       }
 
@@ -6216,7 +6335,8 @@
     function generateCsvString(items) {
       if (!items || items.length === 0) return '';
       const headers = [
-        "Registration ID",
+        "District Reg ID",
+        "Mandal Reg ID",
         "Student Name",
         "Class",
         "Calling Status",
@@ -6238,8 +6358,11 @@
       items.forEach(r => {
         const rawStatus = (r.status || 'pending').toLowerCase();
         const displayStatus = rawStatus === 'confirmed' ? 'Confirmed' : (rawStatus === 'not_coming' ? 'Not Coming' : 'Pending Calling');
+        const distId = r.districtRegId || r["Registration ID"] || r.regId || '';
+        const mandalId = r.mandalRegId || '';
         const row = [
-          r["Registration ID"] || r.regId || r.reg_id || '',
+          distId,
+          mandalId,
           r["Student Name"] || r.name || '',
           r.Class || r.student_class || '',
           displayStatus,
@@ -6486,7 +6609,8 @@
       }
 
       items.forEach((item, idx) => {
-        const regId = item["Registration ID"] || item.regId || item.reg_id || 'N/A';
+        const distId = item.districtRegId || item["Registration ID"] || item.regId || 'N/A';
+        const mandalId = item.mandalRegId || '';
         const name = item["Student Name"] || item.name || 'N/A';
         const studentClass = item.Class || item.student_class || '-';
         const phone = item["Student Mobile Number"] || item.phone || '-';
@@ -6508,7 +6632,10 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="text-align: center; color: #64748B;">${idx + 1}</td>
-          <td style="text-align: center; font-weight: 700; color: #0284C7;">${escapeHtml(regId)}</td>
+          <td style="text-align: center; white-space: nowrap;">
+            <div style="font-weight: 800; color: #0F172A; font-size: 8pt;">${escapeHtml(distId)}</div>
+            ${mandalId ? `<div style="font-weight: 700; color: #0284C7; font-size: 7.2pt;">${escapeHtml(mandalId)}</div>` : ''}
+          </td>
           <td style="font-weight: 700; color: #0F172A;">${escapeHtml(name)}</td>
           <td style="text-align: center; font-weight: 600;">${escapeHtml(studentClass)}</td>
           <td style="white-space: nowrap;">${escapeHtml(phone)}</td>
@@ -6550,7 +6677,8 @@
 
       let rowsHtml = '';
       items.forEach((item, idx) => {
-        const regId = item["Registration ID"] || item.regId || item.reg_id || 'N/A';
+        const distId = item.districtRegId || item["Registration ID"] || item.regId || 'N/A';
+        const mandalId = item.mandalRegId || '';
         const name = item["Student Name"] || item.name || 'N/A';
         const studentClass = item.Class || item.student_class || '-';
         const phone = item["Student Mobile Number"] || item.phone || '-';
@@ -6568,7 +6696,10 @@
         rowsHtml += `
           <tr>
             <td style="text-align:center; color:#64748B;">${idx + 1}</td>
-            <td style="text-align:center; font-weight:bold; color:#0284C7;">${escapeHtml(regId)}</td>
+            <td style="text-align:center; white-space:nowrap;">
+              <div style="font-weight:bold; color:#0F172A; font-size:8pt;">${escapeHtml(distId)}</div>
+              ${mandalId ? `<div style="font-weight:bold; color:#0284C7; font-size:7pt;">${escapeHtml(mandalId)}</div>` : ''}
+            </td>
             <td style="font-weight:bold; color:#0F172A;">${escapeHtml(name)}</td>
             <td style="text-align:center;">${escapeHtml(studentClass)}</td>
             <td style="white-space:nowrap;">${escapeHtml(phone)}</td>
@@ -7101,12 +7232,14 @@
 
     function openStudentEditModal(regId) {
       const modal = document.getElementById('studentModal');
-      const student = registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (!student) return;
 
       document.getElementById('studentModalTitle').innerHTML = '<i class="fas fa-user-graduate text-magenta"></i> Edit Delegate';
       const sub = document.getElementById('studentModalSubtitle');
-      if (sub) sub.textContent = 'Edit delegate profile details below.';
+      const distLabel = student.districtRegId || regId;
+      const mandalLabel = student.mandalRegId ? ` · ${student.mandalRegId}` : '';
+      if (sub) sub.textContent = `Edit delegate profile (${distLabel}${mandalLabel})`;
       const banner = document.getElementById('convertLeadInfoBanner');
       if (banner) banner.style.display = 'none';
       const saveLead = document.getElementById('saveOnlyLeadBtn');
@@ -7116,7 +7249,7 @@
       document.getElementById('convertFromDonatedRegId').value = '';
 
       document.getElementById('studentMode').value = 'edit';
-      document.getElementById('studentRegIdInput').value = regId;
+      document.getElementById('studentRegIdInput').value = student.dbRegId || regId;
 
       document.getElementById('studentNameInput').value = student["Student Name"] || student.name || '';
       document.getElementById('studentPhoneInput').value = student["Student Mobile Number"] || student.phone || '';
@@ -7458,10 +7591,11 @@
 
       // Check for duplicate phone warning
       const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+      const targetDbId = mode === 'edit' ? getRegistrationDbId(regId) : '';
       if (cleanPhone.length === 10) {
         const dupPhoneMap = getDuplicatePhoneMap();
         const existingList = dupPhoneMap.get(cleanPhone) || [];
-        const otherMatches = existingList.filter(m => m.regId !== (mode === 'edit' ? regId : ''));
+        const otherMatches = existingList.filter(m => m.regId !== (mode === 'edit' ? regId : '') && m.dbRegId !== (mode === 'edit' ? targetDbId : ''));
         if (otherMatches.length > 0) {
           const names = otherMatches.map(m => `${m.regId} (${m.name})`).join(', ');
           const proceed = confirm(`⚠️ Warning: Mobile number "${phone}" is already registered to:\n${names}\n\nDo you still want to proceed with saving this registration?`);
@@ -7482,7 +7616,7 @@
         const prefix = getZonePrefix(zone);
         let maxNum = 100;
         registrations.forEach(r => {
-          const idVal = r["Registration ID"] || r.regId || '';
+          const idVal = r.dbRegId || r["Registration ID"] || r.regId || '';
           if (idVal.startsWith(prefix)) {
             const num = parseInt(idVal.substring(prefix.length), 10);
             if (!isNaN(num) && num > maxNum) {
@@ -7507,9 +7641,11 @@
             ward: ward,
             unit: unit,
             zone: zone,
-            assigned_vehicle: assignedVehicle || null
+            assigned_vehicle: assignedVehicle || null,
+            timestamp: new Date().toISOString()
           }]);
       } else {
+        calculatedRegId = targetDbId || regId;
         dbQuery = supabase
           .from('registrations')
           .update({
@@ -7525,7 +7661,7 @@
             zone: zone,
             assigned_vehicle: assignedVehicle || null
           })
-          .eq('reg_id', regId);
+          .eq('reg_id', calculatedRegId);
       }
 
       const { error } = await dbQuery;
@@ -7547,7 +7683,7 @@
           } catch(delErr) {
             console.warn("Notice deleting converted lead:", delErr);
           }
-          alert(`🎉 Success! "${name}" has been converted to an official registered delegate with Registration ID: ${calculatedRegId}!`);
+          alert(`🎉 Success! "${name}" has been converted to an official registered delegate!`);
         } else {
           alert(mode === 'add' ? 'Delegate added successfully!' : 'Delegate profile saved successfully!');
         }
@@ -7559,10 +7695,14 @@
     });
 
     async function deleteStudent(regId) {
-      const student = registrations.find(r => (r.regId === regId || r["Registration ID"] === regId || r.reg_id === regId));
+      const student = findRegistration(regId) || registrations.find(r => (r.regId === regId || r["Registration ID"] === regId || r.reg_id === regId));
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
+      const dbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+      const distId = student ? (student.districtRegId || student.regId) : regId;
+      const mandalId = student ? (student.mandalRegId || '') : '';
+      const displayLabel = mandalId ? `${sName} (${distId} · ${mandalId})` : `${sName} (${distId})`;
 
-      if (!confirm(`Are you sure you want to move delegate "${sName}" (${regId}) to Trash?`)) {
+      if (!confirm(`Are you sure you want to move delegate "${displayLabel}" to Trash?\n\nDeleting this delegate will automatically shift and re-sequence all active delegate numbers without breaking continuous numbering order.`)) {
         return;
       }
 
@@ -7570,7 +7710,7 @@
         // Fetch complete current row from registrations
         let fullRecord = student || {};
         try {
-          const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', regId);
+          const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', dbRegId);
           if (dbRows && dbRows.length > 0) {
             fullRecord = dbRows[0];
           }
@@ -7578,7 +7718,7 @@
 
         const trashItem = {
           item_type: 'student',
-          reg_id: regId,
+          reg_id: dbRegId,
           name: fullRecord.name || fullRecord["Student Name"] || '',
           phone: fullRecord.phone || fullRecord["Student Mobile Number"] || '',
           parent_phone: fullRecord.parent_phone || fullRecord["Parent Mobile Number"] || '',
@@ -7595,7 +7735,7 @@
           deleted_at: new Date().toISOString(),
           deleted_by: (sessionUser ? sessionUser.username : 'Admin') + ' (' + (sessionUser ? sessionUser.role : 'District') + ')',
           original_timestamp: fullRecord.timestamp || fullRecord.Timestamp || null,
-          raw_data: fullRecord
+          raw_data: { ...fullRecord, districtRegId: distId, mandalRegId: mandalId }
         };
 
         // 1. Insert into trash table
@@ -7605,7 +7745,7 @@
           try {
             await supabase.from('registrations').insert([{
               ...fullRecord,
-              reg_id: 'SYS_TRASH_' + regId,
+              reg_id: 'SYS_TRASH_' + dbRegId,
               place: 'TRASH_BACKUP',
               student_class: 'TRASH_STUDENT'
             }]);
@@ -7613,14 +7753,14 @@
         }
 
         // 2. Delete from active registrations table
-        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', regId);
+        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', dbRegId);
         if (delErr) throw delErr;
 
         try {
-          await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + regId);
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + dbRegId);
         } catch(sErr) {}
 
-        alert(`Delegate "${sName}" moved to Trash successfully.`);
+        alert(`Delegate "${sName}" moved to Trash successfully. Active registration numbers have been automatically shifted and re-sequenced.`);
         await loadData();
         await loadTrashData();
       } catch (err) {
@@ -7629,22 +7769,7 @@
       }
     }
 
-    // ========================================================
-    // DYNAMIC BUS ID AUTO-GENERATION AND ZONES PREFIXES
-    // ========================================================
-    const ZONE_PREFIXES = {
-      'CHAVAKKAD': 'CKD',
-      'GURUVAYUR': 'GVR',
-      'KAIPAMANGALAM': 'KPM',
-      'KODUNGALLUR': 'KDR',
-      'KUNNAMKULAM': 'KNM',
-      'PAVARATTY': 'PVT',
-      'THRISSUR': 'TSR'
-    };
-
-    // ========================================================
-    // DYNAMIC TARGET ALLOCATION & MANAGEMENT SUITE
-    // ========================================================
+    // Dynamic Target Allocation & Management Suite
     let customTargetsMap = new Map();
 
     function getDistrictTotalTargetValue() {
