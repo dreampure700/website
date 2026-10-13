@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="preconnect" href="https://vnpiylttdjedglsggeea.supabase.co">
-  <title>Program Schedule | TEENSPACE 2026</title>
+  <title>Program Schedule & Topics | TEENSPACE 2026</title>
   
   <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="css/main.css">
@@ -21,6 +21,130 @@
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* Custom enhancements for Schedule & Topics Timeline */
+    .schedule-timeline {
+      position: relative;
+      max-width: 860px;
+      margin: 1.5rem auto 0 auto;
+      padding-left: 2.75rem;
+    }
+    .schedule-timeline::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      bottom: 25px;
+      left: 14px;
+      width: 4px;
+      background: linear-gradient(180deg, var(--magenta) 0%, var(--cyan) 35%, #8B5CF6 65%, #10B981 100%);
+      border-radius: 4px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 2.25rem;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -2.75rem;
+      margin-left: 16px;
+      top: 22px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      border: 4px solid var(--magenta);
+      box-shadow: 0 0 0 3px rgba(230, 0, 103, 0.2), 0 4px 12px rgba(0,0,0,0.08);
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .timeline-dot.cyan-dot {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(0, 168, 232, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .timeline-dot.purple-dot {
+      border-color: #8B5CF6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .timeline-dot.green-dot {
+      border-color: #10B981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .timeline-dot.amber-dot {
+      border-color: #F59E0B;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .timeline-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 1.6rem 1.85rem;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .timeline-card:hover {
+      transform: translateY(-3px) translateX(4px);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+      border-color: rgba(0, 168, 232, 0.35);
+    }
+
+    .topic-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 0.35rem 0.85rem;
+      border-radius: 50px;
+      letter-spacing: 0.02em;
+    }
+    .malayalam-subtitle {
+      font-family: inherit;
+      font-size: 1.15rem;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 0.65rem;
+    }
+    .speaker-badge-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 0.35rem 0.85rem;
+      border-radius: 10px;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .schedule-timeline {
+        padding-left: 2.2rem;
+      }
+      .schedule-timeline::before {
+        left: 11px;
+      }
+      .timeline-dot {
+        left: -2.2rem;
+        margin-left: 13px;
+        width: 17px;
+        height: 17px;
+        border-width: 3px;
+        top: 20px;
+      }
+      .timeline-card {
+        padding: 1.25rem 1.1rem;
+        border-radius: 16px;
+      }
+      .malayalam-subtitle {
+        font-size: 1.02rem;
+      }
+      .timeline-session-title {
+        font-size: 1.18rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -72,125 +196,407 @@
   <!-- INNER PAGE HEADER -->
   <section class="section" style="background: radial-gradient(circle at 10% 20%, rgba(0, 168, 232, 0.05) 0%, rgba(230, 0, 103, 0.05) 90%); padding: 4.5rem 0 2.5rem 0;">
     <div class="container" style="text-align: center;">
-      <span class="section-tag"><i class="fas fa-user-graduate"></i> Scholars & Mentors</span>
-      <h1 style="font-family: var(--font-heading); font-size: 2.75rem; font-weight: 900; margin-bottom: 0.8rem;">Program Schedule & Faculties</h1>
-      <p style="color: var(--text-muted); max-width: 650px; margin: 0 auto; line-height: 1.6; font-size: 1.05rem;">
-        Full-day empowering conference sessions led by renowned scholars, youth trainers, and career experts on October 18th, 2026 at Dream Palace, Paroor.
+      <span class="section-tag"><i class="fas fa-calendar-check"></i> Official Conference Itinerary</span>
+      <h1 style="font-family: var(--font-heading); font-size: 2.75rem; font-weight: 900; margin-bottom: 0.8rem;">Program Schedule & Topics</h1>
+      <p style="color: var(--text-muted); max-width: 680px; margin: 0 auto; line-height: 1.6; font-size: 1.05rem;">
+        8 empowering conference sessions led by renowned scholars, youth trainers, and career mentors on <strong>Sunday, October 18th, 2026</strong> at <strong>Dream Palace, Paroor</strong>.
       </p>
     </div>
   </section>
 
-  <!-- EMINENT FACULTIES SECTION -->
-  <section class="section" style="padding-top: 1rem; padding-bottom: 3rem;">
+  <!-- PROGRAM SCHEDULE & TOPICS TIMELINE SECTION -->
+  <section class="section" style="padding-top: 1rem; padding-bottom: 3.5rem;">
     <div class="container">
-      <div class="section-header" style="text-align: center; margin-bottom: 2.5rem;">
-        <span class="section-tag cyan-tag"><i class="fas fa-user-tie"></i> Key Speakers</span>
-        <h2 class="section-title">Confirmed Speakers</h2>
-        <p class="section-subtitle">Distinguished scholars and mentors guiding TEENSPACE 2026</p>
+      <div class="section-header" style="text-align: center; margin-bottom: 2rem;">
+        <span class="section-tag cyan-tag"><i class="fas fa-list-ol"></i> Conference Sessions</span>
+        <h2 class="section-title">8 Empowering Topics</h2>
+        <p class="section-subtitle">Complete session-by-session breakdown of topics and faculty mentors</p>
       </div>
 
-      <div class="faculty-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem;">
-        <!-- Speaker 1: Rauof Al Hikami -->
+      <div class="schedule-timeline">
+        
+        <!-- Topic 1 -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(230,0,103,0.08); color: var(--magenta);">
+                <i class="fas fa-bookmark text-magenta"></i> Topic 1
+              </span>
+              <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Spiritual
+              </span>
+            </div>
+            <h3 class="timeline-session-title">When We Leave</h3>
+            <div class="malayalam-subtitle" style="color: var(--magenta);">
+              മരണം & പരലോകം
+            </div>
+            <div class="speaker-badge-wrap" style="color: var(--magenta); background: rgba(230,0,103,0.06);">
+              <i class="fas fa-user-tie"></i> Arshad Al Hikami
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 2 -->
+        <div class="timeline-item">
+          <div class="timeline-dot cyan-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(0,168,232,0.08); color: var(--cyan);">
+                <i class="fas fa-bookmark text-cyan"></i> Topic 2
+              </span>
+              <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Family & Character
+              </span>
+            </div>
+            <h3 class="timeline-session-title">We & Our Parents</h3>
+            <div class="malayalam-subtitle" style="color: var(--cyan);">
+              മാതാപിതാക്കൾ
+            </div>
+            <div class="speaker-badge-wrap" style="color: var(--cyan); background: rgba(0,168,232,0.06);">
+              <i class="fas fa-user-graduate"></i> Haris Atoor
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 3 -->
+        <div class="timeline-item">
+          <div class="timeline-dot green-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(16,185,129,0.08); color: #10B981;">
+                <i class="fas fa-bookmark" style="color:#10B981;"></i> Topic 3
+              </span>
+              <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Youth & Digital Wellness
+              </span>
+            </div>
+            <h3 class="timeline-session-title">The Big Teenager</h3>
+            <div class="malayalam-subtitle" style="color: #10B981;">
+              ട്രെൻഡുകൾ, സോഷ്യൽ മീഡിയ, സെലിബ്രേഷൻസ് & ലിബറലിസം
+            </div>
+            <div class="speaker-badge-wrap" style="color: #10B981; background: rgba(16,185,129,0.06);">
+              <i class="fas fa-chalkboard-teacher"></i> Safwan Barami Al Hikami
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 4 -->
+        <div class="timeline-item">
+          <div class="timeline-dot purple-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(139,92,246,0.08); color: #8B5CF6;">
+                <i class="fas fa-bookmark" style="color:#8B5CF6;"></i> Topic 4
+              </span>
+              <span class="badge" style="background: rgba(139,92,246,0.12); color: #8B5CF6; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                <i class="fas fa-users"></i> Panel Discussion
+              </span>
+            </div>
+            <h3 class="timeline-session-title">ആദർശം നാമറിയേണ്ടത്</h3>
+            <div class="malayalam-subtitle" style="color: #8B5CF6;">
+              പാനൽ ഡിസ്കഷൻ
+            </div>
+            <div class="speaker-badge-wrap" style="color: #8B5CF6; background: rgba(139,92,246,0.06);">
+              <i class="fas fa-user-friends"></i> Shuaib Madeeni & Salahudheen Al Hikami
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 5 -->
+        <div class="timeline-item">
+          <div class="timeline-dot cyan-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(0,168,232,0.08); color: var(--cyan);">
+                <i class="fas fa-bookmark text-cyan"></i> Topic 5
+              </span>
+              <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Career Roadmap
+              </span>
+            </div>
+            <h3 class="timeline-session-title">Confusions to Clarity</h3>
+            <div class="malayalam-subtitle" style="color: var(--cyan);">
+              കരിയർ സെഷൻ
+            </div>
+            <div class="speaker-badge-wrap" style="color: var(--cyan); background: rgba(0,168,232,0.06);">
+              <i class="fas fa-compass"></i> Niyas Kooriyadan
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 6 -->
+        <div class="timeline-item">
+          <div class="timeline-dot amber-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(245,158,11,0.08); color: #D97706;">
+                <i class="fas fa-bookmark" style="color:#D97706;"></i> Topic 6
+              </span>
+              <span class="badge" style="background: rgba(245,158,11,0.12); color: #D97706; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Interactive Session
+              </span>
+            </div>
+            <h3 class="timeline-session-title">Pro-Teen: Issues & Solutions</h3>
+            <div class="malayalam-subtitle" style="color: #D97706;">
+              പ്രശ്നങ്ങൾ & പരിഹാരങ്ങൾ
+            </div>
+            <div class="speaker-badge-wrap" style="color: #D97706; background: rgba(245,158,11,0.06);">
+              <i class="fas fa-user-friends"></i> Azhar Chalissery & Haris Atoor
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 7 -->
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(230,0,103,0.08); color: var(--magenta);">
+                <i class="fas fa-bookmark text-magenta"></i> Topic 7
+              </span>
+              <span class="badge" style="background: #F1F5F9; color: #475569; font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Faith & Practice
+              </span>
+            </div>
+            <h3 class="timeline-session-title">Really Am I Rich...!?</h3>
+            <div class="malayalam-subtitle" style="color: var(--magenta);">
+              ഈമാൻ, വർത്തമാനം & കൃത്യമായ നമസ്കാരം
+            </div>
+            <div class="speaker-badge-wrap" style="color: var(--magenta); background: rgba(230,0,103,0.06);">
+              <i class="fas fa-praying-hands"></i> Shafeeq Swalahi
+            </div>
+          </div>
+        </div>
+
+        <!-- Topic 8 -->
+        <div class="timeline-item">
+          <div class="timeline-dot cyan-dot"></div>
+          <div class="timeline-card">
+            <div class="timeline-header">
+              <span class="topic-pill" style="background: rgba(0,168,232,0.08); color: var(--cyan);">
+                <i class="fas fa-bookmark text-cyan"></i> Topic 8
+              </span>
+              <span class="badge" style="background: rgba(0,168,232,0.12); color: var(--cyan); font-weight: 700; font-size: 0.75rem; padding: 0.3rem 0.65rem; border-radius: 6px;">
+                Valedictory Session
+              </span>
+            </div>
+            <h3 class="timeline-session-title">Let's Walk Together</h3>
+            <div class="malayalam-subtitle" style="color: var(--cyan);">
+              സമാപന സമ്മേളനം
+            </div>
+            <div class="speaker-badge-wrap" style="color: var(--cyan); background: rgba(0,168,232,0.06);">
+              <i class="fas fa-bullhorn"></i> Raoof Al Hikami
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- EMINENT FACULTIES SECTION -->
+  <section class="section" style="background: var(--bg-secondary); padding-top: 3.5rem; padding-bottom: 4rem;">
+    <div class="container">
+      <div class="section-header" style="text-align: center; margin-bottom: 2.5rem;">
+        <span class="section-tag cyan-tag"><i class="fas fa-user-tie"></i> Key Speakers & Mentors</span>
+        <h2 class="section-title">Distinguished Faculties</h2>
+        <p class="section-subtitle">Meet the visionary scholars, youth mentors, and career guides leading TEENSPACE 2026</p>
+      </div>
+
+      <div class="faculty-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+        
+        <!-- Speaker 1: Arshad Al Hikami -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: var(--magenta);">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: var(--magenta); background: linear-gradient(135deg, rgba(230,0,103,0.12), rgba(0,168,232,0.12));">
               <i class="fas fa-user-tie"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Rauof Al Hikami</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Arshad Al Hikami</h3>
+          <span class="faculty-role">Faculty & Scholar</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label"><i class="fas fa-bookmark text-magenta"></i> Topic 1</div>
+            <div class="faculty-topic-title">When We Leave</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">മരണം & പരലോകം</div>
+          </div>
         </div>
 
-        <!-- Speaker 2: Shafeeq Swalahi -->
+        <!-- Speaker 2: Haris Atoor -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: var(--cyan); background: linear-gradient(135deg, rgba(0,168,232,0.12), rgba(16,185,129,0.12));">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: var(--cyan); background: linear-gradient(135deg, rgba(0,168,232,0.12), rgba(16,185,129,0.12));">
               <i class="fas fa-user-graduate"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Shafeeq Swalahi</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Haris Atoor</h3>
+          <span class="faculty-role" style="background: rgba(0,168,232,0.08); color: var(--cyan);">Trainer & Counselor</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:var(--cyan);"><i class="fas fa-bookmark text-cyan"></i> Topic 2 & 6</div>
+            <div class="faculty-topic-title">We & Our Parents | Pro-Teen</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">മാതാപിതാക്കൾ & പരിഹാരങ്ങൾ</div>
+          </div>
         </div>
 
-        <!-- Speaker 3: Safwan Barami -->
+        <!-- Speaker 3: Safwan Barami Al Hikami -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: #10B981; background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(230,0,103,0.12));">
-              <i class="fas fa-book-open"></i>
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: #10B981; background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(0,168,232,0.12));">
+              <i class="fas fa-chalkboard-teacher"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Safwan Baramy Alhikami</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: #10B981; text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Safwan Barami Al Hikami</h3>
+          <span class="faculty-role" style="background: rgba(16,185,129,0.08); color: #10B981;">Youth Scholar & Orator</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:#10B981;"><i class="fas fa-bookmark" style="color:#10B981;"></i> Topic 3</div>
+            <div class="faculty-topic-title">The Big Teenager</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">സോഷ്യൽ മീഡിയ & ലിബറലിസം</div>
+          </div>
         </div>
 
-        <!-- Speaker 4: Mujahid Balussery -->
+        <!-- Speaker 4: Shuaib Madeeni -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: var(--magenta);">
-              <i class="fas fa-bullhorn"></i>
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: #8B5CF6; background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(230,0,103,0.12));">
+              <i class="fas fa-book-reader"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Mujahid Balussery</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--magenta); text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Shuaib Madeeni</h3>
+          <span class="faculty-role" style="background: rgba(139,92,246,0.08); color: #8B5CF6;">Islamic Scholar & Panelist</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:#8B5CF6;"><i class="fas fa-bookmark" style="color:#8B5CF6;"></i> Topic 4</div>
+            <div class="faculty-topic-title">ആദർശം നാമറിയേണ്ടത്</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">പാനൽ ഡിസ്കഷൻ</div>
+          </div>
         </div>
 
-        <!-- Speaker 5: Shamjas K Abbas -->
+        <!-- Speaker 5: Salahudheen Al Hikami -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: var(--cyan); background: linear-gradient(135deg, rgba(0,168,232,0.12), rgba(230,0,103,0.12));">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: #8B5CF6; background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(0,168,232,0.12));">
+              <i class="fas fa-university"></i>
+            </div>
+            <div class="faculty-badge-check" title="Confirmed Speaker">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Salahudheen Al Hikami</h3>
+          <span class="faculty-role" style="background: rgba(139,92,246,0.08); color: #8B5CF6;">Islamic Scholar & Panelist</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:#8B5CF6;"><i class="fas fa-bookmark" style="color:#8B5CF6;"></i> Topic 4</div>
+            <div class="faculty-topic-title">ആദർശം നാമറിയേണ്ടത്</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">പാനൽ ഡിസ്കഷൻ</div>
+          </div>
+        </div>
+
+        <!-- Speaker 6: Niyas Kooriyadan -->
+        <div class="faculty-card" style="padding: 2rem 1.25rem;">
+          <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: var(--cyan); background: linear-gradient(135deg, rgba(0,168,232,0.12), rgba(16,185,129,0.12));">
               <i class="fas fa-compass"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Shamjas K Abbas</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Niyas Kooriyadan</h3>
+          <span class="faculty-role" style="background: rgba(0,168,232,0.08); color: var(--cyan);">Career Consultant & Mentor</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:var(--cyan);"><i class="fas fa-bookmark text-cyan"></i> Topic 5</div>
+            <div class="faculty-topic-title">Confusions to Clarity</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">കരിയർ സെഷൻ</div>
+          </div>
         </div>
 
-        <!-- Speaker 6: Arshad Al Hikami -->
+        <!-- Speaker 7: Azhar Chalissery -->
         <div class="faculty-card" style="padding: 2rem 1.25rem;">
           <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
-            <div class="faculty-avatar" style="width: 90px; height: 90px; font-size: 2.2rem; color: #10B981; background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(0,168,232,0.12));">
-              <i class="fas fa-graduation-cap"></i>
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: #D97706; background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(230,0,103,0.12));">
+              <i class="fas fa-users-cog"></i>
             </div>
             <div class="faculty-badge-check" title="Confirmed Speaker">
               <i class="fas fa-check"></i>
             </div>
           </div>
-          <h3 class="faculty-name" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Arshad Al Hikami</h3>
-          <span style="font-size: 0.8rem; font-weight: 700; color: #10B981; text-transform: uppercase; letter-spacing: 0.5px;">Faculty</span>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Azhar Chalissery</h3>
+          <span class="faculty-role" style="background: rgba(245,158,11,0.08); color: #D97706;">Youth Mentor & Trainer</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:#D97706;"><i class="fas fa-bookmark" style="color:#D97706;"></i> Topic 6</div>
+            <div class="faculty-topic-title">Pro-Teen: Issues & Solutions</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">പ്രശ്നങ്ങൾ & പരിഹാരങ്ങൾ</div>
+          </div>
         </div>
+
+        <!-- Speaker 8: Shafeeq Swalahi -->
+        <div class="faculty-card" style="padding: 2rem 1.25rem;">
+          <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: var(--magenta); background: linear-gradient(135deg, rgba(230,0,103,0.12), rgba(0,168,232,0.12));">
+              <i class="fas fa-praying-hands"></i>
+            </div>
+            <div class="faculty-badge-check" title="Confirmed Speaker">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Shafeeq Swalahi</h3>
+          <span class="faculty-role">Renowned Scholar & Orator</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label"><i class="fas fa-bookmark text-magenta"></i> Topic 7</div>
+            <div class="faculty-topic-title">Really Am I Rich...!?</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">ഈമാൻ & കൃത്യമായ നമസ്കാരം</div>
+          </div>
+        </div>
+
+        <!-- Speaker 9: Raoof Al Hikami -->
+        <div class="faculty-card" style="padding: 2rem 1.25rem;">
+          <div class="faculty-avatar-wrap" style="margin-bottom: 1rem;">
+            <div class="faculty-avatar" style="width: 84px; height: 84px; font-size: 2rem; color: var(--cyan); background: linear-gradient(135deg, rgba(0,168,232,0.12), rgba(230,0,103,0.12));">
+              <i class="fas fa-bullhorn"></i>
+            </div>
+            <div class="faculty-badge-check" title="Confirmed Speaker">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+          <h3 class="faculty-name" style="font-size: 1.25rem; margin-bottom: 0.2rem;">Raoof Al Hikami</h3>
+          <span class="faculty-role" style="background: rgba(0,168,232,0.08); color: var(--cyan);">Leader & Scholar</span>
+          <div class="faculty-topic-box">
+            <div class="faculty-topic-label" style="color:var(--cyan);"><i class="fas fa-bookmark text-cyan"></i> Topic 8</div>
+            <div class="faculty-topic-title">Let's Walk Together</div>
+            <div style="font-size:0.78rem; color:#64748B; margin-top:0.25rem; font-weight:600;">സമാപന സമ്മേളനം</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
 
-  <!-- SCHEDULE ANNOUNCEMENT NOTICE -->
-  <section class="section" style="background: var(--bg-secondary); padding: 4rem 0;">
+  <!-- EVENT VENUE & CALLOUT NOTICE -->
+  <section class="section" style="padding: 3.5rem 0;">
     <div class="container">
-      <div style="max-width: 700px; margin: 0 auto; text-align: center; background: #FFFFFF; border: 2px dashed var(--cyan); border-radius: 24px; padding: 3.5rem 2rem; box-shadow: 0 10px 30px rgba(0, 168, 232, 0.06);">
-        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(0, 168, 232, 0.1); border: 1px solid rgba(0, 168, 232, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 1.8rem; color: var(--cyan);">
-          <i class="fas fa-clock"></i>
+      <div style="max-width: 780px; margin: 0 auto; text-align: center; background: #FFFFFF; border: 2px dashed var(--cyan); border-radius: 24px; padding: 3rem 2rem; box-shadow: 0 10px 30px rgba(0, 168, 232, 0.06);">
+        <div style="width: 65px; height: 65px; border-radius: 50%; background: rgba(0, 168, 232, 0.1); border: 1px solid rgba(0, 168, 232, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 1.7rem; color: var(--cyan);">
+          <i class="fas fa-calendar-alt"></i>
         </div>
         
-        <h3 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-main);">
-          Session Timings & Topic Schedule Announcement
+        <h3 style="font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-main);">
+          Sunday, October 18th, 2026
         </h3>
-        
-        <p style="color: var(--text-muted); font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
-          The hour-by-hour session timetable and topic assignments for each faculty speaker will be updated soon. Pre-register now to receive live updates.
+        <p style="color: var(--text-dim); font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;">
+          Dream Palace, Paroor (Kunnamkulam Road)
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+          Higher Secondary Students Conference organized by Wisdom Students Thrissur District Committee. Pre-register now to receive live transportation updates and official entry pass.
         </p>
 
         <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
@@ -204,6 +610,9 @@
       </div>
     </div>
   </section>
+
+  <!-- DYNAMIC IN-PAGE REGISTRATION MODAL CONTAINER -->
+  <div class="modal-overlay" id="regModal"></div>
 
   <!-- FOOTER -->
   <footer class="footer">
