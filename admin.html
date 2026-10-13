@@ -1378,12 +1378,12 @@
       <form id="loginForm">
         <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
           <label class="form-label" for="adminUser"><i class="fas fa-user text-cyan"></i> Username</label>
-          <input type="text" id="adminUser" class="form-input" placeholder="e.g. mannalamkunnu_admin or chavakkad_admin" required autofocus autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username">
+          <input type="text" id="adminUser" class="form-input" placeholder="Username" required autofocus autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username">
         </div>
         <div class="form-group" style="text-align: left; margin-bottom: 1.5rem;">
           <label class="form-label" for="adminPassword"><i class="fas fa-lock text-magenta"></i> Password</label>
           <div style="position: relative;">
-            <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required style="padding-right: 2.75rem;" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password">
+            <input type="password" id="adminPassword" class="form-input" placeholder="Password" required style="padding-right: 2.75rem;" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password">
             <button type="button" onclick="toggleModalPassVisibility('adminPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 8px;" title="Show/Hide Password">
               <i class="fas fa-eye"></i>
             </button>
@@ -1393,13 +1393,6 @@
           <i class="fas fa-sign-in-alt"></i> Login to Portal
         </button>
         <p id="loginError" style="color: #EF4444; font-size: 0.85rem; margin-top: 1rem; display: none; line-height: 1.4; padding: 0.75rem; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; text-align: left;"></p>
-        
-        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed rgba(15,23,42,0.1); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; text-align: left;">
-          <div style="margin-bottom: 0.35rem; color: var(--text-main); font-weight: 700;"><i class="fas fa-info-circle text-cyan"></i> Login Guidance for Phones:</div>
-          <div>• <strong>Unit Login:</strong> Enter Unit name (e.g. <code>mannalamkunnu_admin</code>) · Password: <code>unit123</code></div>
-          <div>• <strong>Zone Login:</strong> Enter Zone name (e.g. <code>chavakkad_admin</code> or <code>ckd_admin</code>) · Password: <code>zone123</code> (or zone code)</div>
-          <div style="margin-top: 0.25rem; font-size: 0.72rem; color: #64748B;">💡 <em>Pass, spacing & capital letters are automatically handled.</em></div>
-        </div>
       </form>
     </div>
   </div>
@@ -3409,7 +3402,7 @@
           initDashboard();
           return;
         } else {
-          showAuthError("Incorrect password for District Admin. Check spelling or case (default: admin123).");
+          showAuthError("Invalid username or password. Please check your credentials.");
           return;
         }
       }
@@ -3540,8 +3533,7 @@
               initDashboard();
               return;
             } else {
-              const targetDesc = isZone ? (acc.zone || 'Zone') : (acc.unit || 'Unit');
-              showAuthError(`Incorrect password for ${targetDesc} Admin. Please check credentials.`);
+              showAuthError("Invalid username or password. Please check your credentials.");
               return;
             }
           }
@@ -3564,7 +3556,7 @@
               initDashboard();
               return;
             } else {
-              showAuthError(`Incorrect password for ${acc.username}.`);
+              showAuthError("Invalid username or password. Please check your credentials.");
               return;
             }
           }
@@ -3584,7 +3576,7 @@
                   initDashboard();
                   return;
                 } else {
-                  showAuthError(`Incorrect password for Bus Coordinator (${v.vehicle_id}).`);
+                  showAuthError("Invalid username or password. Please check your credentials.");
                   return;
                 }
               }
@@ -3594,7 +3586,7 @@
                   initDashboard();
                   return;
                 } else {
-                  showAuthError(`Incorrect password for Asst Bus Coordinator (${v.vehicle_id}).`);
+                  showAuthError("Invalid username or password. Please check your credentials.");
                   return;
                 }
               }
@@ -3605,18 +3597,7 @@
         console.warn("DB auth lookup notice:", err);
       }
 
-      // 6. Helpful error feedback if credentials match known unit or zone with wrong password
-      if (matchedZoneDef) {
-        showAuthError(`Incorrect password for ${matchedZoneDef.name} Zone. Password is: ${matchedZoneDef.passes[0]} or zone123`);
-        return;
-      }
-      if (matchedUnitName) {
-        const uCode = getUnitCode(matchedUnitName);
-        showAuthError(`Incorrect password for Unit "${matchedUnitName}" (${uCode}). Default password is: unit123`);
-        return;
-      }
-
-      showAuthError("Invalid username or password. Check your unit/zone name or contact District Admin.");
+      showAuthError("Invalid username or password. Please check your credentials.");
     });
 
     // Logout
