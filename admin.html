@@ -2479,11 +2479,21 @@
 
       <form id="assignForm">
         <input type="hidden" id="assignRegId">
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 1rem;">
           <label class="form-label" for="assignVehicleSelect">Select Vehicle</label>
           <select id="assignVehicleSelect" class="form-select" required>
             <!-- Dynamically populated options -->
           </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="assignPickupPoint" style="font-size:0.85rem;"><i class="fas fa-map-pin text-cyan"></i> Pickup Location / Stop Point (Optional)</label>
+          <input type="text" id="assignPickupPoint" class="form-control" placeholder="e.g. Chavakkad Bus Stand, Al-Ameen Junction">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="assignPickupTime" style="font-size:0.85rem;"><i class="fas fa-clock text-magenta"></i> Pickup Time (Optional)</label>
+          <input type="text" id="assignPickupTime" class="form-control" placeholder="e.g. 06:30 AM, 07:15 AM">
         </div>
         
         <button type="submit" id="assignSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.8rem;">
@@ -2534,13 +2544,13 @@
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
           <thead>
             <tr style="border-bottom: 2px solid var(--border-light); color: var(--text-dim); font-weight: 700; font-size: 0.75rem;">
-              <th style="padding: 0.75rem 0.5rem; width: 60px;">ORDER</th>
+              <th style="padding: 0.75rem 0.5rem; width: 50px;">ORDER</th>
               <th style="padding: 0.75rem 0.5rem;">REG ID</th>
               <th style="padding: 0.75rem 0.5rem;">NAME</th>
-              <th style="padding: 0.75rem 0.5rem;">CLASS</th>
               <th style="padding: 0.75rem 0.5rem;">MOBILE</th>
-              <th style="padding: 0.75rem 0.5rem;">ZONE / UNIT</th>
-              <th style="padding: 0.75rem 0.5rem;">BOARDING STATUS</th>
+              <th style="padding: 0.75rem 0.5rem;">PICKUP POINT</th>
+              <th style="padding: 0.75rem 0.5rem;">PICKUP TIME</th>
+              <th style="padding: 0.75rem 0.5rem;">STATUS</th>
               <th style="padding: 0.75rem 0.5rem; text-align: right;">ACTION</th>
             </tr>
           </thead>
@@ -2554,6 +2564,57 @@
         <button id="shareWhatsAppPassengerListBtn" class="btn btn-primary" style="background:#25D366; border-color:#25D366; height: 40px; display: inline-flex; align-items: center; gap: 0.4rem;"><i class="fab fa-whatsapp"></i> Share List on WhatsApp</button>
         <button class="btn btn-outline" style="height: 40px;" onclick="closePassengerListModal()">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- PASSENGER PICKUP DETAILS MODAL -->
+  <div class="modal-overlay" id="passengerPickupModal">
+    <div class="modal-content" style="max-width: 480px; width: 92%; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closePassengerPickupModal()"><i class="fas fa-times"></i></button>
+      
+      <h3 style="font-family: var(--font-heading); font-size: 1.3rem; margin-bottom: 0.35rem;">
+        <i class="fas fa-map-marker-alt text-cyan"></i> Set Passenger Pickup Details
+      </h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;" id="pickupModalSubtitle">
+        Specify pickup stop location and timing.
+      </p>
+
+      <form id="passengerPickupForm" onsubmit="savePassengerPickupDetails(event)">
+        <input type="hidden" id="pickupStudentId">
+        <input type="hidden" id="pickupVehicleId">
+
+        <div class="form-group" style="margin-bottom: 1.15rem;">
+          <label class="form-label" style="font-weight:700; font-size:0.85rem; margin-bottom:0.35rem; display:block;">
+            <i class="fas fa-map-pin text-cyan"></i> Pickup Location / Stop Point
+          </label>
+          <input type="text" id="pickupLocationInput" class="form-control" placeholder="e.g. Al-Ameen Junction, Chavakkad Bus Stand" style="width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid var(--border-light);" required>
+          <div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.35rem;">Quick Suggestions (Click to fill):</div>
+          <div id="pickupLocationSuggestions" style="display:flex; gap:0.35rem; flex-wrap:wrap; margin-top:0.25rem;">
+            <!-- Suggested quick location pills -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label class="form-label" style="font-weight:700; font-size:0.85rem; margin-bottom:0.35rem; display:block;">
+            <i class="fas fa-clock text-magenta"></i> Pickup Time
+          </label>
+          <input type="text" id="pickupTimeInput" class="form-control" placeholder="e.g. 06:30 AM, 07:15 AM" style="width:100%; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid var(--border-light);" required>
+          <div style="display:flex; gap:0.35rem; flex-wrap:wrap; margin-top:0.4rem;">
+            <button type="button" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:0.18rem 0.45rem; border-radius:5px;" onclick="setQuickPickupTime('06:00 AM')">06:00 AM</button>
+            <button type="button" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:0.18rem 0.45rem; border-radius:5px;" onclick="setQuickPickupTime('06:30 AM')">06:30 AM</button>
+            <button type="button" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:0.18rem 0.45rem; border-radius:5px;" onclick="setQuickPickupTime('07:00 AM')">07:00 AM</button>
+            <button type="button" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:0.18rem 0.45rem; border-radius:5px;" onclick="setQuickPickupTime('07:30 AM')">07:30 AM</button>
+            <button type="button" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:0.18rem 0.45rem; border-radius:5px;" onclick="setQuickPickupTime('08:00 AM')">08:00 AM</button>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+          <button type="button" class="btn btn-outline" onclick="closePassengerPickupModal()">Cancel</button>
+          <button type="submit" id="savePickupBtn" class="btn btn-primary" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.6rem 1.25rem;">
+            <i class="fas fa-check"></i> Save Pickup Details
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -4184,9 +4245,15 @@
             assignedVehicle: d.assigned_vehicle || "",
             "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
             pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
+            "Pickup Point": d.pickup_point || "",
+            pickupPoint: d.pickup_point || "",
+            pickup_point: d.pickup_point || "",
+            "Pickup Time": d.pickup_time || "",
+            pickupTime: d.pickup_time || "",
+            pickup_time: d.pickup_time || "",
             "Picked Up": d.picked_up ? "true" : "false",
             pickedUp: d.picked_up ? "true" : "false",
-            status: studentStatusMap.get(d.reg_id) || "pending"
+            status: d.status || studentStatusMap.get(d.reg_id) || "pending"
           };
         });
 
@@ -5504,6 +5571,21 @@
               </div>
             </div>
 
+            <!-- Pickup Point and Time Details -->
+            <div class="detail-row" style="display:flex; align-items:center; justify-content:space-between; background:rgba(0,168,232,0.06); padding:0.55rem 0.75rem; border-radius:10px; border:1px solid rgba(0,168,232,0.18); margin-top:0.35rem;">
+              <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                <div style="font-size:0.82rem; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:0.35rem;">
+                  <i class="fas fa-map-pin text-cyan"></i> <span>${(item["Pickup Point"] || item.pickupPoint || item.pickup_point) ? (item["Pickup Point"] || item.pickupPoint || item.pickup_point) : '<em style="color:#94a3b8; font-weight:normal;">Pickup Point: Not set</em>'}</span>
+                </div>
+                <div style="font-size:0.75rem; color:var(--magenta); font-weight:600; display:flex; align-items:center; gap:0.35rem;">
+                  <i class="fas fa-clock"></i> <span>${(item["Pickup Time"] || item.pickupTime || item.pickup_time) ? 'Pickup Time: ' + (item["Pickup Time"] || item.pickupTime || item.pickup_time) : '<em style="color:#94a3b8; font-weight:normal;">Pickup Time: Not set</em>'}</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline btn-xs" style="font-size:0.72rem; padding:0.25rem 0.55rem; border-radius:6px; color:var(--cyan); border-color:rgba(0,168,232,0.3); background:white; font-weight:600;" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')">
+                <i class="fas fa-edit"></i> Edit
+              </button>
+            </div>
+
             <!-- Picked Up Toggle Button -->
             <div style="border-top: 1px dashed rgba(0,0,0,0.06); padding-top:0.75rem; margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.8rem; font-weight:600; color:${isPickedUp ? '#15803D' : '#64748B'};">
@@ -5884,6 +5966,14 @@
       document.getElementById('assignStudentZone').textContent = zone;
       document.getElementById('assignStudentUnit').textContent = unit;
 
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const currPt = student ? (student["Pickup Point"] || student.pickupPoint || student.pickup_point || '') : '';
+      const currTm = student ? (student["Pickup Time"] || student.pickupTime || student.pickup_time || '') : '';
+      const ptInput = document.getElementById('assignPickupPoint');
+      const tmInput = document.getElementById('assignPickupTime');
+      if (ptInput) ptInput.value = currPt;
+      if (tmInput) tmInput.value = currTm;
+
       select.innerHTML = '<option value="">Choose Vehicle</option>';
 
       // Filter vehicles based on logged-in admin's role
@@ -6175,6 +6265,12 @@
           ? `*District Reg ID:* ${distId}\n*Mandal Reg ID:* ${mandalId}\n`
           : `*District Reg ID:* ${distId}\n`;
 
+        const pickupPt = student["Pickup Point"] || student.pickupPoint || student.pickup_point || '';
+        const pickupTm = student["Pickup Time"] || student.pickupTime || student.pickup_time || '';
+        const pickupLine = (pickupPt || pickupTm) 
+          ? `*Pickup Point:* ${pickupPt || 'As notified'}\n*Pickup Time:* ${pickupTm || 'As notified'}\n`
+          : '';
+
         const text = `*TEENSPACE 2026 - OFFICIAL TRAVEL PASS*\n\n` +
           `Dear *${rawName}*,\n` +
           `Your vehicle assignment for the summit is confirmed!\n\n` +
@@ -6182,7 +6278,8 @@
           `*Assigned Bus ID:* *${vCode}*\n` +
           `*Vehicle Name:* ${vBus}\n` +
           `*Organizational Zone:* ${zoneVal}\n` +
-          `*Organizational Unit:* ${unitVal}\n\n` +
+          `*Organizational Unit:* ${unitVal}\n` +
+          (pickupLine ? pickupLine : '') + `\n` +
           `Please download your digital travel ticket pass card inside the website to show the coordinator at boarding.`;
 
         // Convert canvas to Blob for clipboard copying and direct link routing
@@ -6280,11 +6377,34 @@
             ? `<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-check-circle"></i> Boarded</span>`
             : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-clock"></i> Waiting</span>`;
 
+          const pickupPt = item["Pickup Point"] || item.pickupPoint || item.pickup_point || '';
+          const pickupTm = item["Pickup Time"] || item.pickupTime || item.pickup_time || '';
+
+          const pickupPointHtml = pickupPt
+            ? `<div style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Click to change pickup point">
+                <i class="fas fa-map-marker-alt text-cyan"></i> <strong style="font-size:0.85rem;">${pickupPt}</strong>
+               </div>`
+            : `<button class="btn btn-outline btn-xs" style="font-size:0.68rem; padding:0.18rem 0.45rem; border-style:dashed; color:var(--text-dim);" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')">
+                <i class="fas fa-plus"></i> Set Stop
+               </button>`;
+
+          const pickupTimeHtml = pickupTm
+            ? `<div style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem;" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Click to change pickup time">
+                <span class="badge" style="background:rgba(230,0,103,0.08); color:var(--magenta); font-weight:700; font-size:0.72rem; border:1px solid rgba(230,0,103,0.2); padding:0.18rem 0.4rem; border-radius:6px; display:inline-flex; align-items:center; gap:0.3rem;">
+                  <i class="fas fa-clock"></i> ${pickupTm}
+                </span>
+               </div>`
+            : `<button class="btn btn-outline btn-xs" style="font-size:0.68rem; padding:0.18rem 0.45rem; border-style:dashed; color:var(--text-dim);" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')">
+                <i class="fas fa-plus"></i> Set Time
+               </button>`;
+
           row.innerHTML = `
             <td data-label="Order" style="padding:0.75rem 0.5rem; font-weight:700; color:var(--cyan);">#${index + 1}</td>
             <td data-label="Reg ID" style="padding:0.75rem 0.5rem;"><span class="badge-reg">${item["Registration ID"] || item.regId || 'N/A'}</span></td>
-            <td data-label="Name" style="padding:0.75rem 0.5rem;"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
-            <td data-label="Class" style="padding:0.75rem 0.5rem;">${item.Class || 'N/A'}</td>
+            <td data-label="Name" style="padding:0.75rem 0.5rem;">
+              <strong>${item["Student Name"] || item.name || 'N/A'}</strong>
+              <div style="font-size:0.72rem; color:var(--text-dim);">${item["Organization Zone"] || ''} ${item["Organization Unit"] ? '• ' + item["Organization Unit"] : ''}</div>
+            </td>
             <td data-label="Mobile" style="padding:0.75rem 0.5rem;">
               <div style="display:inline-flex; align-items:center; gap:0.4rem;">
                 <span>${item["Student Mobile Number"] || item.phone || 'N/A'}</span>
@@ -6294,13 +6414,17 @@
                 ` : ''}
               </div>
             </td>
-            <td data-label="Zone / Unit" style="padding:0.75rem 0.5rem;">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
+            <td data-label="Pickup Point" style="padding:0.75rem 0.5rem;">${pickupPointHtml}</td>
+            <td data-label="Pickup Time" style="padding:0.75rem 0.5rem;">${pickupTimeHtml}</td>
             <td data-label="Status" style="padding:0.75rem 0.5rem;">${boardingStatusHtml}</td>
             <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
-              <div style="display:inline-flex; align-items:center; gap:0.5rem;">
+              <div style="display:inline-flex; align-items:center; gap:0.3rem;">
+                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Edit Pickup Location & Time">
+                  <i class="fas fa-map-pin"></i> Pickup
+                </button>
                 ${orderControls}
-                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')">
-                  <i class="fas fa-user-minus"></i> Remove
+                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Remove passenger">
+                  <i class="fas fa-user-minus"></i>
                 </button>
               </div>
             </td>
@@ -6321,7 +6445,13 @@
           const regIdVal = item["Registration ID"] || item.regId || 'N/A';
           const p = item["Student Mobile Number"] || item.phone || 'N/A';
           const u = item["Organization Unit"] || item.unit || 'N/A';
-          text += `${index + 1}. *${rawName}* (${regIdVal}) - ${p} [${u}]%0A`;
+          const pickupPt = item["Pickup Point"] || item.pickupPoint || item.pickup_point || '';
+          const pickupTm = item["Pickup Time"] || item.pickupTime || item.pickup_time || '';
+          let pickupInfo = '';
+          if (pickupPt || pickupTm) {
+            pickupInfo = ` | 📍 ${pickupPt || '-'}${pickupTm ? ' (' + pickupTm + ')' : ''}`;
+          }
+          text += `${index + 1}. *${rawName}* (${regIdVal}) - ${p} [${u}]${pickupInfo}%0A`;
         });
 
         text += `%0A*Wisdom Students Thrissur District Committee*`;
@@ -6396,6 +6526,148 @@
       document.getElementById('passengerListModal').classList.remove('active');
     }
 
+    function openPassengerPickupModal(regId, vehicleId) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) {
+        alert('Delegate not found.');
+        return;
+      }
+
+      document.getElementById('pickupStudentId').value = regId;
+      document.getElementById('pickupVehicleId').value = vehicleId || '';
+
+      const sName = student["Student Name"] || student.name || 'Delegate';
+      const distId = student.districtRegId || student["Registration ID"] || student.regId;
+      const mandalId = student.mandalRegId ? ` • ${student.mandalRegId}` : '';
+      document.getElementById('pickupModalSubtitle').innerHTML = `Specify pickup stop and time for <strong>${sName}</strong> (${distId}${mandalId})`;
+
+      const currentPt = student["Pickup Point"] || student.pickupPoint || student.pickup_point || '';
+      const currentTm = student["Pickup Time"] || student.pickupTime || student.pickup_time || '';
+
+      document.getElementById('pickupLocationInput').value = currentPt;
+      document.getElementById('pickupTimeInput').value = currentTm;
+
+      // Suggestion pills
+      const suggContainer = document.getElementById('pickupLocationSuggestions');
+      if (suggContainer) {
+        suggContainer.innerHTML = '';
+        const suggestions = [];
+        if (student.Place && student.Place.trim()) suggestions.push(student.Place.trim());
+        if (student.Panchayath && student.Panchayath.trim()) suggestions.push(student.Panchayath.trim());
+        if (student.Ward && student.Ward.trim()) suggestions.push('Ward ' + student.Ward.trim());
+        if (student.Place) {
+          suggestions.push(`${student.Place.trim()} Bus Stand`);
+          suggestions.push(`${student.Place.trim()} Junction`);
+        }
+        if (student.School && student.School.trim()) suggestions.push(student.School.trim());
+
+        const uniqueSuggs = Array.from(new Set(suggestions)).slice(0, 5);
+        if (uniqueSuggs.length > 0) {
+          uniqueSuggs.forEach(sug => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-outline btn-xs';
+            btn.style.cssText = 'font-size:0.7rem; padding:0.2rem 0.5rem; border-radius:6px; background:#F8FAFC; border-color:var(--border-light);';
+            btn.textContent = sug;
+            btn.onclick = () => setQuickPickupLocation(sug);
+            suggContainer.appendChild(btn);
+          });
+        } else {
+          suggContainer.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">No suggestions available</span>';
+        }
+      }
+
+      document.getElementById('passengerPickupModal').classList.add('active');
+    }
+
+    function closePassengerPickupModal() {
+      const modal = document.getElementById('passengerPickupModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function setQuickPickupLocation(loc) {
+      const input = document.getElementById('pickupLocationInput');
+      if (input) {
+        input.value = loc;
+        input.focus();
+      }
+    }
+
+    function setQuickPickupTime(time) {
+      const input = document.getElementById('pickupTimeInput');
+      if (input) {
+        input.value = time;
+        input.focus();
+      }
+    }
+
+    async function savePassengerPickupDetails(e) {
+      if (e) e.preventDefault();
+      const regId = document.getElementById('pickupStudentId').value;
+      const vehicleId = document.getElementById('pickupVehicleId').value;
+      const pickupLocation = document.getElementById('pickupLocationInput').value.trim();
+      const pickupTime = document.getElementById('pickupTimeInput').value.trim();
+      const saveBtn = document.getElementById('savePickupBtn');
+
+      if (!regId) return;
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      }
+
+      try {
+        const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+        if (student) {
+          student["Pickup Point"] = pickupLocation;
+          student.pickupPoint = pickupLocation;
+          student.pickup_point = pickupLocation;
+          student["Pickup Time"] = pickupTime;
+          student.pickupTime = pickupTime;
+          student.pickup_time = pickupTime;
+        }
+
+        const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+        
+        let query;
+        if (student && student.id) {
+          query = supabase
+            .from('registrations')
+            .update({ pickup_point: pickupLocation, pickup_time: pickupTime })
+            .eq('id', student.id);
+        } else {
+          query = supabase
+            .from('registrations')
+            .update({ pickup_point: pickupLocation, pickup_time: pickupTime })
+            .eq('reg_id', targetDbId);
+        }
+
+        const { error } = await query;
+        if (error) {
+          console.error("Database error saving pickup point/time: ", error);
+          alert("Saved locally! Supabase returned: " + error.message + "\\n(Please make sure you have executed the SQL script in Supabase to add the pickup_point and pickup_time columns.)");
+        }
+
+        closePassengerPickupModal();
+
+        // Refresh relevant views
+        if (vehicleId) {
+          openPassengerListModal(vehicleId);
+        }
+        if (sessionUser && sessionUser.role === 'Bus Coordinator') {
+          renderCoordinatorDashboard();
+        }
+      } catch (err) {
+        console.error("Exception in savePassengerPickupDetails:", err);
+        alert("Error saving pickup details: " + err.message);
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-check"></i> Save Pickup Details';
+        }
+      }
+    }
+
     function unassignPassenger(regId, vehicleId) {
       if (!confirm(`Are you sure you want to remove this delegate from vehicle ${vehicleId}?`)) return;
 
@@ -6431,6 +6703,8 @@
       e.preventDefault();
       const regId = document.getElementById('assignRegId').value;
       const vehicleId = document.getElementById('assignVehicleSelect').value;
+      const pickupPoint = document.getElementById('assignPickupPoint') ? document.getElementById('assignPickupPoint').value.trim() : '';
+      const pickupTime = document.getElementById('assignPickupTime') ? document.getElementById('assignPickupTime').value.trim() : '';
       const submitBtn = document.getElementById('assignSubmitBtn');
 
       if (!vehicleId) {
@@ -6452,20 +6726,30 @@
       });
       const nextOrder = maxOrder + 1;
 
-      supabase
-        .from('registrations')
-        .update({ assigned_vehicle: vehicleId, pickup_order: nextOrder })
-        .eq('reg_id', getRegistrationDbId(regId))
-        .then(({ error }) => {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
-          if (!error) {
-            closeAssignModal();
-            loadData();
-          } else {
-            alert('Error updating assignment: ' + error.message);
-          }
-        });
+      const updateData = { assigned_vehicle: vehicleId, pickup_order: nextOrder };
+      if (pickupPoint) updateData.pickup_point = pickupPoint;
+      if (pickupTime) updateData.pickup_time = pickupTime;
+
+      const targetDbId = getRegistrationDbId(regId);
+      const student = findRegistration(regId);
+
+      let query;
+      if (student && student.id) {
+        query = supabase.from('registrations').update(updateData).eq('id', student.id);
+      } else {
+        query = supabase.from('registrations').update(updateData).eq('reg_id', targetDbId);
+      }
+
+      query.then(({ error }) => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
+        if (!error) {
+          closeAssignModal();
+          loadData();
+        } else {
+          alert('Error updating assignment: ' + error.message);
+        }
+      });
     });
 
     // ==========================================
@@ -6709,6 +6993,8 @@
         "Organization Unit",
         "Assigned Vehicle",
         "Pickup Order",
+        "Pickup Point",
+        "Pickup Time",
         "Registration Timestamp"
       ];
 
@@ -6719,6 +7005,8 @@
         const displayStatus = rawStatus === 'confirmed' ? 'Confirmed' : (rawStatus === 'not_coming' ? 'Not Coming' : 'Pending Calling');
         const distId = r.districtRegId || r["Registration ID"] || r.regId || '';
         const mandalId = r.mandalRegId || '';
+        const pickupPt = r["Pickup Point"] || r.pickupPoint || r.pickup_point || '';
+        const pickupTm = r["Pickup Time"] || r.pickupTime || r.pickup_time || '';
         const row = [
           distId,
           mandalId,
@@ -6735,6 +7023,8 @@
           r["Organization Unit"] || r.unit || '',
           r["Assigned Vehicle"] || r.assigned_vehicle || '',
           r.pickup_order || '',
+          pickupPt,
+          pickupTm,
           r.Timestamp || r.timestamp || ''
         ];
 
