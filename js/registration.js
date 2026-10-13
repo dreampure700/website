@@ -488,23 +488,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const regData = { regId: finalRegId, districtRegId, mandalRegId, name, phone, timestamp: nowIso };
         localStorage.setItem('teenspace_reg_' + finalRegId, JSON.stringify(regData));
 
-        // Insert into Supabase registrations table
-        const { error: insertError } = await supabase
-          .from('registrations')
-          .insert([{
-            reg_id: finalRegId,
-            name: name,
-            phone: phone,
-            parent_phone: parentMobile || null,
-            student_class: studentClass,
-            school: school,
-            place: place,
-            panchayath: panchayath,
-            ward: ward,
-            unit: unit,
-            zone: zone,
-            timestamp: nowIso
-          }]);
+        // Insert into Supabase registrations table with both District ID and Zone ID
+        const insertPayload = {
+          reg_id: finalRegId,
+          district_id: districtRegId,
+          zone_id: mandalRegId,
+          name: name,
+          phone: phone,
+          parent_phone: parentMobile || null,
+          student_class: studentClass,
+          school: school,
+          place: place,
+          panchayath: panchayath,
+          ward: ward,
+          unit: unit,
+          zone: zone,
+          timestamp: nowIso
+        };
+
+        let { error: insertError } = await supabase.from('registrations').insert([insertPayload]);
+        if (insertError && insertError.message && (insertError.message.includes('district_id') || insertError.message.includes('zone_id'))) {
+          // Backward compatibility fallback if migration hasn't been executed yet
+          delete insertPayload.district_id;
+          delete insertPayload.zone_id;
+          const retry = await supabase.from('registrations').insert([insertPayload]);
+          insertError = retry.error;
+        }
           
         if (insertError) throw insertError;
         

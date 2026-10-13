@@ -4136,14 +4136,14 @@
 
           // 1. Continuous District Sequential Numbering (starts from REG 101)
           const distSeq = 101 + index;
-          const districtRegId = `REG ${distSeq}`;
+          const districtRegId = d.district_id || `REG ${distSeq}`;
 
           // 2. Continuous Mandal (Zone) Sequential Numbering (starts from 101 with prefix code, e.g. KPM 101)
           const zCanon = canonicalZone(resolvedZone);
           const prefix = getZonePrefix(zCanon);
           mandalCounters[prefix] = (mandalCounters[prefix] || 100) + 1;
           const mandalSeq = mandalCounters[prefix];
-          const mandalRegId = `${prefix} ${mandalSeq}`;
+          const mandalRegId = d.zone_id || `${prefix} ${mandalSeq}`;
 
           // Default role-focused registration ID
           const isZoneOrUnit = sessionUser && (sessionUser.role === 'Zone' || sessionUser.role === 'Unit');
@@ -4158,8 +4158,11 @@
             "Registration ID": primaryRegId,
             regId: primaryRegId,
             districtRegId: districtRegId,
+            districtId: districtRegId,
             districtSeq: distSeq,
             mandalRegId: mandalRegId,
+            zoneRegId: mandalRegId,
+            zoneId: mandalRegId,
             mandalSeq: mandalSeq,
             mandalPrefix: prefix,
             secondaryRegId: secondaryRegId,
