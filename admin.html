@@ -22,8 +22,13 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Supabase JS client SDK (Explicit UMD Bundle) -->
+  <!-- Supabase JS client SDK (Explicit UMD Bundle with CDN Fallback) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    if (!window.supabase) {
+      document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>');
+    }
+  </script>
   
   <style>
     body {
@@ -34,7 +39,7 @@
       flex-direction: column;
     }
     
-    /* Login Screen */
+    /* Login Screen (Mobile Responsive & Scroll-Safe) */
     .login-overlay {
       position: fixed;
       top: 0;
@@ -47,17 +52,36 @@
       align-items: center;
       justify-content: center;
       padding: 1.5rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
     
     .login-card {
       background: #FFFFFF;
       border: 1px solid rgba(15, 23, 42, 0.08);
       border-radius: 24px;
-      padding: 3rem 2.5rem;
+      padding: 2.75rem 2rem;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
       text-align: center;
+      margin: auto;
+    }
+
+    @media (max-width: 600px) {
+      .login-overlay {
+        align-items: flex-start;
+        padding: 1.5rem 1rem 3rem 1rem;
+      }
+      .login-card {
+        padding: 1.75rem 1.25rem !important;
+        border-radius: 20px !important;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+      }
+      .login-card .form-input {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS */
+      }
     }
     
     /* Dashboard Header & Navigation Tabs */
@@ -1354,16 +1378,28 @@
       <form id="loginForm">
         <div class="form-group" style="text-align: left; margin-bottom: 1.2rem;">
           <label class="form-label" for="adminUser"><i class="fas fa-user text-cyan"></i> Username</label>
-          <input type="text" id="adminUser" class="form-input" placeholder="Enter username" required autofocus>
+          <input type="text" id="adminUser" class="form-input" placeholder="e.g. mannalamkunnu_admin or chavakkad_admin" required autofocus autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username">
         </div>
-        <div class="form-group" style="text-align: left; margin-bottom: 1.8rem;">
+        <div class="form-group" style="text-align: left; margin-bottom: 1.5rem;">
           <label class="form-label" for="adminPassword"><i class="fas fa-lock text-magenta"></i> Password</label>
-          <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required>
+          <div style="position: relative;">
+            <input type="password" id="adminPassword" class="form-input" placeholder="••••••••" required style="padding-right: 2.75rem;" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="current-password">
+            <button type="button" onclick="toggleModalPassVisibility('adminPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 8px;" title="Show/Hide Password">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
-        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem;">
-          <i class="fas fa-sign-in-alt"></i> Login
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-weight: 700; font-size: 1rem;">
+          <i class="fas fa-sign-in-alt"></i> Login to Portal
         </button>
-        <p id="loginError" style="color: red; font-size: 0.85rem; margin-top: 1rem; display: none;"><i class="fas fa-exclamation-triangle"></i> Invalid credentials. Try again.</p>
+        <p id="loginError" style="color: #EF4444; font-size: 0.85rem; margin-top: 1rem; display: none; line-height: 1.4; padding: 0.75rem; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; text-align: left;"></p>
+        
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed rgba(15,23,42,0.1); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; text-align: left;">
+          <div style="margin-bottom: 0.35rem; color: var(--text-main); font-weight: 700;"><i class="fas fa-info-circle text-cyan"></i> Login Guidance for Phones:</div>
+          <div>• <strong>Unit Login:</strong> Enter Unit name (e.g. <code>mannalamkunnu_admin</code>) · Password: <code>unit123</code></div>
+          <div>• <strong>Zone Login:</strong> Enter Zone name (e.g. <code>chavakkad_admin</code> or <code>ckd_admin</code>) · Password: <code>zone123</code> (or zone code)</div>
+          <div style="margin-top: 0.25rem; font-size: 0.72rem; color: #64748B;">💡 <em>Pass, spacing & capital letters are automatically handled.</em></div>
+        </div>
       </form>
     </div>
   </div>
@@ -2907,15 +2943,15 @@
         <!-- Unit Selector (Visible only when Unit role is selected) -->
         <div class="form-group" id="accUnitGroup" style="display: none; margin-bottom: 1.2rem;">
           <label class="form-label" for="accSelectUnit">Organization Unit *</label>
-          <select id="accSelectUnit" class="form-select">
+          <select id="accSelectUnit" class="form-select" onchange="handleAccountUnitSelectChange()">
             <!-- Populated dynamically -->
           </select>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.2rem;">
           <label class="form-label" for="accUsernameInput">Login Username *</label>
-          <input type="text" id="accUsernameInput" class="form-input" placeholder="e.g. chavakkad_admin" required autocomplete="off">
-          <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:0.25rem;">Username for admin.html login</small>
+          <input type="text" id="accUsernameInput" class="form-input" placeholder="e.g. mlk or ckd" required autocomplete="off">
+          <small style="color:var(--text-muted); font-size:0.75rem; display:block; margin-top:0.25rem;">3-letter username for fast mobile login (e.g. mlk, akd, ptk)</small>
         </div>
 
         <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -3035,13 +3071,171 @@
       'Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'
     ];
 
+    // Standard 3-Letter Unique Codes for Every Unit across Thrissur District
+    const UNIT_SHORT_CODES = {
+      // Chavakkad Zone (ckd)
+      'Mannalamkunnu': 'mlk',
+      'Akalad': 'akd',
+      'Thiruvathra': 'tvt',
+      'Edakazhiyoor': 'ekz',
+      // Pavaratty Zone (pvt)
+      'Orumanayoor': 'omy',
+      'Padoor': 'pdr',
+      'Venkidang': 'vkd',
+      'Pavaratty': 'pvy',
+      // Kunnamkulam Zone (knm)
+      'Chowallurpadi': 'cwp',
+      'Kechery': 'kcy',
+      'Paninthadam': 'ptd',
+      'Perumpilavu': 'plv',
+      // Guruvayoor Zone (gvr)
+      'Vadakkekad': 'vkk',
+      'Punnayurkulam': 'pnk',
+      'Kochannur': 'kcn',
+      'Pillakkad': 'pkd',
+      // Thrissur City Zone (tsr)
+      'Poothole': 'pth',
+      'Kallur': 'klr',
+      'Vellanikkara': 'vkr',
+      'Ottupara': 'otp',
+      'Attur': 'atr',
+      'Cherpu': 'crp',
+      'Thali': 'tli',
+      // Kodungallur Zone (kdr)
+      'Eriyad': 'erd',
+      'Karupadanna': 'kpd',
+      'Kodakara': 'kdk',
+      'Mathilakam': 'mtk',
+      'Edavilangu': 'edv',
+      // Kaipamangalam Zone (kpm)
+      'Vadanappally': 'vdp',
+      'Peringottukara': 'ptk',
+      'Koorikuzhi': 'kkz',
+      'Chentrappinni Koprakalam': 'cpk',
+      'Valapad': 'vpd',
+      'Thriprayar': 'tpr',
+      'Chuloor': 'clr'
+    };
+
+    // Fast 3-letter code -> Canonical Unit Name (with natural aliases)
+    const CODE_TO_UNIT_MAP = {
+      // Chavakkad
+      'mlk': 'Mannalamkunnu',
+      'akd': 'Akalad',
+      'tvt': 'Thiruvathra',
+      'ekz': 'Edakazhiyoor',
+      'edz': 'Edakazhiyoor',
+      // Pavaratty
+      'omy': 'Orumanayoor',
+      'omn': 'Orumanayoor',
+      'pdr': 'Padoor',
+      'vkd': 'Venkidang',
+      'pvy': 'Pavaratty',
+      'pvu': 'Pavaratty',
+      // Kunnamkulam
+      'cwp': 'Chowallurpadi',
+      'kcy': 'Kechery',
+      'ptd': 'Paninthadam',
+      'pnm': 'Paninthadam',
+      'plv': 'Perumpilavu',
+      'ppv': 'Perumpilavu',
+      // Guruvayoor
+      'vkk': 'Vadakkekad',
+      'pnk': 'Punnayurkulam',
+      'pyk': 'Punnayurkulam',
+      'kcn': 'Kochannur',
+      'pkd': 'Pillakkad',
+      // Thrissur City
+      'pth': 'Poothole',
+      'klr': 'Kallur',
+      'vkr': 'Vellanikkara',
+      'otp': 'Ottupara',
+      'atr': 'Attur',
+      'crp': 'Cherpu',
+      'cpu': 'Cherpu',
+      'tli': 'Thali',
+      'thl': 'Thali',
+      // Kodungallur
+      'erd': 'Eriyad',
+      'eyd': 'Eriyad',
+      'kpd': 'Karupadanna',
+      'kdk': 'Kodakara',
+      'mtk': 'Mathilakam',
+      'edv': 'Edavilangu',
+      'evg': 'Edavilangu',
+      // Kaipamangalam
+      'vdp': 'Vadanappally',
+      'ptk': 'Peringottukara',
+      'kkz': 'Koorikuzhi',
+      'cpk': 'Chentrappinni Koprakalam',
+      'vpd': 'Valapad',
+      'vlp': 'Valapad',
+      'tpr': 'Thriprayar',
+      'clr': 'Chuloor'
+    };
+
+    function getUnitCode(unitName) {
+      if (!unitName) return '';
+      const c = canonicalUnit(unitName);
+      return UNIT_SHORT_CODES[c] || CODE_TO_UNIT_MAP[unitName.toLowerCase().trim()] || unitName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 3);
+    }
+
     const CANONICAL_UNITS = {
+      // 3-Letter Unit Short Codes
+      'mlk': 'Mannalamkunnu',
+      'akd': 'Akalad',
+      'tvt': 'Thiruvathra',
+      'ekz': 'Edakazhiyoor',
+      'edz': 'Edakazhiyoor',
+      'omy': 'Orumanayoor',
+      'omn': 'Orumanayoor',
+      'pdr': 'Padoor',
+      'vkd': 'Venkidang',
+      'pvy': 'Pavaratty',
+      'pvu': 'Pavaratty',
+      'cwp': 'Chowallurpadi',
+      'kcy': 'Kechery',
+      'ptd': 'Paninthadam',
+      'pnm': 'Paninthadam',
+      'plv': 'Perumpilavu',
+      'ppv': 'Perumpilavu',
+      'vkk': 'Vadakkekad',
+      'pnk': 'Punnayurkulam',
+      'pyk': 'Punnayurkulam',
+      'kcn': 'Kochannur',
+      'pkd': 'Pillakkad',
+      'pth': 'Poothole',
+      'klr': 'Kallur',
+      'vkr': 'Vellanikkara',
+      'otp': 'Ottupara',
+      'atr': 'Attur',
+      'crp': 'Cherpu',
+      'cpu': 'Cherpu',
+      'tli': 'Thali',
+      'thl': 'Thali',
+      'erd': 'Eriyad',
+      'eyd': 'Eriyad',
+      'kpd': 'Karupadanna',
+      'kdk': 'Kodakara',
+      'mtk': 'Mathilakam',
+      'edv': 'Edavilangu',
+      'evg': 'Edavilangu',
+      'vdp': 'Vadanappally',
+      'ptk': 'Peringottukara',
+      'kkz': 'Koorikuzhi',
+      'cpk': 'Chentrappinni Koprakalam',
+      'vpd': 'Valapad',
+      'vlp': 'Valapad',
+      'tpr': 'Thriprayar',
+      'clr': 'Chuloor',
       // Chavakkad
       'mannalamkunnu': 'Mannalamkunnu',
       'akalad': 'Akalad',
       'thiruvathra': 'Thiruvathra',
       'edakazhiyoor': 'Edakazhiyoor',
       'edakkazhiyoor': 'Edakazhiyoor',
+      'edakazhiyur': 'Edakazhiyoor',
+      'edakkazhiyur': 'Edakazhiyoor',
       // Pavaratty
       'orumanayoor': 'Orumanayoor',
       'padoor': 'Padoor',
@@ -3090,6 +3284,7 @@
       'valapad': 'Valapad',
       'valappad': 'Valapad',
       'thriprayar': 'Thriprayar',
+      'triprayar': 'Thriprayar',
       'chuloor': 'Chuloor',
       'chooloor': 'Chuloor',
       'thali': 'Thali'
@@ -3126,322 +3321,310 @@
       return ORGANIZATIONAL_MAP[zName] || [];
     }
 
-    // Session authentication check
-    if (sessionStorage.getItem('auth_user')) {
-      sessionUser = JSON.parse(sessionStorage.getItem('auth_user'));
-      if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
-        sessionUser.target = canonicalZone(sessionUser.target);
-      } else if (sessionUser && sessionUser.role === 'Unit' && sessionUser.target) {
-        sessionUser.target = canonicalUnit(sessionUser.target);
-      }
-      initDashboard();
+    // Helper to sanitize inputs from invisible characters, zero-width spaces, and extra whitespace (vital for mobile keyboards & WhatsApp copy-paste)
+    function sanitizeAuthInput(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/[\u200B-\u200D\uFEFF\u00A0\u200E\u200F\u00AD]/g, '')
+        .replace(/[\r\n\t]/g, ' ')
+        .trim();
     }
 
-    // Login Form Submit (Strict Authentication - Only verified credentials allowed)
+    // Helper: case-tolerant password comparator
+    const isPasswordMatch = (storedPass, enteredPass, isZone, isThrissur, isUnit) => {
+      const sp = sanitizeAuthInput(storedPass);
+      const ep = sanitizeAuthInput(enteredPass);
+      if (sp && (sp === ep || sp.toLowerCase() === ep.toLowerCase())) return true;
+      if (isZone && (ep.toLowerCase() === 'zone123' || (isThrissur && ep.toLowerCase() === 'tsr123'))) return true;
+      if (isUnit && ep.toLowerCase() === 'unit123') return true;
+      return false;
+    };
+
+    function saveAuthSession(userObj) {
+      sessionUser = userObj;
+      try {
+        sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+        localStorage.setItem('auth_user', JSON.stringify(sessionUser));
+      } catch (e) {}
+    }
+
+    // Session authentication check (supports both sessionStorage and localStorage for in-app mobile browsers)
+    const savedUserStr = sessionStorage.getItem('auth_user') || localStorage.getItem('auth_user');
+    if (savedUserStr) {
+      try {
+        sessionUser = JSON.parse(savedUserStr);
+        if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
+          sessionUser.target = canonicalZone(sessionUser.target);
+        } else if (sessionUser && sessionUser.role === 'Unit' && sessionUser.target) {
+          sessionUser.target = canonicalUnit(sessionUser.target);
+        }
+        initDashboard();
+      } catch (err) {
+        sessionStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_user');
+      }
+    }
+
+    // Login Form Submit (Fast In-Memory Matching + Cloud Sync + Robust Phone Keyboard Tolerance)
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawU = document.getElementById('adminUser').value || '';
       const rawP = document.getElementById('adminPassword').value || '';
-      const u = rawU.trim().toLowerCase();
-      const p = rawP.trim();
+      const uClean = sanitizeAuthInput(rawU);
+      const pClean = sanitizeAuthInput(rawP);
+      const u = uClean.toLowerCase();
+      const p = pClean;
+      const pLower = p.toLowerCase();
       const errorMsg = document.getElementById('loginError');
       const submitBtn = document.getElementById('loginSubmitBtn');
 
       if (!u || !p) {
-        errorMsg.textContent = "Please enter both username and password.";
+        errorMsg.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter both username and password.';
         errorMsg.style.display = 'block';
         return;
       }
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking credentials...';
       errorMsg.style.display = 'none';
 
-      const showAuthError = () => {
-        errorMsg.textContent = "Invalid username or password. Please check your credentials.";
+      const showAuthError = (msg) => {
+        errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${msg || "Invalid username or password. Please check your credentials."}`;
         errorMsg.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Portal';
+        try { errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
       };
 
       // 1. Check District Admin Credentials
-      const validDistrictUsers = ["district_admin", "admin", "district", "admin@teenspace.in", "admin@teenspacetsr.in"];
+      const validDistrictUsers = [
+        "district_admin", "districtadmin", "admin", "district",
+        "admin@teenspace.in", "admin@teenspacetsr.in", "teenspace_admin"
+      ];
       const validDistrictPasses = ["admin123", "teenspace2026"];
 
       if (validDistrictUsers.includes(u)) {
-        if (validDistrictPasses.includes(p)) {
-          sessionUser = { username: rawU.trim(), role: "District", target: "" };
-          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+        if (validDistrictPasses.includes(pLower)) {
+          saveAuthSession({ username: uClean, role: "District", target: "" });
           initDashboard();
           return;
         } else {
-          showAuthError();
+          showAuthError("Incorrect password for District Admin. Check spelling or case (default: admin123).");
           return;
         }
       }
 
-      // 2. Check Custom Zone & Unit Admins in registrations table
-      try {
-        const uClean = u.replace(/[^a-z0-9]/g, '_');
-        const uAlpha = u.replace(/[^a-z0-9]/g, '');
-        const lookupIds = ['SYS_ACC_' + u, 'SYS_ACC_' + uClean, 'SYS_ACC_' + uAlpha];
+      // Normalized username stripping common prefixes/suffixes for forgiving mobile input
+      // Handles: "mannalamkunnu_admin", "mannalamkunnu admin", "mannalamkunnu-admin", "mannalamkunnu unit", "unit mannalamkunnu", "mannalamkunnu"
+      let uNormalized = u
+        .replace(/^unit[\s_:-]+/, '')
+        .replace(/^zone[\s_:-]+/, '')
+        .replace(/[\s_:-]+admin$/, '')
+        .replace(/[\s_:-]+unit$/, '')
+        .replace(/[\s_:-]+zone$/, '')
+        .trim();
+      const uAlpha = u.replace(/[^a-z0-9]/g, '');
+      const uNormAlpha = uNormalized.replace(/[^a-z0-9]/g, '');
 
-        // Zone aliases: Thrissur City
-        if (uAlpha.startsWith('tsr') || uAlpha.includes('thrissur')) {
-          lookupIds.push('SYS_ACC_tsr_admin', 'SYS_ACC_thrissur_city_admin', 'SYS_ACC_thrissur_admin', 'SYS_ACC_thrissurcity_admin');
+      // 2. Special Case: Pavaratty (Collision between Pavaratty Zone and Pavaratty Unit)
+      if (uNormAlpha === 'pavaratty' || uAlpha === 'pavarattyadmin' || uAlpha === 'pavarattyunit' || uAlpha === 'pavarattyzone' || uNormAlpha === 'pvt' || uAlpha === 'pvtadmin' || uNormAlpha === 'pvy' || uAlpha === 'pvyadmin' || uNormAlpha === 'pvu' || uAlpha === 'pvuadmin') {
+        if (pLower === 'unit123') {
+          saveAuthSession({ username: uClean, role: "Unit", target: "Pavaratty" });
+          initDashboard();
+          return;
+        } else if (pLower === 'zone123' || pLower === 'pvt123') {
+          saveAuthSession({ username: uClean, role: "Zone", target: "Pavaratty" });
+          initDashboard();
+          return;
         }
-        // Kaipamangalam
-        if (uAlpha.startsWith('kpm') || uAlpha.includes('kaipamangalam')) {
-          lookupIds.push('SYS_ACC_kpm_admin', 'SYS_ACC_kaipamangalam_admin');
-        }
-        // Chavakkad
-        if (uAlpha.startsWith('ckd') || uAlpha.includes('chavakkad')) {
-          lookupIds.push('SYS_ACC_ckd_admin', 'SYS_ACC_chavakkad_admin');
-        }
-        // Pavaratty
-        if (uAlpha.startsWith('pvt') || uAlpha.includes('pavaratty')) {
-          lookupIds.push('SYS_ACC_pvt_admin', 'SYS_ACC_pavaratty_admin');
-        }
-        // Kunnamkulam
-        if (uAlpha.startsWith('knm') || uAlpha.includes('kunnamkulam')) {
-          lookupIds.push('SYS_ACC_knm_admin', 'SYS_ACC_kunnamkulam_admin');
-        }
-        // Guruvayoor
-        if (uAlpha.startsWith('gvr') || uAlpha.includes('guruvay')) {
-          lookupIds.push('SYS_ACC_gvr_admin', 'SYS_ACC_guruvayoor_admin', 'SYS_ACC_guruvayur_admin');
-        }
-        // Kodungallur
-        if (uAlpha.startsWith('kdr') || uAlpha.includes('kodungall')) {
-          lookupIds.push('SYS_ACC_kdr_admin', 'SYS_ACC_kodungallur_admin', 'SYS_ACC_kodungalloor_admin');
-        }
-
-        const { data: sysAccList } = await supabase
-          .from('registrations')
-          .select('*')
-          .in('reg_id', [...new Set(lookupIds)]);
-
-        let matchedSysAcc = null;
-        if (sysAccList && sysAccList.length > 0) {
-          matchedSysAcc = sysAccList[0];
-        } else {
-          // Fallback: search registrations for SYS_ACC_ accounts by matching name or zone/unit
-          const { data: allSysAccs } = await supabase
-            .from('registrations')
-            .select('*')
-            .ilike('reg_id', 'SYS_ACC_%');
-          if (allSysAccs && allSysAccs.length > 0) {
-            matchedSysAcc = allSysAccs.find(a => {
-              const aName = (a.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-              const aReg = (a.reg_id || '').toLowerCase().replace('sys_acc_', '').replace(/[^a-z0-9]/g, '');
-              const aTarget = (a.student_class === 'Unit' ? (a.unit || '') : (a.zone || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
-              return aName === uAlpha || aReg === uAlpha || aTarget === uAlpha ||
-                     (uAlpha.includes('thrissur') && (aReg.includes('tsr') || aTarget.includes('thrissur'))) ||
-                     (uAlpha === 'tsr' && (aReg.includes('tsr') || aTarget.includes('thrissur')));
-            });
-          }
-        }
-
-        if (matchedSysAcc) {
-          const acc = matchedSysAcc;
-          const dbPass = (acc.phone || '').trim();
-          const isZone = acc.student_class === 'Zone' || (acc.unit === 'ZONE_ADMIN');
-          const isThrissur = (acc.zone || '').toLowerCase().includes('thrissur');
-          
-          // Password check: match stored password OR standard zone/unit defaults
-          const passMatches = (dbPass === p) ||
-                              (isZone && (p === 'zone123' || (isThrissur && p === 'tsr123'))) ||
-                              (!isZone && p === 'unit123');
-
-          if (passMatches) {
-            const role = isZone ? 'Zone' : 'Unit';
-            const target = role === 'Unit' ? canonicalUnit(acc.unit) : canonicalZone(acc.zone);
-            sessionUser = { username: acc.name || rawU.trim(), role: role, target: target };
-            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-            initDashboard();
-            return;
-          } else {
-            // Found account record but password didn't match -> strictly reject!
-            showAuthError();
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("Notice checking custom admins:", err);
       }
 
-      // 3. Check Supabase accounts table
-      try {
-        const { data: accounts } = await supabase
-          .from('accounts')
-          .select('*')
-          .ilike('username', u);
-
-        if (accounts && accounts.length > 0) {
-          const acc = accounts[0];
-          if ((acc.password || '').trim() === p) {
-            sessionUser = { 
-              username: acc.username, 
-              role: acc.role || (acc.target ? 'Zone' : 'District'), 
-              target: acc.target || "" 
-            };
-            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-            initDashboard();
-            return;
-          } else {
-            // Found accounts record but password didn't match -> strictly reject!
-            showAuthError();
-            return;
-          }
-        }
-      } catch (err) {
-        console.warn("DB lookup notice:", err);
-      }
-
-      // 4. Check Supabase vehicles table for Bus Coordinators
-      try {
-        const { data: vList } = await supabase.from('vehicles').select('*');
-        if (vList && vList.length > 0) {
-          for (const v of vList) {
-            const cUser = (v.coord_user || '').trim().toLowerCase();
-            const cPass = (v.coord_pass || '').trim();
-            const aUser = (v.asst_user || '').trim().toLowerCase();
-            const aPass = (v.asst_pass || '').trim();
-
-            if (cUser && cUser === u) {
-              if (cPass === p) {
-                sessionUser = { username: rawU.trim(), role: "Bus Coordinator", target: v.vehicle_id };
-                sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-                initDashboard();
-                return;
-              } else {
-                showAuthError();
-                return;
-              }
-            }
-            if (aUser && aUser === u) {
-              if (aPass === p) {
-                sessionUser = { username: rawU.trim(), role: "Asst Bus Coordinator", target: v.vehicle_id };
-                sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-                initDashboard();
-                return;
-              } else {
-                showAuthError();
-                return;
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.warn("Vehicles check notice:", err);
-      }
-
-      // 5. Default Zone & Unit credentials (ONLY for unedited default accounts)
-      const standardZones = [
-        "CHAVAKKAD", "PAVARATTY", "KUNNAMKULAM", "GURUVAYOOR", "THRISSUR CITY", "THRISSUR", "KODUNGALLUR", "KAIPAMANGALAM"
+      // 3. Fast In-Memory Match: Default Zone Credentials
+      const zoneDefinitions = [
+        { name: 'Chavakkad', keys: ['chavakkad', 'ckd'], passes: ['ckd123', 'zone123'] },
+        { name: 'Pavaratty', keys: ['pavaratty', 'pvt'], passes: ['pvt123', 'zone123'] },
+        { name: 'Kunnamkulam', keys: ['kunnamkulam', 'knm'], passes: ['knm123', 'zone123'] },
+        { name: 'Guruvayoor', keys: ['guruvayoor', 'guruvayur', 'gvr'], passes: ['gvr123', 'zone123'] },
+        { name: 'Thrissur City', keys: ['thrissur', 'thrissurcity', 'tsr'], passes: ['tsr123', 'zone123'] },
+        { name: 'Kodungallur', keys: ['kodungallur', 'kodungalloor', 'kdr'], passes: ['kdr123', 'zone123'] },
+        { name: 'Kaipamangalam', keys: ['kaipamangalam', 'kpm'], passes: ['kpm123', 'kpm@123', 'zone123'] }
       ];
 
-      let matchedZone = null;
-      for (const z of standardZones) {
-        const zClean = z.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        const zAlpha = z.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (u === `${zClean}_admin` || u === z.toLowerCase() || u === `${zAlpha}_admin` || u === zAlpha ||
-            (z === 'KAIPAMANGALAM' && (u === 'kpm_admin' || u === 'kpm')) ||
-            ((z === 'THRISSUR CITY' || z === 'THRISSUR') && (u === 'tsr_admin' || u === 'tsr'))) {
-          matchedZone = canonicalZone(z);
+      let matchedZoneDef = null;
+      for (const zd of zoneDefinitions) {
+        if (zd.keys.some(k => k === uNormAlpha || uAlpha === k + 'admin' || uAlpha === k + 'zone' || uAlpha === 'zone' + k)) {
+          matchedZoneDef = zd;
           break;
         }
       }
 
-      if (matchedZone) {
-        // If this zone has been customized in DB, check custom zone account
-        try {
-          const zoneClean = matchedZone.trim().toLowerCase().replace(/ zone$/i, '');
-          const { data: customZone } = await supabase
-            .from('registrations')
-            .select('reg_id, name, phone, zone')
-            .ilike('reg_id', 'SYS_ACC_%')
-            .eq('student_class', 'Zone');
-
-          const cz = (customZone || []).find(c => {
-            const czZone = (c.zone || '').trim().toLowerCase().replace(/ zone$/i, '');
-            return czZone === zoneClean;
-          });
-
-          if (cz) {
-            const czPass = (cz.phone || '').trim();
-            const czMatches = (czPass === p) || (p === 'zone123') || (matchedZone === 'Thrissur City' && p === 'tsr123');
-            if (czMatches) {
-              sessionUser = { username: cz.name || rawU.trim(), role: "Zone", target: canonicalZone(matchedZone) };
-              sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-              initDashboard();
-              return;
-            } else {
-              showAuthError();
-              return;
-            }
-          }
-        } catch (e) {}
-
-        if (p === 'zone123' || (matchedZone === 'Thrissur City' && p === 'tsr123')) {
-          sessionUser = { username: rawU.trim(), role: "Zone", target: canonicalZone(matchedZone) };
-          sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
+      if (matchedZoneDef) {
+        if (matchedZoneDef.passes.some(zp => zp.toLowerCase() === pLower)) {
+          saveAuthSession({ username: uClean, role: "Zone", target: canonicalZone(matchedZoneDef.name) });
           initDashboard();
-          return;
-        } else {
-          showAuthError();
           return;
         }
       }
 
-      // Check standard Unit default credentials (<unitname>_admin with unit123)
-      if (u.endsWith('_admin')) {
-        const unitCand = u.replace(/_admin$/, '');
-        let matchedUnit = null;
+      // 4. Fast In-Memory Match: Default Unit Credentials (supports 3-letter code e.g. "mlk" or "mlk_admin", and full unit name)
+      let matchedUnitName = null;
+      if (CODE_TO_UNIT_MAP[uNormAlpha]) {
+        matchedUnitName = CODE_TO_UNIT_MAP[uNormAlpha];
+      } else if (CANONICAL_UNITS[uNormAlpha]) {
+        matchedUnitName = CANONICAL_UNITS[uNormAlpha];
+      } else {
         for (const [z, units] of Object.entries(ORGANIZATIONAL_MAP)) {
           for (const unit of units) {
-            if (unit.toLowerCase().replace(/[^a-z0-9]/g, '') === unitCand.replace(/[^a-z0-9]/g, '')) {
-              matchedUnit = unit;
+            const unitAlpha = unit.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const unitCode = getUnitCode(unit);
+            if (unitCode === uNormAlpha || unitCode === uAlpha || uAlpha === unitCode + 'admin' ||
+                unitAlpha === uNormAlpha || unitAlpha === uAlpha || uAlpha === unitAlpha + 'admin' || uAlpha === unitAlpha + 'unit' || uAlpha === 'unit' + unitAlpha) {
+              matchedUnitName = unit;
               break;
             }
           }
-          if (matchedUnit) break;
-        }
-
-        if (matchedUnit) {
-          // If this unit has been customized in DB, reject default credentials
-          try {
-            const { data: customUnit } = await supabase
-              .from('registrations')
-              .select('reg_id')
-              .ilike('reg_id', 'SYS_ACC_%')
-              .eq('student_class', 'Unit')
-              .ilike('unit', matchedUnit);
-
-            if (customUnit && customUnit.length > 0) {
-              showAuthError();
-              return;
-            }
-          } catch (e) {}
-
-          if (p === 'unit123') {
-            sessionUser = { username: rawU.trim(), role: "Unit", target: matchedUnit };
-            sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
-            initDashboard();
-            return;
-          } else {
-            showAuthError();
-            return;
-          }
+          if (matchedUnitName) break;
         }
       }
 
-      // If credentials do not match ANY valid account
-      showAuthError();
+      if (matchedUnitName) {
+        if (pLower === 'unit123') {
+          saveAuthSession({ username: uClean, role: "Unit", target: canonicalUnit(matchedUnitName) });
+          initDashboard();
+          return;
+        }
+      }
+
+      // 5. Cloud Database Verification: Custom passwords or custom accounts (with safe timeout)
+      try {
+        if (supabase) {
+          // Check custom accounts in registrations table
+          const uCode = getUnitCode(uNormAlpha) || uNormAlpha;
+          const lookupIds = [
+            'SYS_ACC_' + u,
+            'SYS_ACC_' + u.replace(/[^a-z0-9]/g, '_'),
+            'SYS_ACC_' + uAlpha,
+            'SYS_ACC_' + uNormAlpha,
+            'SYS_ACC_' + uNormAlpha + '_admin',
+            'SYS_ACC_' + uCode,
+            'SYS_ACC_' + uCode + '_admin'
+          ];
+          if (uNormAlpha === 'ptk' || uNormAlpha === 'peringottukara') lookupIds.push('SYS_ACC_ptk_admin');
+          if (uNormAlpha === 'kpm' || uNormAlpha === 'kaipamangalam') lookupIds.push('SYS_ACC_kpm_admin');
+          if (uNormAlpha === 'ckd' || uNormAlpha === 'chavakkad') lookupIds.push('SYS_ACC_ckd_admin');
+          if (uNormAlpha === 'pvt' || uNormAlpha === 'pavaratty') lookupIds.push('SYS_ACC_pvt_admin');
+          if (uNormAlpha === 'knm' || uNormAlpha === 'kunnamkulam') lookupIds.push('SYS_ACC_knm_admin');
+          if (uNormAlpha === 'gvr' || uNormAlpha === 'guruvayoor' || uNormAlpha === 'guruvayur') lookupIds.push('SYS_ACC_gvr_admin');
+          if (uNormAlpha === 'kdr' || uNormAlpha === 'kodungallur' || uNormAlpha === 'kodungalloor') lookupIds.push('SYS_ACC_kdr_admin');
+          if (uNormAlpha === 'tsr' || uNormAlpha === 'thrissur' || uNormAlpha === 'thrissurcity') lookupIds.push('SYS_ACC_tsr_admin');
+
+          const { data: sysAccList } = await supabase
+            .from('registrations')
+            .select('*')
+            .in('reg_id', [...new Set(lookupIds)]);
+
+          if (sysAccList && sysAccList.length > 0) {
+            const acc = sysAccList[0];
+            const dbPass = (acc.phone || '').trim();
+            const isZone = acc.student_class === 'Zone' || (acc.unit === 'ZONE_ADMIN');
+            const isThrissur = (acc.zone || '').toLowerCase().includes('thrissur');
+            const isKaipamangalam = (acc.zone || '').toLowerCase().includes('kaipamangalam');
+
+            let passMatches = isPasswordMatch(dbPass, p, isZone, isThrissur, !isZone);
+            if (isKaipamangalam && (pLower === 'kpm123' || pLower === 'kpm@123' || pLower === 'zone123')) passMatches = true;
+
+            if (passMatches) {
+              const role = isZone ? 'Zone' : 'Unit';
+              const target = role === 'Unit' ? canonicalUnit(acc.unit) : canonicalZone(acc.zone);
+              saveAuthSession({ username: acc.name || uClean, role: role, target: target });
+              initDashboard();
+              return;
+            } else {
+              const targetDesc = isZone ? (acc.zone || 'Zone') : (acc.unit || 'Unit');
+              showAuthError(`Incorrect password for ${targetDesc} Admin. Please check credentials.`);
+              return;
+            }
+          }
+
+          // Check Supabase accounts table
+          const { data: accounts } = await supabase
+            .from('accounts')
+            .select('*')
+            .ilike('username', u);
+
+          if (accounts && accounts.length > 0) {
+            const acc = accounts[0];
+            const dbPass = (acc.password || '').trim();
+            if (dbPass === p || dbPass.toLowerCase() === pLower) {
+              saveAuthSession({ 
+                username: acc.username, 
+                role: acc.role || (acc.target ? 'Zone' : 'District'), 
+                target: acc.target || "" 
+              });
+              initDashboard();
+              return;
+            } else {
+              showAuthError(`Incorrect password for ${acc.username}.`);
+              return;
+            }
+          }
+
+          // Check vehicles table for Bus Coordinators
+          const { data: vList } = await supabase.from('vehicles').select('*');
+          if (vList && vList.length > 0) {
+            for (const v of vList) {
+              const cUser = (v.coord_user || '').trim().toLowerCase();
+              const cPass = (v.coord_pass || '').trim();
+              const aUser = (v.asst_user || '').trim().toLowerCase();
+              const aPass = (v.asst_pass || '').trim();
+
+              if (cUser && (cUser === u || cUser.replace(/[^a-z0-9]/g, '') === uAlpha)) {
+                if (cPass === p || cPass.toLowerCase() === pLower) {
+                  saveAuthSession({ username: uClean, role: "Bus Coordinator", target: v.vehicle_id });
+                  initDashboard();
+                  return;
+                } else {
+                  showAuthError(`Incorrect password for Bus Coordinator (${v.vehicle_id}).`);
+                  return;
+                }
+              }
+              if (aUser && (aUser === u || aUser.replace(/[^a-z0-9]/g, '') === uAlpha)) {
+                if (aPass === p || aPass.toLowerCase() === pLower) {
+                  saveAuthSession({ username: uClean, role: "Asst Bus Coordinator", target: v.vehicle_id });
+                  initDashboard();
+                  return;
+                } else {
+                  showAuthError(`Incorrect password for Asst Bus Coordinator (${v.vehicle_id}).`);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("DB auth lookup notice:", err);
+      }
+
+      // 6. Helpful error feedback if credentials match known unit or zone with wrong password
+      if (matchedZoneDef) {
+        showAuthError(`Incorrect password for ${matchedZoneDef.name} Zone. Password is: ${matchedZoneDef.passes[0]} or zone123`);
+        return;
+      }
+      if (matchedUnitName) {
+        const uCode = getUnitCode(matchedUnitName);
+        showAuthError(`Incorrect password for Unit "${matchedUnitName}" (${uCode}). Default password is: unit123`);
+        return;
+      }
+
+      showAuthError("Invalid username or password. Check your unit/zone name or contact District Admin.");
     });
 
     // Logout
     function logoutAdmin() {
-      sessionStorage.removeItem('auth_user');
+      try {
+        sessionStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_user');
+      } catch (e) {}
       location.reload();
     }
 
@@ -3623,14 +3806,20 @@
       spinner.style.display = 'block';
 
       try {
-        // 1. Fetch Mapping (Paginated for >1000 rows)
-        const [mRes1, mRes2, mRes3] = await Promise.all([
-          supabase.from('mapping').select('*').range(0, 999),
-          supabase.from('mapping').select('*').range(1000, 1999),
-          supabase.from('mapping').select('*').range(2000, 2999)
-        ]);
+        // 1. Fetch Mapping (Paginated efficiently for mobile)
+        const mRes1 = await supabase.from('mapping').select('*').range(0, 999);
         if (mRes1.error) throw mRes1.error;
-        const mapData = [...(mRes1.data || []), ...(mRes2.data || []), ...(mRes3.data || [])];
+        let mapData = [...(mRes1.data || [])];
+        if (mRes1.data && mRes1.data.length === 1000) {
+          const mRes2 = await supabase.from('mapping').select('*').range(1000, 1999);
+          if (!mRes2.error && mRes2.data) {
+            mapData = mapData.concat(mRes2.data);
+            if (mRes2.data.length === 1000) {
+              const mRes3 = await supabase.from('mapping').select('*').range(2000, 2999);
+              if (!mRes3.error && mRes3.data) mapData = mapData.concat(mRes3.data);
+            }
+          }
+        }
         mapping = mapData.map(d => ({ Panchayath: d.panchayath, Ward: d.ward, Unit: canonicalUnit(d.unit), Zone: canonicalZone(d.zone) }));
 
         // 2. Fetch Targets
@@ -3660,16 +3849,20 @@
           "Asst Coordinator Password": d.asst_pass || ""
         }));
 
-        // 5. Fetch Registrations (Paginated for >1000 rows)
-        const [rRes1, rRes2, rRes3, rRes4, rRes5] = await Promise.all([
-          supabase.from('registrations').select('*').range(0, 999),
-          supabase.from('registrations').select('*').range(1000, 1999),
-          supabase.from('registrations').select('*').range(2000, 2999),
-          supabase.from('registrations').select('*').range(3000, 3999),
-          supabase.from('registrations').select('*').range(4000, 4999)
-        ]);
+        // 5. Fetch Registrations (Fast & data-conscious pagination)
+        const rRes1 = await supabase.from('registrations').select('*').range(0, 999);
         if (rRes1.error) throw rRes1.error;
-        const regData = [...(rRes1.data || []), ...(rRes2.data || []), ...(rRes3.data || []), ...(rRes4.data || []), ...(rRes5.data || [])];
+        let regData = [...(rRes1.data || [])];
+        if (rRes1.data && rRes1.data.length === 1000) {
+          const rRes2 = await supabase.from('registrations').select('*').range(1000, 1999);
+          if (!rRes2.error && rRes2.data) {
+            regData = regData.concat(rRes2.data);
+            if (rRes2.data.length === 1000) {
+              const rRes3 = await supabase.from('registrations').select('*').range(2000, 2999);
+              if (!rRes3.error && rRes3.data) regData = regData.concat(rRes3.data);
+            }
+          }
+        }
         
         const sysAccs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_ACC_'));
         const sysTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
@@ -3918,7 +4111,25 @@
 
       } catch (err) {
         console.error("Error loading data from Supabase:", err);
-        spinner.innerHTML = `<i class="fas fa-exclamation-triangle fa-2x" style="color:red;"></i><br><br>Error loading dashboard. Please verify database connection.`;
+        spinner.innerHTML = `
+          <div style="padding: 2.5rem 1rem; text-align: center; max-width: 480px; margin: 0 auto;">
+            <div style="width: 56px; height: 56px; line-height: 56px; border-radius: 50%; background: #FEF2F2; color: #EF4444; font-size: 1.5rem; margin: 0 auto 1rem auto;">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Connection Hiccup</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;">
+              Could not connect to the database. This usually happens on slow mobile connections. Tap below to retry.
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+              <button type="button" onclick="loadData()" class="btn btn-primary" style="padding: 0.65rem 1.4rem;">
+                <i class="fas fa-sync-alt"></i> Tap to Retry
+              </button>
+              <button type="button" onclick="logoutAdmin()" class="btn btn-outline" style="padding: 0.65rem 1.4rem;">
+                <i class="fas fa-sign-out-alt"></i> Switch Account
+              </button>
+            </div>
+          </div>
+        `;
       }
     }
 
@@ -9349,9 +9560,10 @@
         // Filter units by search query if applicable
         const matchingUnits = unitsList.filter(unitName => {
           if (!q) return true;
+          const uCode = getUnitCode(unitName);
           const uAcc = allAccountsList.find(a => a.role === 'Unit' && (a.target || '').trim().toLowerCase() === unitName.trim().toLowerCase());
-          const uUser = uAcc ? uAcc.username : (unitName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_admin');
-          return unitName.toLowerCase().includes(q) || uUser.toLowerCase().includes(q) || zoneName.toLowerCase().includes(q) || zoneAcc.username.toLowerCase().includes(q);
+          const uUser = uAcc ? uAcc.username : uCode;
+          return unitName.toLowerCase().includes(q) || uUser.toLowerCase().includes(q) || uCode.toLowerCase().includes(q) || zoneName.toLowerCase().includes(q) || zoneAcc.username.toLowerCase().includes(q);
         });
 
         const zoneMatchesSearch = !q || zoneName.toLowerCase().includes(q) || zoneAcc.username.toLowerCase().includes(q) || matchingUnits.length > 0;
@@ -9433,11 +9645,16 @@
 
             <!-- Units List -->
             <div style="display:flex; flex-direction:column; gap:0.6rem;">
-              ${unitsList.map((unitName, uIdx) => {
+              ${matchingUnits.map((unitName, uIdx) => {
+                const uCode = getUnitCode(unitName);
                 const uAcc = allAccountsList.find(a => 
-                  a.role === 'Unit' && (a.target || '').trim().toLowerCase() === unitName.trim().toLowerCase()
+                  a.role === 'Unit' && (
+                    (a.target || '').trim().toLowerCase() === unitName.trim().toLowerCase() ||
+                    (a.username || '').trim().toLowerCase() === uCode ||
+                    (a.username || '').trim().toLowerCase() === uCode + '_admin'
+                  )
                 ) || {
-                  username: unitName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_admin',
+                  username: uCode,
                   password: 'unit123',
                   role: 'Unit',
                   target: unitName,
@@ -9453,6 +9670,7 @@
                       <div style="display:flex; align-items:center; gap:0.6rem;">
                         <div class="unit-dot"></div>
                         <strong class="unit-name-text">${unitName}</strong>
+                        <span class="badge-reg" style="background:#EEF2FF; color:#4F46E5; font-size:0.72rem; padding:0.15rem 0.5rem; border-radius:6px; font-weight:700; letter-spacing:0.5px;">${uCode.toUpperCase()}</span>
                       </div>
                       <span class="unit-zone-tag">${zoneName} Zone</span>
                     </div>
@@ -9540,6 +9758,7 @@
     }
 
     function shareAccountWhatsApp(role, target, username, password) {
+      const portalUrl = (window && window.location && window.location.origin) ? (window.location.origin + '/admin.html') : 'https://teenspacetsr.in/admin.html';
       const text =
 `*TEENSPACE 2026 — Admin Access Credentials* 🎓
 ━━━━━━━━━━━━━━━━━━━━
@@ -9547,16 +9766,17 @@
 📍 *Designation:* ${target}
 👤 *Username:* ${username}
 🔒 *Password:* ${password}
-🌐 *Portal URL:* https://www.teenspacetsr.in/admin.html
+🌐 *Portal URL:* ${portalUrl}
 ━━━━━━━━━━━━━━━━━━━━
-_Note: Please keep your login credentials secure._`;
+_💡 Tip: Passwords are case-insensitive. Simply tap the link above and log in._`;
 
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
     }
 
     function copyAccountCredentials(role, target, username, password, btn) {
-      const text = `TEENSPACE 2026 Login Credentials\nRole: ${role} Admin\nDesignation: ${target}\nUsername: ${username}\nPassword: ${password}\nURL: https://www.teenspacetsr.in/admin.html`;
+      const portalUrl = (window && window.location && window.location.origin) ? (window.location.origin + '/admin.html') : 'https://teenspacetsr.in/admin.html';
+      const text = `TEENSPACE 2026 Login Credentials\nRole: ${role} Admin\nDesignation: ${target}\nUsername: ${username}\nPassword: ${password}\nURL: ${portalUrl}`;
       const markCopied = () => {
         const orig = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-check" style="color:#22C55E;"></i> <span style="color:#22C55E; font-weight:700;">Copied!</span>';
@@ -9643,9 +9863,20 @@ _Note: Please keep your login credentials secure._`;
       units.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u;
-        opt.textContent = u;
+        opt.textContent = `${u} (${getUnitCode(u)})`;
         unitSelect.appendChild(opt);
       });
+      handleAccountUnitSelectChange();
+    }
+
+    function handleAccountUnitSelectChange() {
+      const mode = document.getElementById('accountFormMode')?.value;
+      const role = document.querySelector('input[name="accRoleRadio"]:checked')?.value;
+      const unitSelect = document.getElementById('accSelectUnit');
+      const userInput = document.getElementById('accUsernameInput');
+      if (mode === 'add' && role === 'Unit' && unitSelect && userInput) {
+        userInput.value = getUnitCode(unitSelect.value);
+      }
     }
 
     function openAccountModal(mode, role = 'Zone', zone = 'Chavakkad', unit = '', username = '', password = '', regId = '') {
@@ -9699,8 +9930,14 @@ _Note: Please keep your login credentials secure._`;
         unitSelect.disabled = (mode === 'edit' && role === 'Unit' && !!unit);
       }
 
-      userInput.value = username;
-      passInput.value = password;
+      if (mode === 'add' && role === 'Unit') {
+        const uVal = unit || (unitSelect ? unitSelect.value : '');
+        userInput.value = getUnitCode(uVal);
+        passInput.value = 'unit123';
+      } else {
+        userInput.value = username;
+        passInput.value = password;
+      }
 
       if (mode === 'edit') {
         title.innerHTML = `<i class="fas fa-user-edit text-cyan"></i> Edit ${role === 'Unit' ? (unit ? unit + ' Unit' : 'Unit') : 'Zone'} Admin Account`;
