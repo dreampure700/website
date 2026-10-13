@@ -2529,7 +2529,7 @@
       <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem;"><i class="fas fa-users text-cyan"></i> Vehicle Passenger List</h3>
       <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;" id="passengerModalSubtitle">Loading assigned passengers...</p>
 
-      <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.05); padding:1rem; border-radius:10px; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+      <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.05); padding:1rem; border-radius:10px; margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
         <div>
           <div style="font-size:0.75rem; color:var(--text-dim);">VEHICLE ID & NAME</div>
           <div style="font-weight:700;" id="passengerVehicleName">Loading...</div>
@@ -2538,6 +2538,28 @@
           <div style="font-size:0.75rem; color:var(--text-dim);">SEAT CAPACITY</div>
           <div style="font-weight:700;" id="passengerSeatRatio">0 / 50 seats</div>
         </div>
+      </div>
+
+      <!-- FAST ADD DELEGATE TO THIS BUS -->
+      <div class="quick-add-box" style="background:#F0FDF4; border:1.5px solid rgba(34,197,94,0.35); border-radius:12px; padding:0.85rem 1rem; margin-bottom:1.25rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem; flex-wrap:wrap; gap:0.3rem;">
+          <span style="font-weight:700; font-size:0.85rem; color:#15803D; display:inline-flex; align-items:center; gap:0.4rem;">
+            <i class="fas fa-user-plus"></i> Fast Add Delegate to this Bus
+          </span>
+          <span id="quickAddRemainingInfo" style="font-size:0.75rem; color:#15803D; font-weight:700;"></span>
+        </div>
+        <form id="quickAddPassengerForm" onsubmit="executeQuickAddPassenger(event)" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+          <input type="hidden" id="quickAddVehicleId">
+          <div style="flex-grow:1; min-width:240px; position:relative;">
+            <input type="text" id="quickAddStudentInput" class="form-control" placeholder="Type student Name, District ID, Mandal ID, or Mobile..." list="quickAddStudentDatalist" style="width:100%; padding:0.55rem 0.8rem; font-size:0.85rem; border-radius:8px; border:1px solid #BBF7D0; background:white;" autocomplete="off" required>
+            <datalist id="quickAddStudentDatalist">
+              <!-- Dynamically populated with unassigned students -->
+            </datalist>
+          </div>
+          <button type="submit" id="quickAddStudentSubmitBtn" class="btn btn-primary" style="background:#16A34A; border-color:#16A34A; padding:0.55rem 1.1rem; font-size:0.82rem; font-weight:700; white-space:nowrap; border-radius:8px; display:inline-flex; align-items:center; gap:0.4rem;">
+            <i class="fas fa-plus"></i> Add to Bus
+          </button>
+        </form>
       </div>
 
       <div style="overflow-x: auto; margin-bottom: 1.5rem;">
@@ -4211,50 +4233,55 @@
           const primaryRegId = isZoneOrUnit ? mandalRegId : districtRegId;
           const secondaryRegId = isZoneOrUnit ? districtRegId : mandalRegId;
 
-          return {
-            Timestamp: d.timestamp,
-            id: d.id,
-            dbRegId: d.reg_id,
-            rawRegId: d.reg_id,
-            "Registration ID": primaryRegId,
-            regId: primaryRegId,
-            districtRegId: districtRegId,
-            districtId: districtRegId,
-            districtSeq: distSeq,
-            mandalRegId: mandalRegId,
-            zoneRegId: mandalRegId,
-            zoneId: mandalRegId,
-            mandalSeq: mandalSeq,
-            mandalPrefix: prefix,
-            secondaryRegId: secondaryRegId,
-            "Student Name": d.name,
-            name: d.name,
-            "Student Mobile Number": d.phone,
-            phone: d.phone,
-            "Parent Mobile Number": d.parent_phone || "",
-            Class: d.student_class || "",
-            School: d.school || "",
-            Place: d.place || "",
-            Panchayath: d.panchayath || "",
-            Ward: d.ward || "",
-            "Organization Unit": resolvedUnit,
-            unit: resolvedUnit,
-            "Organization Zone": resolvedZone,
-            zone: resolvedZone,
-            "Assigned Vehicle": d.assigned_vehicle || "",
-            assignedVehicle: d.assigned_vehicle || "",
-            "Pickup Order": d.pickup_order ? d.pickup_order.toString() : "",
-            pickupOrder: d.pickup_order ? d.pickup_order.toString() : "",
-            "Pickup Point": d.pickup_point || "",
-            pickupPoint: d.pickup_point || "",
-            pickup_point: d.pickup_point || "",
-            "Pickup Time": d.pickup_time || "",
-            pickupTime: d.pickup_time || "",
-            pickup_time: d.pickup_time || "",
-            "Picked Up": d.picked_up ? "true" : "false",
-            pickedUp: d.picked_up ? "true" : "false",
-            status: d.status || studentStatusMap.get(d.reg_id) || "pending"
-          };
+            // Validate that assigned vehicle actually exists in vehicles table
+            const rawV = (d.assigned_vehicle || "").trim();
+            const validVObj = (rawV && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === rawV.toLowerCase()) : null;
+            const validVehicleId = validVObj ? validVObj["Vehicle ID"] : "";
+
+            return {
+              Timestamp: d.timestamp,
+              id: d.id,
+              dbRegId: d.reg_id,
+              rawRegId: d.reg_id,
+              "Registration ID": primaryRegId,
+              regId: primaryRegId,
+              districtRegId: districtRegId,
+              districtId: districtRegId,
+              districtSeq: distSeq,
+              mandalRegId: mandalRegId,
+              zoneRegId: mandalRegId,
+              zoneId: mandalRegId,
+              mandalSeq: mandalSeq,
+              mandalPrefix: prefix,
+              secondaryRegId: secondaryRegId,
+              "Student Name": d.name,
+              name: d.name,
+              "Student Mobile Number": d.phone,
+              phone: d.phone,
+              "Parent Mobile Number": d.parent_phone || "",
+              Class: d.student_class || "",
+              School: d.school || "",
+              Place: d.place || "",
+              Panchayath: d.panchayath || "",
+              Ward: d.ward || "",
+              "Organization Unit": resolvedUnit,
+              unit: resolvedUnit,
+              "Organization Zone": resolvedZone,
+              zone: resolvedZone,
+              "Assigned Vehicle": validVehicleId,
+              assignedVehicle: validVehicleId,
+              "Pickup Order": validVehicleId ? (d.pickup_order ? d.pickup_order.toString() : "") : "",
+              pickupOrder: validVehicleId ? (d.pickup_order ? d.pickup_order.toString() : "") : "",
+              "Pickup Point": validVehicleId ? (d.pickup_point || "") : "",
+              pickupPoint: validVehicleId ? (d.pickup_point || "") : "",
+              pickup_point: validVehicleId ? (d.pickup_point || "") : "",
+              "Pickup Time": validVehicleId ? (d.pickup_time || "") : "",
+              pickupTime: validVehicleId ? (d.pickup_time || "") : "",
+              pickup_time: validVehicleId ? (d.pickup_time || "") : "",
+              "Picked Up": validVehicleId ? (d.picked_up ? "true" : "false") : "false",
+              pickedUp: validVehicleId ? (d.picked_up ? "true" : "false") : "false",
+              status: d.status || studentStatusMap.get(d.reg_id) || "pending"
+            };
         });
 
         // 6. Fetch Media
@@ -5177,7 +5204,9 @@
         const dupPhoneMap = getDuplicatePhoneMap();
 
         pageItems.forEach(item => {
-        const vehicleAssigned = item["Assigned Vehicle"] || '';
+        const rawAssignedVehicle = (item["Assigned Vehicle"] || item.assignedVehicle || '').trim();
+        const assignedVehicleObj = (rawAssignedVehicle && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === rawAssignedVehicle.toLowerCase()) : null;
+        const vehicleAssigned = assignedVehicleObj ? assignedVehicleObj["Vehicle ID"] : '';
         const vehicleBadge = vehicleAssigned 
           ? `<span class="badge-reg badge-vehicle"><i class="fas fa-bus"></i> ${vehicleAssigned}</span>` 
           : `<span class="badge-reg badge-unassigned">Not Assigned</span>`;
@@ -6083,8 +6112,13 @@
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (!student) return;
 
-      const vehicleVal = student["Assigned Vehicle"] || student.assignedVehicle || '';
-      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleVal) || { "Vehicle ID": vehicleVal, "Vehicle Name": "Special Bus" };
+      const vehicleVal = (student["Assigned Vehicle"] || student.assignedVehicle || '').trim();
+      const vehicle = vehicleVal ? vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === vehicleVal.toLowerCase()) : null;
+
+      if (!vehicleVal || !vehicle) {
+        alert("This delegate does not have an active assigned vehicle. The vehicle may have been deleted or not assigned yet.");
+        return;
+      }
 
       const modal = document.getElementById('travelTicketModal');
       const canvas = document.getElementById('travelTicketCanvas');
@@ -6345,6 +6379,39 @@
 
       document.getElementById('passengerSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
       document.getElementById('passengerModalSubtitle').textContent = `Manage passengers for this bus route.`;
+
+      // Setup Fast-Add input and datalist
+      const quickAddVehicleInput = document.getElementById('quickAddVehicleId');
+      if (quickAddVehicleInput) quickAddVehicleInput.value = vehicleId;
+
+      const quickAddInput = document.getElementById('quickAddStudentInput');
+      if (quickAddInput) quickAddInput.value = '';
+
+      const datalist = document.getElementById('quickAddStudentDatalist');
+      if (datalist) {
+        datalist.innerHTML = '';
+        const unassigned = registrations.filter(r => {
+          const v = (r["Assigned Vehicle"] || r.assignedVehicle || '').trim();
+          return !v;
+        });
+
+        const availableSeats = Math.max(0, capacity - passengers.length);
+        const remInfo = document.getElementById('quickAddRemainingInfo');
+        if (remInfo) {
+          remInfo.textContent = `${availableSeats} seat(s) free • ${unassigned.length} unassigned delegates`;
+        }
+
+        unassigned.forEach(u => {
+          const opt = document.createElement('option');
+          const distId = u.districtRegId || u["Registration ID"] || u.regId;
+          const mandalId = u.mandalRegId ? ` (${u.mandalRegId})` : '';
+          const uName = u["Student Name"] || u.name || 'Delegate';
+          const zoneU = u["Organization Zone"] ? ` - ${u["Organization Zone"]}` : '';
+          const ph = (u["Student Mobile Number"] || u.phone) ? ` - ${u["Student Mobile Number"] || u.phone}` : '';
+          opt.value = `${distId} | ${uName}${mandalId}${zoneU}${ph}`;
+          datalist.appendChild(opt);
+        });
+      }
 
       const tbody = document.getElementById('passengerTableBody');
       tbody.innerHTML = '';
@@ -6668,34 +6735,144 @@
       }
     }
 
-    function unassignPassenger(regId, vehicleId) {
-      if (!confirm(`Are you sure you want to remove this delegate from vehicle ${vehicleId}?`)) return;
+    async function executeQuickAddPassenger(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('quickAddStudentInput');
+      const vehicleId = document.getElementById('quickAddVehicleId').value;
+      const rawVal = (input ? input.value : '').trim();
+      if (!rawVal || !vehicleId) return;
 
-      const btn = event.target.closest('button');
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      if (!vehicle) {
+        alert("Vehicle not found.");
+        return;
       }
 
-      const targetDbId = getRegistrationDbId(regId);
-      supabase
-        .from('registrations')
-        .update({ assigned_vehicle: null, pickup_order: null })
-        .eq('reg_id', targetDbId)
-        .then(({ error }) => {
-          if (!error) {
-            alert('Passenger removed from vehicle successfully!');
-            loadData().then(() => {
-              openPassengerListModal(vehicleId);
-            });
-          } else {
-            alert('Error removing passenger: ' + error.message);
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = '<i class="fas fa-user-minus"></i> Remove';
-            }
-          }
-        });
+      let identifier = rawVal;
+      if (rawVal.includes('|')) {
+        identifier = rawVal.split('|')[0].trim();
+      }
+
+      let student = findRegistration(identifier);
+      if (!student) {
+        const cleanVal = rawVal.toLowerCase();
+        student = registrations.find(r => 
+          (r["Student Name"] || r.name || '').toLowerCase() === cleanVal ||
+          (r["Student Mobile Number"] || r.phone || '').replace(/\D/g, '').endsWith(cleanVal.replace(/\D/g, ''))
+        );
+      }
+
+      if (!student) {
+        alert(`Could not find delegate "${rawVal}". Please choose a delegate from the dropdown list.`);
+        return;
+      }
+
+      const sName = student["Student Name"] || student.name || 'Delegate';
+      const studentIdVal = student.districtRegId || student["Registration ID"] || student.regId;
+
+      const currentV = (student["Assigned Vehicle"] || student.assignedVehicle || '').trim();
+      if (currentV === vehicleId) {
+        alert(`"${sName}" is already assigned to this vehicle.`);
+        input.value = '';
+        return;
+      }
+
+      // Calculate next pickup order
+      const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      let maxOrder = 0;
+      vehiclePassengers.forEach(p => {
+        const ord = parseInt(p["Pickup Order"] || p.pickupOrder, 10);
+        if (!isNaN(ord) && ord > maxOrder) maxOrder = ord;
+      });
+      const nextOrder = maxOrder + 1;
+
+      // 1. INSTANT LOCAL UPDATE (0ms)
+      student["Assigned Vehicle"] = vehicleId;
+      student.assignedVehicle = vehicleId;
+      student["Pickup Order"] = nextOrder;
+      student.pickupOrder = nextOrder;
+      student["Picked Up"] = "false";
+      student.pickedUp = "false";
+
+      input.value = '';
+
+      openPassengerListModal(vehicleId);
+      renderDataList();
+      renderVehicles();
+      showToast(`Added ${sName} to vehicle ${vehicleId}`);
+
+      // 2. BACKGROUND PERSISTENCE TO SUPABASE
+      const updateData = { assigned_vehicle: vehicleId, pickup_order: nextOrder };
+      let query;
+      if (student.id) {
+        query = supabase.from('registrations').update(updateData).eq('id', student.id);
+      } else {
+        const dbId = student.dbRegId || getRegistrationDbId(studentIdVal);
+        query = supabase.from('registrations').update(updateData).eq('reg_id', dbId);
+      }
+
+      query.then(({ error }) => {
+        if (error) {
+          console.error("Failed to persist passenger assignment on Supabase:", error);
+          alert("Database notice: " + error.message);
+          loadData();
+        }
+      });
+    }
+
+    function unassignPassenger(regId, vehicleId) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const sName = student ? (student["Student Name"] || student.name || regId) : regId;
+
+      if (!confirm(`Are you sure you want to remove "${sName}" from vehicle ${vehicleId}?`)) {
+        return;
+      }
+
+      // 1. INSTANT LOCAL UPDATE (0ms lag)
+      if (student) {
+        student["Assigned Vehicle"] = "";
+        student.assignedVehicle = "";
+        student["Pickup Order"] = "";
+        student.pickupOrder = "";
+        student["Pickup Point"] = "";
+        student.pickupPoint = "";
+        student.pickup_point = "";
+        student["Pickup Time"] = "";
+        student.pickupTime = "";
+        student.pickup_time = "";
+        student["Picked Up"] = "false";
+        student.pickedUp = "false";
+      }
+
+      openPassengerListModal(vehicleId);
+      renderDataList();
+      renderVehicles();
+      showToast(`Removed "${sName}" from vehicle ${vehicleId}`);
+
+      // 2. BACKGROUND PERSISTENCE TO SUPABASE
+      const clearPayload = {
+        assigned_vehicle: null,
+        pickup_order: null,
+        pickup_point: null,
+        pickup_time: null,
+        picked_up: false
+      };
+
+      let query;
+      if (student && student.id) {
+        query = supabase.from('registrations').update(clearPayload).eq('id', student.id);
+      } else {
+        const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+        query = supabase.from('registrations').update(clearPayload).eq('reg_id', targetDbId);
+      }
+
+      query.then(({ error }) => {
+        if (error) {
+          console.error("Error removing passenger on Supabase: ", error);
+          alert("Database notice: " + error.message);
+          loadData();
+        }
+      });
     }
 
     // Assign Form Submit
@@ -6740,14 +6917,37 @@
         query = supabase.from('registrations').update(updateData).eq('reg_id', targetDbId);
       }
 
+      // 1. INSTANT LOCAL UPDATE (0ms)
+      if (student) {
+        student["Assigned Vehicle"] = vehicleId;
+        student.assignedVehicle = vehicleId;
+        student["Pickup Order"] = nextOrder;
+        student.pickupOrder = nextOrder;
+        if (pickupPoint) {
+          student["Pickup Point"] = pickupPoint;
+          student.pickupPoint = pickupPoint;
+          student.pickup_point = pickupPoint;
+        }
+        if (pickupTime) {
+          student["Pickup Time"] = pickupTime;
+          student.pickupTime = pickupTime;
+          student.pickup_time = pickupTime;
+        }
+      }
+
+      closeAssignModal();
+      renderDataList();
+      renderVehicles();
+      showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
+
+      // 2. BACKGROUND PERSISTENCE TO SUPABASE
       query.then(({ error }) => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
-        if (!error) {
-          closeAssignModal();
+        if (error) {
+          console.error('Error updating assignment on Supabase:', error);
+          alert('Database notice: ' + error.message);
           loadData();
-        } else {
-          alert('Error updating assignment: ' + error.message);
         }
       });
     });
@@ -7814,23 +8014,66 @@
       }
     });
 
-    function deleteVehicle(vId) {
-      if (!confirm(`Are you sure you want to delete vehicle ${vId}? This will not unassign students automatically, but they will no longer belong to this vehicle ID.`)) {
-        return;
-      }
+    async function deleteVehicle(vId) {
+      const vObj = vehicles.find(v => v["Vehicle ID"] === vId);
+      const vName = vObj ? `${vObj["Vehicle ID"]} (${vObj["Vehicle Name"]})` : vId;
       
-      supabase
-        .from('vehicles')
-        .delete()
-        .eq('vehicle_id', vId)
-        .then(({ error }) => {
-          if (!error) {
-            alert('Vehicle deleted successfully.');
-            loadData();
-          } else {
-            alert('Error deleting vehicle: ' + error.message);
-          }
-        });
+      const assignedCount = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()).length;
+
+      const confirmMsg = assignedCount > 0
+        ? `Are you sure you want to delete vehicle "${vName}"?\n\n⚠️ ${assignedCount} delegate(s) currently assigned to this vehicle will be automatically unassigned and their travel tickets revoked.`
+        : `Are you sure you want to delete vehicle "${vName}"?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      // 1. INSTANT LOCAL UPDATE (0ms)
+      registrations.forEach(r => {
+        if ((r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()) {
+          r["Assigned Vehicle"] = "";
+          r.assignedVehicle = "";
+          r["Pickup Order"] = "";
+          r.pickupOrder = "";
+          r["Pickup Point"] = "";
+          r.pickupPoint = "";
+          r.pickup_point = "";
+          r["Pickup Time"] = "";
+          r.pickupTime = "";
+          r.pickup_time = "";
+          r["Picked Up"] = "false";
+          r.pickedUp = "false";
+        }
+      });
+      vehicles = vehicles.filter(v => v["Vehicle ID"] !== vId);
+      renderVehicles();
+      renderDataList();
+      showToast(`Vehicle ${vId} deleted and ${assignedCount} delegate(s) unassigned.`);
+
+      // 2. PERSIST TO SUPABASE
+      try {
+        // Clear all registrations pointing to this vehicle
+        await supabase
+          .from('registrations')
+          .update({ 
+            assigned_vehicle: null, 
+            pickup_order: null, 
+            pickup_point: null, 
+            pickup_time: null, 
+            picked_up: false 
+          })
+          .eq('assigned_vehicle', vId);
+
+        // Delete vehicle row from vehicles table
+        const { error } = await supabase
+          .from('vehicles')
+          .delete()
+          .eq('vehicle_id', vId);
+
+        if (error) throw error;
+      } catch (err) {
+        console.error("Error deleting vehicle from Supabase:", err);
+        alert("Error deleting vehicle from database: " + err.message);
+        loadData();
+      }
     }
 
     // ========================================================
