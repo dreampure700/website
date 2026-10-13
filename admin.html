@@ -3991,7 +3991,9 @@
         // 2. Fetch Targets
         const { data: targetData, error: targetErr } = await supabase.from('targets').select('*');
         if (targetErr) throw targetErr;
-        targets = (targetData || []).map(d => ({ Zone: d.zone, Target: d.target.toString() }));
+        targets = (targetData || [])
+          .filter(d => !d.type || d.type === 'zone')
+          .map(d => ({ Zone: d.zone, Target: (d.target != null ? d.target : 0).toString() }));
 
         // 3. Fetch Settings
         const { data: settingsData, error: settingsErr } = await supabase.from('settings').select('*');
@@ -4270,22 +4272,29 @@
         // Populate Trash Data & Badges
         loadTrashData();
 
-        // Load custom targets from registrations table
-        let directTargets = [];
-        try {
-          const { data: dtList } = await supabase.from('registrations').select('*').ilike('reg_id', 'SYS_TARGET_%');
-          if (dtList) directTargets = dtList;
-        } catch(e) {}
-
-        const allTargetRecs = [...sysTargetRecs];
-        directTargets.forEach(dt => {
-          if (!allTargetRecs.some(r => r.reg_id === dt.reg_id)) allTargetRecs.push(dt);
+        // Load custom targets from targets table
+        customTargetsMap.clear();
+        (targetData || []).forEach(tr => {
+          const tType = (tr.type || '').toLowerCase();
+          const tVal = (tr.target != null ? tr.target : 0).toString();
+          if (tType === 'district' || (tr.zone && tr.zone.toUpperCase() === 'DISTRICT')) {
+            customTargetsMap.set('district', tVal);
+          } else if (tr.unit) {
+            const uKey = tr.unit.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+            if (uKey) customTargetsMap.set('unit_' + uKey, tVal);
+          } else if (tr.zone) {
+            const zKey = tr.zone.trim().toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_zone$/i, '');
+            if (zKey) customTargetsMap.set('zone_' + zKey, tVal);
+          }
         });
 
-        customTargetsMap.clear();
-        allTargetRecs.forEach(tr => {
+        // Backward compatibility fallback: if any legacy SYS_TARGET_ records exist in registrations
+        const legacyTargetRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_TARGET_'));
+        legacyTargetRecs.forEach(tr => {
           const key = tr.reg_id.replace('SYS_TARGET_', '').toLowerCase();
-          customTargetsMap.set(key, tr.phone || '0');
+          if (!customTargetsMap.has(key)) {
+            customTargetsMap.set(key, tr.phone || '0');
+          }
         });
 
         spinner.style.display = 'none';
@@ -8376,98 +8385,185 @@
     }
 
     async function saveDistrictTotalTarget(newVal) {
-      const regId = 'SYS_TARGET_district';
-      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
-      if (existing && existing.length > 0) {
-        await supabase.from('registrations').update({
-          phone: newVal.toString(),
-          name: 'DISTRICT_TOTAL_TARGET',
-          zone: 'DISTRICT',
-          unit: 'DISTRICT',
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG'
-        }).eq('reg_id', regId);
+      const parsedVal = parseInt(newVal) || 0;
+      customTargetsMap.set('district', parsedVal.toString());
+
+      let savedToTargetsTable = false;
+      try {
+        const { data: existing } = await supabase.from('targets')
+          .select('id, type, zone')
+          .or('type.eq.district,zone.eq.DISTRICT');
+
+        if (existing && existing.length > 0) {
+          const { error } = await supabase.from('targets').update({
+            target: parsedVal,
+            type: 'district',
+            zone: 'DISTRICT',
+            updated_at: new Date().toISOString()
+          }).eq('id', existing[0].id);
+          if (!error) savedToTargetsTable = true;
+        } else {
+          const { error } = await supabase.from('targets').insert([{
+            type: 'district',
+            zone: 'DISTRICT',
+            unit: null,
+            target: parsedVal
+          }]);
+          if (!error) savedToTargetsTable = true;
+        }
+      } catch (err) {
+        console.warn("Notice saving to targets table:", err);
+      }
+
+      // If successfully saved to targets table, remove legacy SYS_TARGET_ row from registrations
+      if (savedToTargetsTable) {
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_TARGET_district');
+        } catch(e) {}
       } else {
-        await supabase.from('registrations').insert([{
-          reg_id: regId,
-          name: 'DISTRICT_TOTAL_TARGET',
-          phone: newVal.toString(),
-          zone: 'DISTRICT',
-          unit: 'DISTRICT',
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG',
-          school: 'N/A',
-          panchayath: 'N/A',
-          ward: 'N/A'
-        }]);
+        // Fallback to registrations table only if targets table write was blocked
+        try {
+          const regId = 'SYS_TARGET_district';
+          const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+          if (existing && existing.length > 0) {
+            await supabase.from('registrations').update({ phone: parsedVal.toString() }).eq('reg_id', regId);
+          } else {
+            await supabase.from('registrations').insert([{
+              reg_id: regId,
+              name: 'DISTRICT_TOTAL_TARGET',
+              phone: parsedVal.toString(),
+              zone: 'DISTRICT',
+              unit: 'DISTRICT',
+              student_class: 'Target',
+              place: 'SYSTEM_CONFIG',
+              school: 'N/A',
+              panchayath: 'N/A',
+              ward: 'N/A'
+            }]);
+          }
+        } catch(e) {}
       }
     }
 
     async function saveZoneTarget(zoneName, newVal) {
       const zoneClean = zoneName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const regId = 'SYS_TARGET_zone_' + zoneClean;
-      
-      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
-      if (existing && existing.length > 0) {
-        await supabase.from('registrations').update({
-          phone: newVal.toString(),
-          name: zoneName,
-          zone: zoneName,
-          unit: 'ZONE_TARGET',
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG'
-        }).eq('reg_id', regId);
-      } else {
-        await supabase.from('registrations').insert([{
-          reg_id: regId,
-          name: zoneName,
-          phone: newVal.toString(),
-          zone: zoneName,
-          unit: 'ZONE_TARGET',
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG',
-          school: 'N/A',
-          panchayath: 'N/A',
-          ward: 'N/A'
-        }]);
+      const parsedVal = parseInt(newVal) || 0;
+      customTargetsMap.set('zone_' + zoneClean, parsedVal.toString());
+
+      let savedToTargetsTable = false;
+      try {
+        const { data: existing } = await supabase.from('targets')
+          .select('id, zone, type')
+          .ilike('zone', zoneName);
+
+        const zoneRow = (existing || []).find(r => !r.type || r.type === 'zone');
+        if (zoneRow) {
+          const { error } = await supabase.from('targets').update({
+            target: parsedVal,
+            zone: zoneName,
+            type: 'zone',
+            updated_at: new Date().toISOString()
+          }).eq('id', zoneRow.id);
+          if (!error) savedToTargetsTable = true;
+        } else {
+          const { error } = await supabase.from('targets').insert([{
+            type: 'zone',
+            zone: zoneName,
+            unit: null,
+            target: parsedVal
+          }]);
+          if (!error) savedToTargetsTable = true;
+        }
+      } catch (err) {
+        console.warn("Notice saving to targets table:", err);
       }
 
-      // Also sync to targets table if row exists
-      try {
-        await supabase.from('targets').update({ target: newVal }).ilike('zone', zoneName);
-        await supabase.from('targets').update({ target: newVal }).ilike('zone', zoneName + ' zone');
-      } catch(e) {
-        console.warn("Notice syncing targets table:", e);
+      if (savedToTargetsTable) {
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_TARGET_zone_' + zoneClean);
+        } catch(e) {}
+      } else {
+        try {
+          const regId = 'SYS_TARGET_zone_' + zoneClean;
+          const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+          if (existing && existing.length > 0) {
+            await supabase.from('registrations').update({ phone: parsedVal.toString() }).eq('reg_id', regId);
+          } else {
+            await supabase.from('registrations').insert([{
+              reg_id: regId,
+              name: zoneName,
+              phone: parsedVal.toString(),
+              zone: zoneName,
+              unit: 'ZONE_TARGET',
+              student_class: 'Target',
+              place: 'SYSTEM_CONFIG',
+              school: 'N/A',
+              panchayath: 'N/A',
+              ward: 'N/A'
+            }]);
+          }
+        } catch(e) {}
       }
     }
 
     async function saveUnitTarget(unitName, parentZone, newVal) {
       const unitClean = unitName.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const regId = 'SYS_TARGET_unit_' + unitClean;
+      const parsedVal = parseInt(newVal) || 0;
+      customTargetsMap.set('unit_' + unitClean, parsedVal.toString());
 
-      const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
-      if (existing && existing.length > 0) {
-        await supabase.from('registrations').update({
-          phone: newVal.toString(),
-          name: unitName,
-          zone: parentZone,
-          unit: unitName,
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG'
-        }).eq('reg_id', regId);
+      let savedToTargetsTable = false;
+      try {
+        const { data: existing } = await supabase.from('targets')
+          .select('id, unit, type')
+          .eq('type', 'unit')
+          .ilike('unit', unitName);
+
+        if (existing && existing.length > 0) {
+          const { error } = await supabase.from('targets').update({
+            target: parsedVal,
+            zone: parentZone,
+            type: 'unit',
+            updated_at: new Date().toISOString()
+          }).eq('id', existing[0].id);
+          if (!error) savedToTargetsTable = true;
+        } else {
+          const { error } = await supabase.from('targets').insert([{
+            type: 'unit',
+            zone: parentZone,
+            unit: unitName,
+            target: parsedVal
+          }]);
+          if (!error) savedToTargetsTable = true;
+        }
+      } catch (err) {
+        console.warn("Notice saving to targets table:", err);
+      }
+
+      if (savedToTargetsTable) {
+        try {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_TARGET_unit_' + unitClean);
+        } catch(e) {}
       } else {
-        await supabase.from('registrations').insert([{
-          reg_id: regId,
-          name: unitName,
-          phone: newVal.toString(),
-          zone: parentZone,
-          unit: unitName,
-          student_class: 'Target',
-          place: 'SYSTEM_CONFIG',
-          school: 'N/A',
-          panchayath: 'N/A',
-          ward: 'N/A'
-        }]);
+        try {
+          const regId = 'SYS_TARGET_unit_' + unitClean;
+          const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', regId);
+          if (existing && existing.length > 0) {
+            await supabase.from('registrations').update({ phone: parsedVal.toString() }).eq('reg_id', regId);
+          } else {
+            await supabase.from('registrations').insert([{
+              reg_id: regId,
+              name: unitName,
+              phone: parsedVal.toString(),
+              zone: parentZone,
+              unit: unitName,
+              student_class: 'Target',
+              place: 'SYSTEM_CONFIG',
+              school: 'N/A',
+              panchayath: 'N/A',
+              ward: 'N/A'
+            }]);
+          }
+        } catch(e) {}
       }
     }
 
