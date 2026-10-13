@@ -1364,6 +1364,105 @@
         border-radius: 10px !important;
       }
     }
+
+    /* Directory Pagination & Range Toolbar Styles */
+    .directory-toolbar-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      margin-bottom: 0.75rem;
+      background: #F8FAFC;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+    }
+    .directory-pagination-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      background: #F8FAFC;
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+    }
+    .directory-pagination-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .page-btn {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 0.55rem;
+      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      color: var(--text-main);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .page-btn:hover:not(:disabled):not(.active) {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: rgba(0, 168, 232, 0.06);
+    }
+    .page-btn.active {
+      background: #0F172A;
+      color: #FFFFFF;
+      border-color: #0F172A;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+    }
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #F1F5F9;
+      border-color: var(--border-light);
+      color: var(--text-muted);
+    }
+    .page-ellipsis {
+      padding: 0 0.35rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 800;
+      user-select: none;
+    }
+    .page-jump-select {
+      height: 34px;
+      padding: 0 0.5rem;
+      border: 1px solid var(--border-light);
+      background: #FFFFFF;
+      color: var(--text-main);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .directory-range-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .directory-range-badge span.highlight {
+      color: var(--cyan);
+      font-weight: 800;
+    }
   </style>
 </head>
 <body>
@@ -2132,6 +2231,30 @@
             </div>
           </div>
 
+          <!-- Directory Table Controls & Top Pagination Bar -->
+          <div class="directory-toolbar-bar">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div id="directoryRangeInfoTop" class="directory-range-badge">
+                Showing <span class="highlight">1–50</span> of <span class="highlight">0</span> delegates
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="directoryPageSizeSelectTop" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 0; white-space: nowrap;">Show:</label>
+                <select id="directoryPageSizeSelectTop" class="form-select directory-page-size-select" style="padding: 0.28rem 0.6rem; font-size: 0.8rem; width: auto; min-width: 125px;" onchange="changeDirectoryPageSize(this.value)">
+                  <option value="10">10 contacts</option>
+                  <option value="25">25 contacts</option>
+                  <option value="50" selected>50 contacts</option>
+                  <option value="100">100 contacts</option>
+                  <option value="all">All contacts</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Top Page Navigation Controls -->
+            <div id="directoryPaginationTop" class="directory-pagination-controls">
+              <!-- Dynamically rendered page buttons -->
+            </div>
+          </div>
+
           <div style="overflow-x: auto;" class="table-responsive">
             <table class="data-table">
               <thead>
@@ -2156,6 +2279,30 @@
 
           <!-- Mobile card view placeholder -->
           <div class="student-mobile-card-list" id="studentMobileCardList"></div>
+
+          <!-- Directory Bottom Pagination Bar -->
+          <div class="directory-pagination-footer">
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div id="directoryRangeInfoBottom" class="directory-range-badge">
+                Showing <span class="highlight">1–50</span> of <span class="highlight">0</span> delegates
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <label for="directoryPageSizeSelectBottom" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin: 0; white-space: nowrap;">Show:</label>
+                <select id="directoryPageSizeSelectBottom" class="form-select directory-page-size-select" style="padding: 0.28rem 0.6rem; font-size: 0.8rem; width: auto; min-width: 125px;" onchange="changeDirectoryPageSize(this.value)">
+                  <option value="10">10 contacts</option>
+                  <option value="25">25 contacts</option>
+                  <option value="50" selected>50 contacts</option>
+                  <option value="100">100 contacts</option>
+                  <option value="all">All contacts</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Bottom Page Navigation Controls -->
+            <div id="directoryPaginationBottom" class="directory-pagination-controls">
+              <!-- Dynamically rendered page buttons -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4852,17 +4999,105 @@
       }
     };
 
+    // ========================================================
+    // DIRECTORY PAGINATION & RANGE CONTROLS STATE
+    // ========================================================
+    let directoryCurrentPage = 1;
+    let directoryPageSize = 50; // Options: 10, 25, 50, 100, 'all'
+    let directoryCurrentFilteredList = [];
+
+    // Change number of contacts shown per page (10, 25, 50, 100, all)
+    function changeDirectoryPageSize(newSize) {
+      directoryPageSize = (newSize === 'all') ? 'all' : (parseInt(newSize, 10) || 50);
+      directoryCurrentPage = 1;
+      // Synchronize all per-page selects (top & bottom)
+      document.querySelectorAll('.directory-page-size-select').forEach(el => {
+        el.value = String(directoryPageSize);
+      });
+      renderDirectoryPage();
+    }
+
+    // Go to specific page (1, 2, 3...)
+    function goToDirectoryPage(pageNum) {
+      const total = directoryCurrentFilteredList.length;
+      const isAll = directoryPageSize === 'all';
+      const pSize = isAll ? (total || 1) : (parseInt(directoryPageSize, 10) || 50);
+      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(total / pSize));
+
+      let target = parseInt(pageNum, 10) || 1;
+      if (target < 1) target = 1;
+      if (target > totalPages) target = totalPages;
+
+      if (target !== directoryCurrentPage) {
+        directoryCurrentPage = target;
+        renderDirectoryPage();
+
+        // Smooth scroll back up to directory if user scrolled down
+        const dirTab = document.getElementById('tab-directory');
+        if (dirTab) {
+          const rect = dirTab.getBoundingClientRect();
+          if (rect.top < 0) {
+            dirTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+    }
+
     // Render registrations directory list
-    function renderDirectory(filteredRegs) {
+    function renderDirectory(filteredRegs, resetPage = false) {
+      directoryCurrentFilteredList = Array.isArray(filteredRegs) ? filteredRegs : [];
+      if (resetPage) {
+        directoryCurrentPage = 1;
+      }
+      renderDirectoryPage();
+    }
+
+    function renderDirectoryPage() {
       const tbody = document.getElementById('directoryBody');
       const cardList = document.getElementById('studentMobileCardList');
+      if (!tbody) return;
       
       tbody.innerHTML = '';
       if (cardList) cardList.innerHTML = '';
 
-      const dupPhoneMap = getDuplicatePhoneMap();
+      const total = directoryCurrentFilteredList.length;
+      const isAll = directoryPageSize === 'all';
+      const pSize = isAll ? (total || 1) : (parseInt(directoryPageSize, 10) || 50);
+      const totalPages = isAll ? 1 : Math.max(1, Math.ceil(total / pSize));
 
-      filteredRegs.forEach(item => {
+      if (directoryCurrentPage > totalPages) directoryCurrentPage = totalPages;
+      if (directoryCurrentPage < 1) directoryCurrentPage = 1;
+
+      const startIdx = total === 0 ? 0 : (directoryCurrentPage - 1) * pSize;
+      const endIdx = isAll ? total : Math.min(startIdx + pSize, total);
+      const displayStart = total === 0 ? 0 : startIdx + 1;
+      const displayEnd = endIdx;
+
+      // Slice active page items
+      const pageItems = isAll ? directoryCurrentFilteredList : directoryCurrentFilteredList.slice(startIdx, endIdx);
+
+      if (total === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
+              <i class="fas fa-search" style="font-size:2rem; color:#CBD5E1; margin-bottom:0.6rem; display:block;"></i>
+              <div style="font-weight:700; font-size:1rem; color:var(--text-main);">No matching delegates found</div>
+              <div style="font-size:0.85rem; margin-top:0.25rem;">Try adjusting your search terms or clearing active filters.</div>
+            </td>
+          </tr>
+        `;
+        if (cardList) {
+          cardList.innerHTML = `
+            <div style="text-align:center; padding:2rem 1rem; color:var(--text-muted); background:#FFFFFF; border:1px solid var(--border-light); border-radius:12px;">
+              <i class="fas fa-search" style="font-size:1.8rem; color:#CBD5E1; margin-bottom:0.5rem; display:block;"></i>
+              <div style="font-weight:700; color:var(--text-main);">No matching delegates found</div>
+            </div>
+          `;
+        }
+      } else {
+        const dupPhoneMap = getDuplicatePhoneMap();
+
+        pageItems.forEach(item => {
         const vehicleAssigned = item["Assigned Vehicle"] || '';
         const vehicleBadge = vehicleAssigned 
           ? `<span class="badge-reg badge-vehicle"><i class="fas fa-bus"></i> ${vehicleAssigned}</span>` 
@@ -5049,6 +5284,108 @@
         }
       });
     }
+
+    // Update Pagination UI across top and bottom controls
+    updateDirectoryPaginationUI(total, totalPages, displayStart, displayEnd);
+  }
+
+  // Update Directory Pagination Numbers and Range UI
+  function updateDirectoryPaginationUI(total, totalPages, displayStart, displayEnd) {
+    // 1. Update range summary texts
+    const rangeHtml = total === 0 
+      ? `No delegates found` 
+      : `Showing <span class="highlight">${displayStart}–${displayEnd}</span> of <span class="highlight">${total}</span> delegates`;
+
+    ['directoryRangeInfoTop', 'directoryRangeInfoBottom'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = rangeHtml;
+    });
+
+    // 2. Synchronize page size dropdowns
+    document.querySelectorAll('.directory-page-size-select').forEach(el => {
+      el.value = String(directoryPageSize);
+    });
+
+    // 3. Build pagination buttons HTML
+    let paginationHtml = '';
+    if (totalPages > 1 && directoryPageSize !== 'all') {
+      const prevDisabled = directoryCurrentPage <= 1 ? 'disabled' : '';
+      const nextDisabled = directoryCurrentPage >= totalPages ? 'disabled' : '';
+
+      // First & Prev buttons
+      paginationHtml += `
+        <button type="button" class="page-btn" ${prevDisabled} onclick="goToDirectoryPage(1)" title="First Page">
+          <i class="fas fa-angle-double-left"></i>
+        </button>
+        <button type="button" class="page-btn" ${prevDisabled} onclick="goToDirectoryPage(${directoryCurrentPage - 1})" title="Previous Page">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+      `;
+
+      // Calculate pages to show: 1, 2, 3...
+      const pagesToShow = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pagesToShow.push(i);
+      } else {
+        pagesToShow.push(1);
+        let left = Math.max(2, directoryCurrentPage - 1);
+        let right = Math.min(totalPages - 1, directoryCurrentPage + 1);
+
+        if (directoryCurrentPage <= 3) {
+          left = 2;
+          right = 4;
+        } else if (directoryCurrentPage >= totalPages - 2) {
+          left = totalPages - 3;
+          right = totalPages - 1;
+        }
+
+        if (left > 2) pagesToShow.push('...');
+        for (let i = left; i <= right; i++) pagesToShow.push(i);
+        if (right < totalPages - 1) pagesToShow.push('...');
+        pagesToShow.push(totalPages);
+      }
+
+      pagesToShow.forEach(p => {
+        if (p === '...') {
+          paginationHtml += `<span class="page-ellipsis">…</span>`;
+        } else {
+          const isActive = p === directoryCurrentPage ? 'active' : '';
+          paginationHtml += `
+            <button type="button" class="page-btn ${isActive}" onclick="goToDirectoryPage(${p})" title="Page ${p}">${p}</button>
+          `;
+        }
+      });
+
+      // Next & Last buttons
+      paginationHtml += `
+        <button type="button" class="page-btn" ${nextDisabled} onclick="goToDirectoryPage(${directoryCurrentPage + 1})" title="Next Page">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <button type="button" class="page-btn" ${nextDisabled} onclick="goToDirectoryPage(${totalPages})" title="Last Page">
+          <i class="fas fa-angle-double-right"></i>
+        </button>
+      `;
+
+      // Quick page jump dropdown
+      if (totalPages >= 4) {
+        let optionsHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+          optionsHtml += `<option value="${i}" ${i === directoryCurrentPage ? 'selected' : ''}>Page ${i}</option>`;
+        }
+        paginationHtml += `
+          <select class="page-jump-select" onchange="goToDirectoryPage(this.value)" title="Jump to page" style="margin-left: 0.25rem;">
+            ${optionsHtml}
+          </select>
+        `;
+      }
+    }
+
+    // Update both top and bottom containers
+    ['directoryPaginationTop', 'directoryPaginationBottom'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = paginationHtml;
+    });
+  }
 
     // Render Coordinator Student Cards in Pick-up Order Sequence
     function renderCoordinatorDashboard() {
@@ -5317,7 +5654,7 @@
         });
       }
 
-      renderDirectory(filtered);
+      renderDirectory(filtered, true);
       updateConfirmationCounts();
     }
 
