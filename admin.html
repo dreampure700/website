@@ -8015,7 +8015,7 @@
     });
 
     async function deleteVehicle(vId) {
-      const vObj = vehicles.find(v => v["Vehicle ID"] === vId);
+      const vObj = vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === String(vId).trim().toLowerCase());
       const vName = vObj ? `${vObj["Vehicle ID"]} (${vObj["Vehicle Name"]})` : vId;
       
       const assignedCount = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()).length;
@@ -8026,7 +8026,7 @@
 
       if (!confirm(confirmMsg)) return;
 
-      // 1. INSTANT LOCAL UPDATE (0ms)
+      // 1. INSTANT LOCAL UPDATE (0ms delay)
       registrations.forEach(r => {
         if ((r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()) {
           r["Assigned Vehicle"] = "";
@@ -8043,36 +8043,53 @@
           r.pickedUp = "false";
         }
       });
-      vehicles = vehicles.filter(v => v["Vehicle ID"] !== vId);
+      vehicles = vehicles.filter(v => (v["Vehicle ID"] || '').trim().toLowerCase() !== String(vId).trim().toLowerCase());
       renderVehicles();
       renderDataList();
-      showToast(`Vehicle ${vId} deleted and ${assignedCount} delegate(s) unassigned.`);
+      showToast(`Vehicle ${vId} deleted.`);
 
       // 2. PERSIST TO SUPABASE
+      // Step A: Delete vehicle directly from vehicles table FIRST!
       try {
-        // Clear all registrations pointing to this vehicle
-        await supabase
-          .from('registrations')
-          .update({ 
-            assigned_vehicle: null, 
-            pickup_order: null, 
-            pickup_point: null, 
-            pickup_time: null, 
-            picked_up: false 
-          })
-          .eq('assigned_vehicle', vId);
+        let vDelQuery;
+        if (vObj && vObj.id) {
+          vDelQuery = supabase.from('vehicles').delete().or(`id.eq.${vObj.id},vehicle_id.eq.${vId}`);
+        } else {
+          vDelQuery = supabase.from('vehicles').delete().eq('vehicle_id', vId);
+        }
 
-        // Delete vehicle row from vehicles table
-        const { error } = await supabase
-          .from('vehicles')
-          .delete()
-          .eq('vehicle_id', vId);
+        const { error: vErr } = await vDelQuery;
+        if (vErr) {
+          console.error("Failed to delete vehicle row from Supabase:", vErr);
+          alert("Could not delete vehicle: " + vErr.message);
+          loadData();
+          return;
+        }
 
-        if (error) throw error;
+        // Step B: Unassign delegates in background (non-blocking)
+        if (assignedCount > 0) {
+          supabase
+            .from('registrations')
+            .update({ 
+              assigned_vehicle: null, 
+              pickup_order: null, 
+              pickup_point: null, 
+              pickup_time: null, 
+              picked_up: false 
+            })
+            .eq('assigned_vehicle', vId)
+            .then(({ error: regErr }) => {
+              if (regErr) {
+                // Backward-compatibility fallback if pickup columns do not exist yet
+                supabase
+                  .from('registrations')
+                  .update({ assigned_vehicle: null, pickup_order: null, picked_up: false })
+                  .eq('assigned_vehicle', vId);
+              }
+            });
+        }
       } catch (err) {
-        console.error("Error deleting vehicle from Supabase:", err);
-        alert("Error deleting vehicle from database: " + err.message);
-        loadData();
+        console.error("Exception in deleteVehicle:", err);
       }
     }
 
