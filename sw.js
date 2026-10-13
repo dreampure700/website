@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teenspace-cache-v55';
+const CACHE_NAME = 'teenspace-cache-v56';
 const ASSETS = [
   '/',
   '/index.html',

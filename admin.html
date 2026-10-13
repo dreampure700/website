@@ -5846,18 +5846,28 @@
 
       // 5. Persist to Supabase registrations table
       try {
-        const sysRegId = 'SYS_STATUS_' + targetDbId;
-        const { error } = await supabase.from('registrations').upsert([{
-          reg_id: sysRegId,
-          name: normStatus,
-          phone: '0000000000',
-          timestamp: new Date().toISOString()
-        }], { onConflict: 'reg_id' });
+        // Try updating the student record directly on registrations table
+        const { error: updErr } = await supabase.from('registrations')
+          .update({ status: normStatus })
+          .eq('reg_id', targetDbId);
 
-        if (error) throw error;
+        if (updErr) {
+          // Fallback if status column hasn't been added to registrations table yet
+          const sysRegId = 'SYS_STATUS_' + targetDbId;
+          await supabase.from('registrations').upsert([{
+            reg_id: sysRegId,
+            name: normStatus,
+            phone: '0000000000',
+            timestamp: new Date().toISOString()
+          }], { onConflict: 'reg_id' });
+        } else {
+          // If direct update succeeded, clean up any legacy SYS_STATUS_ row
+          try {
+            await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + targetDbId);
+          } catch(e) {}
+        }
       } catch (err) {
         console.error('Error saving status to Supabase:', err);
-        alert('Warning: Could not save status to server: ' + err.message);
       }
     }
 
@@ -7251,23 +7261,8 @@
           .insert([{ type: type, title: title, url: url, description: desc }])
           .then(async ({ error }) => {
             if (error) {
-              // RLS fallback: store in registrations table with SYS_MEDIA_ prefix
-              const fbRow = {
-                reg_id: 'SYS_MEDIA_' + Date.now(),
-                name: title,
-                phone: '0000000000',
-                student_class: type,
-                school: url,
-                place: desc,
-                unit: 'Media',
-                zone: 'Media',
-                timestamp: new Date().toISOString()
-              };
-              const { error: fbErr } = await supabase.from('registrations').insert([fbRow]);
-              if (fbErr) {
-                handleSaveError(fbErr.message);
-                return;
-              }
+              handleSaveError(error.message);
+              return;
             }
             handleSaveSuccess();
           })
@@ -7279,13 +7274,12 @@
           .eq('title', origTitle)
           .eq('url', origUrl)
           .then(async ({ error }) => {
+            if (error) {
+              handleSaveError(error.message);
+              return;
+            }
             try {
-              await supabase.from('registrations').update({
-                name: title,
-                student_class: type,
-                school: url,
-                place: desc
-              }).ilike('reg_id', 'SYS_MEDIA_%').eq('name', origTitle);
+              await supabase.from('registrations').delete().ilike('reg_id', 'SYS_MEDIA_%').eq('name', origTitle);
             } catch(e) {}
             handleSaveSuccess();
           })
@@ -9729,47 +9723,20 @@
       const regId = 'SYS_MAP_' + cleanKey;
 
       try {
-        // If editing and Panchayath or Ward changed, clear old key
-        if (mode === 'edit' && (origP !== panchayath || origW !== ward)) {
-          const oldCleanKey = (origP + '__' + origW).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
-          const oldRegId = 'SYS_MAP_' + oldCleanKey;
-          await supabase.from('registrations').delete().eq('reg_id', oldRegId);
-          // Also mark old ward deleted if it existed in base mapping
-          await supabase.from('registrations').insert([{
-            reg_id: oldRegId,
-            panchayath: origP,
-            ward: origW,
-            unit: 'N/A',
-            zone: zone,
-            phone: '0000000000',
-            name: 'SYSTEM_MAPPING_OVERRIDE',
-            student_class: 'DELETED',
-            place: 'SYSTEM_CONFIG'
-          }]);
+        if (mode === 'add') {
+          const { error: insErr } = await supabase.from('mapping').insert([{ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }]);
+          if (insErr) throw insErr;
+        } else {
+          const { error: updErr } = await supabase.from('mapping').update({ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }).eq('panchayath', origP).eq('ward', origW);
+          if (updErr) throw updErr;
         }
 
-        // Upsert into registrations table (delete existing first if present to avoid duplicate key)
-        await supabase.from('registrations').delete().eq('reg_id', regId);
-        const { error: insErr } = await supabase.from('registrations').insert([{
-          reg_id: regId,
-          panchayath: panchayath,
-          ward: ward,
-          unit: unit,
-          zone: zone,
-          phone: '0000000000',
-          name: 'SYSTEM_MAPPING_OVERRIDE',
-          student_class: 'ACTIVE',
-          place: 'SYSTEM_CONFIG'
-        }]);
-
-        if (insErr) throw insErr;
-
-        // Also attempt direct update on mapping table in background
+        // Clean up legacy SYS_MAP_ rows from registrations table if present
         try {
-          if (mode === 'add') {
-            await supabase.from('mapping').insert([{ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }]);
-          } else {
-            await supabase.from('mapping').update({ panchayath, ward, unit: canonicalUnit(unit), zone: canonicalZone(zone) }).eq('panchayath', origP).eq('ward', origW);
+          await supabase.from('registrations').delete().eq('reg_id', regId);
+          if (mode === 'edit' && (origP !== panchayath || origW !== ward)) {
+            const oldCleanKey = (origP + '__' + origW).toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+            await supabase.from('registrations').delete().eq('reg_id', 'SYS_MAP_' + oldCleanKey);
           }
         } catch(ignore) {}
 
@@ -10567,43 +10534,27 @@ _💡 Tip: Passwords are case-insensitive. Simply tap the link above and log in.
           }
         }
 
-        // 1. Save to registrations table (bulletproof cloud storage)
-        const { data: existing } = await supabase.from('registrations').select('reg_id').eq('reg_id', targetRegId);
-        if (existing && existing.length > 0) {
-          await supabase.from('registrations').update({
-            name: username,
-            phone: password,
-            zone: zone,
-            unit: role === 'Unit' ? unit : 'ZONE_ADMIN',
-            student_class: role,
-            place: 'SYSTEM_CONFIG'
-          }).eq('reg_id', targetRegId);
-        } else {
-          await supabase.from('registrations').insert([{
-            reg_id: targetRegId,
-            name: username,
-            phone: password,
-            zone: zone,
-            unit: role === 'Unit' ? unit : 'ZONE_ADMIN',
-            student_class: role,
-            place: 'SYSTEM_CONFIG',
-            school: 'N/A',
-            panchayath: 'N/A',
-            ward: 'N/A'
-          }]);
+        // 1. Save directly to Supabase accounts table
+        const { error: accErr } = await supabase.from('accounts').upsert([{
+          username: username,
+          password: password,
+          role: role,
+          target: target
+        }], { onConflict: 'username' });
+
+        if (accErr) {
+          const { data: ex } = await supabase.from('accounts').select('id').ilike('username', username);
+          if (ex && ex.length > 0) {
+            await supabase.from('accounts').update({ password: password, role: role, target: target }).eq('id', ex[0].id);
+          } else {
+            await supabase.from('accounts').insert([{ username: username, password: password, role: role, target: target }]);
+          }
         }
 
-        // 2. Try saving to Supabase accounts table
+        // 2. Clean up legacy SYS_ACC_ row from registrations table if present
         try {
-          await supabase.from('accounts').upsert([{
-            username: username,
-            password: password,
-            role: role,
-            target: target
-          }]);
-        } catch(e) {
-          console.warn("Accounts table upsert notice:", e);
-        }
+          await supabase.from('registrations').delete().eq('reg_id', targetRegId);
+        } catch(e) {}
 
         alert(`✅ ${role} Admin credentials for "${target}" saved successfully!`);
         closeAccountModal();
