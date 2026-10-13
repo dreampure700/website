@@ -17,7 +17,7 @@ WITH numbered_delegates AS (
     SELECT 
         id,
         -- District ID starts sequentially from REG101 across all delegates
-        'REG' || (100 + ROW_NUMBER() OVER (ORDER BY COALESCE(timestamp, created_at) ASC, id ASC)) AS calculated_district_id,
+        'REG' || (100 + ROW_NUMBER() OVER (ORDER BY timestamp ASC, id ASC)) AS calculated_district_id,
         -- Zone ID starts from 101 with respective Zone Code (e.g. KPM101, CKD101, GVR101, etc.)
         (
             CASE 
@@ -44,7 +44,7 @@ WITH numbered_delegates AS (
                         ELSE 'REG'
                     END
                 ) 
-                ORDER BY COALESCE(timestamp, created_at) ASC, id ASC
+                ORDER BY timestamp ASC, id ASC
             )
         ) AS calculated_zone_id
     FROM public.registrations
@@ -57,7 +57,7 @@ SET
 FROM numbered_delegates n
 WHERE r.id = n.id;
 
--- 4. Clean up any remaining legacy status records if present
+-- 4. Clean up any remaining legacy status records
 UPDATE public.registrations r
 SET status = s.name
 FROM public.registrations s
@@ -65,7 +65,7 @@ WHERE s.reg_id = 'SYS_STATUS_' || r.reg_id;
 
 DELETE FROM public.registrations WHERE reg_id ILIKE 'SYS_%';
 
--- 5. Verification output: Show sample of delegates with both IDs
+-- 5. Verification: View sample delegates with both IDs
 SELECT 
     district_id, 
     zone_id, 
