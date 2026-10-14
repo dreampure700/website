@@ -3562,19 +3562,67 @@
       return ZONE_PREFIXES[c] || 'REG';
     }
 
-    // Helper: robust lookup of registration by any ID (District ID e.g. "REG 101", Mandal ID e.g. "KPM 101", or DB reg_id)
+    // Helper: robust lookup of registration by any ID (Display ID, Mandal ID e.g. "KPM 101", District ID e.g. "REG 101", numeric id, or legacy DB reg_id)
     function findRegistration(identifier) {
       if (!identifier || !Array.isArray(registrations)) return null;
+
+      // Direct object lookup
+      if (typeof identifier === 'object' && identifier !== null) {
+        if (identifier.id) {
+          const match = registrations.find(r => r.id === identifier.id);
+          if (match) return match;
+        }
+      }
+
       const idStr = String(identifier).trim().toLowerCase();
+      if (!idStr) return null;
       const idAlpha = idStr.replace(/[^a-z0-9]/g, '');
-      return registrations.find(r => {
-        if (r.dbRegId && (r.dbRegId.toLowerCase() === idStr || r.dbRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
-        if (r.districtRegId && (r.districtRegId.toLowerCase() === idStr || r.districtRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
-        if (r.mandalRegId && (r.mandalRegId.toLowerCase() === idStr || r.mandalRegId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
-        if (r.regId && (r.regId.toLowerCase() === idStr || r.regId.toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
-        if (r["Registration ID"] && (r["Registration ID"].toLowerCase() === idStr || r["Registration ID"].toLowerCase().replace(/[^a-z0-9]/g, '') === idAlpha)) return true;
-        return false;
-      }) || null;
+      if (!idAlpha) return null;
+
+      // 1. Priority 1: Exact match on primary active Display ID ("Registration ID" or regId)
+      let found = registrations.find(r => {
+        const p1 = (r["Registration ID"] || '').trim().toLowerCase();
+        const p2 = (r.regId || '').trim().toLowerCase();
+        return (p1 && (p1 === idStr || p1.replace(/[^a-z0-9]/g, '') === idAlpha)) ||
+               (p2 && (p2 === idStr || p2.replace(/[^a-z0-9]/g, '') === idAlpha));
+      });
+      if (found) return found;
+
+      // 2. Priority 2: Match on Mandal/Zone Registration ID (e.g. "KPM 101", "KPM101", "CKD 104")
+      found = registrations.find(r => {
+        const m1 = (r.mandalRegId || '').trim().toLowerCase();
+        const m2 = (r.zoneRegId || r.zoneId || '').trim().toLowerCase();
+        return (m1 && (m1 === idStr || m1.replace(/[^a-z0-9]/g, '') === idAlpha)) ||
+               (m2 && (m2 === idStr || m2.replace(/[^a-z0-9]/g, '') === idAlpha));
+      });
+      if (found) return found;
+
+      // 3. Priority 3: Match on District Registration ID (e.g. "REG 101", "REG101", "REG 112")
+      found = registrations.find(r => {
+        const d1 = (r.districtRegId || '').trim().toLowerCase();
+        const d2 = (r.districtId || '').trim().toLowerCase();
+        return (d1 && (d1 === idStr || d1.replace(/[^a-z0-9]/g, '') === idAlpha)) ||
+               (d2 && (d2 === idStr || d2.replace(/[^a-z0-9]/g, '') === idAlpha));
+      });
+      if (found) return found;
+
+      // 4. Priority 4: Supabase primary key numeric ID (e.g. 18, 16, 481)
+      const numId = parseInt(idStr, 10);
+      if (!isNaN(numId) && String(numId) === idStr) {
+        found = registrations.find(r => r.id === numId);
+        if (found) return found;
+      }
+
+      // 5. Priority 5 (legacy fallback ONLY): dbRegId (raw database reg_id from older legacy rows)
+      found = registrations.find(r => {
+        const db1 = (r.dbRegId || '').trim().toLowerCase();
+        const db2 = (r.rawRegId || '').trim().toLowerCase();
+        return (db1 && (db1 === idStr || db1.replace(/[^a-z0-9]/g, '') === idAlpha)) ||
+               (db2 && (db2 === idStr || db2.replace(/[^a-z0-9]/g, '') === idAlpha));
+      });
+      if (found) return found;
+
+      return null;
     }
 
     function getRegistrationDbId(identifier) {
@@ -6395,20 +6443,53 @@
           return !v;
         });
 
+        const vZone = vehicle && vehicle.Zone ? canonicalZone(vehicle.Zone) : '';
+
+        // Sort unassigned: prioritize students from this vehicle's zone!
+        unassigned.sort((a, b) => {
+          const aZone = canonicalZone(a["Organization Zone"] || a.zone || '');
+          const bZone = canonicalZone(b["Organization Zone"] || b.zone || '');
+          const aMatch = vZone && aZone === vZone ? 1 : 0;
+          const bMatch = vZone && bZone === vZone ? 1 : 0;
+          if (aMatch !== bMatch) return bMatch - aMatch; // vehicle's zone first
+
+          const aName = (a["Student Name"] || a.name || '').toLowerCase();
+          const bName = (b["Student Name"] || b.name || '').toLowerCase();
+          return aName.localeCompare(bName);
+        });
+
         const availableSeats = Math.max(0, capacity - passengers.length);
+        const zoneCount = vZone ? unassigned.filter(r => canonicalZone(r["Organization Zone"] || r.zone || '') === vZone).length : 0;
         const remInfo = document.getElementById('quickAddRemainingInfo');
         if (remInfo) {
-          remInfo.textContent = `${availableSeats} seat(s) free • ${unassigned.length} unassigned delegates`;
+          if (vZone && zoneCount > 0) {
+            remInfo.textContent = `${availableSeats} seat(s) free • ${zoneCount} in ${vehicle.Zone} (${unassigned.length} total unassigned)`;
+          } else {
+            remInfo.textContent = `${availableSeats} seat(s) free • ${unassigned.length} unassigned delegates`;
+          }
         }
 
         unassigned.forEach(u => {
           const opt = document.createElement('option');
-          const distId = u.districtRegId || u["Registration ID"] || u.regId;
-          const mandalId = u.mandalRegId ? ` (${u.mandalRegId})` : '';
+          const distId = u.districtRegId || '';
+          const mandalId = u.mandalRegId || '';
           const uName = u["Student Name"] || u.name || 'Delegate';
-          const zoneU = u["Organization Zone"] ? ` - ${u["Organization Zone"]}` : '';
-          const ph = (u["Student Mobile Number"] || u.phone) ? ` - ${u["Student Mobile Number"] || u.phone}` : '';
-          opt.value = `${distId} | ${uName}${mandalId}${zoneU}${ph}`;
+          const zoneU = u["Organization Zone"] || u.zone || '';
+          const unitU = u["Organization Unit"] || u.unit || '';
+          const ph = u["Student Mobile Number"] || u.phone || '';
+          
+          const zoneDesc = zoneU ? (unitU ? `${zoneU} • ${unitU}` : zoneU) : '';
+          const idToken = `[ID:${u.id}]`;
+
+          // Format: Name | Mandal ID | District ID | Zone • Unit | Phone | [ID:18]
+          const tokens = [uName];
+          if (mandalId) tokens.push(mandalId);
+          if (distId && distId !== mandalId) tokens.push(distId);
+          if (zoneDesc) tokens.push(zoneDesc);
+          if (ph) tokens.push(ph);
+          tokens.push(idToken);
+
+          opt.value = tokens.join(' | ');
           datalist.appendChild(opt);
         });
       }
@@ -6748,22 +6829,96 @@
         return;
       }
 
-      let identifier = rawVal;
-      if (rawVal.includes('|')) {
-        identifier = rawVal.split('|')[0].trim();
+      let student = null;
+
+      // 1. Direct match by embedded database primary key [ID:xxx] or #ID:xxx
+      const idMatch = rawVal.match(/\[ID:\s*(\d+)\]/i) || rawVal.match(/#ID:\s*(\d+)/i) || rawVal.match(/\[#(\d+)\]/i);
+      if (idMatch) {
+        const targetId = parseInt(idMatch[1], 10);
+        student = registrations.find(r => r.id === targetId);
       }
 
-      let student = findRegistration(identifier);
+      // 2. If option has pipe '|', split and try findRegistration on individual tokens
+      if (!student && rawVal.includes('|')) {
+        const parts = rawVal.split('|').map(s => s.trim()).filter(Boolean);
+        for (const token of parts) {
+          student = findRegistration(token);
+          if (student) break;
+        }
+      }
+
+      // 3. Try findRegistration with the whole rawVal
       if (!student) {
-        const cleanVal = rawVal.toLowerCase();
-        student = registrations.find(r => 
-          (r["Student Name"] || r.name || '').toLowerCase() === cleanVal ||
-          (r["Student Mobile Number"] || r.phone || '').replace(/\D/g, '').endsWith(cleanVal.replace(/\D/g, ''))
-        );
+        student = findRegistration(rawVal);
+      }
+
+      // 4. Try matching phone number (exact or 7+ digits endsWith)
+      if (!student) {
+        const cleanDigits = rawVal.replace(/\D/g, '');
+        if (cleanDigits.length >= 7) {
+          student = registrations.find(r => {
+            const ph = String(r["Student Mobile Number"] || r.phone || '').replace(/\D/g, '');
+            return ph === cleanDigits || ph.endsWith(cleanDigits);
+          });
+        }
+      }
+
+      // 5. Try matching Name (case-insensitive, prioritizing the vehicle's zone)
+      if (!student) {
+        const cleanVal = rawVal.toLowerCase().trim();
+        const vZone = (vehicle && vehicle.Zone) ? canonicalZone(vehicle.Zone) : '';
+
+        // Priority 5a: Exact name match
+        let exactMatches = [];
+        if (vZone) {
+          exactMatches = registrations.filter(r => {
+            const rZone = canonicalZone(r["Organization Zone"] || r.zone || '');
+            const sName = (r["Student Name"] || r.name || '').trim().toLowerCase();
+            return rZone === vZone && sName === cleanVal;
+          });
+        }
+        if (exactMatches.length === 0) {
+          exactMatches = registrations.filter(r => 
+            (r["Student Name"] || r.name || '').trim().toLowerCase() === cleanVal
+          );
+        }
+
+        if (exactMatches.length === 1) {
+          student = exactMatches[0];
+        } else if (exactMatches.length > 1) {
+          const listStr = exactMatches.slice(0, 4).map(m => `• ${m["Student Name"]} (${m.mandalRegId || m.districtRegId || ''} - ${m["Organization Zone"] || ''})`).join('\n');
+          alert(`Multiple delegates found with name "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Mandal ID (e.g. KPM 101).`);
+          return;
+        }
+
+        // Priority 5b: Partial name match (min 3 chars)
+        if (!student && cleanVal.length >= 3) {
+          let partialMatches = [];
+          if (vZone) {
+            partialMatches = registrations.filter(r => {
+              const rZone = canonicalZone(r["Organization Zone"] || r.zone || '');
+              const sName = (r["Student Name"] || r.name || '').trim().toLowerCase();
+              return rZone === vZone && sName.includes(cleanVal);
+            });
+          }
+          if (partialMatches.length === 0) {
+            partialMatches = registrations.filter(r => 
+              (r["Student Name"] || r.name || '').trim().toLowerCase().includes(cleanVal)
+            );
+          }
+
+          if (partialMatches.length === 1) {
+            student = partialMatches[0];
+          } else if (partialMatches.length > 1) {
+            const listStr = partialMatches.slice(0, 4).map(m => `• ${m["Student Name"]} (${m.mandalRegId || m.districtRegId || ''} - ${m["Organization Zone"] || ''})`).join('\n');
+            alert(`Multiple delegates match "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Mandal ID (e.g. KPM 101).`);
+            return;
+          }
+        }
       }
 
       if (!student) {
-        alert(`Could not find delegate "${rawVal}". Please choose a delegate from the dropdown list.`);
+        alert(`Could not find delegate "${rawVal}". Please select a delegate from the dropdown suggestions or search with their exact Name, Mandal ID (e.g. KPM 101), District ID, or Mobile number.`);
         return;
       }
 
@@ -6775,6 +6930,10 @@
         alert(`"${sName}" is already assigned to this vehicle.`);
         input.value = '';
         return;
+      } else if (currentV) {
+        if (!confirm(`"${sName}" is currently assigned to vehicle ${currentV}. Do you want to move this delegate to ${vehicleId}?`)) {
+          return;
+        }
       }
 
       // Calculate next pickup order
