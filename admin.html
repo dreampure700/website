@@ -309,6 +309,26 @@
       background-color: #FEE2E2;
       border-color: #FCA5A5;
     }
+    .status-select.status-unanswered {
+      background-color: #EEF2FF;
+      color: #4338CA;
+      border-color: #C7D2FE;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%234338CA'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    .status-select.status-unanswered:hover {
+      background-color: #E0E7FF;
+      border-color: #A5B4FC;
+    }
+    .status-select.status-wrong_number {
+      background-color: #FFF1F2;
+      color: #BE123C;
+      border-color: #FECDD3;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23BE123C'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    }
+    .status-select.status-wrong_number:hover {
+      background-color: #FFE4E6;
+      border-color: #FDA4AF;
+    }
     .confirmation-card {
       transition: all 0.2s ease;
     }
@@ -450,6 +470,16 @@
       background: #FEE2E2;
       color: #B91C1C;
       border: 1px solid #FECACA;
+    }
+    .a4-status-unanswered {
+      background: #E0E7FF;
+      color: #4338CA;
+      border: 1px solid #C7D2FE;
+    }
+    .a4-status-wrong_number {
+      background: #FFE4E6;
+      color: #BE123C;
+      border: 1px solid #FECDD3;
     }
     .attendance-box {
       width: 14px;
@@ -2165,6 +2195,16 @@
               </div>
             </div>
 
+            <div class="stat-card confirmation-card" id="cardStatusUnanswered" style="border-left: 4px solid #6366F1; background: #EEF2FF; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('unanswered')" title="Click to filter Unanswered Call students">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="unansweredCount" style="color: #4338CA; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #4F46E5; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Unanswered Call</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366F1; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-phone-slash"></i></div>
+              </div>
+            </div>
+
             <div class="stat-card confirmation-card" id="cardStatusNotComing" style="border-left: 4px solid #EF4444; background: #FEF2F2; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('not_coming')" title="Click to filter Not Coming students">
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
@@ -2172,6 +2212,16 @@
                   <div class="stat-label" style="color: #B91C1C; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Not Coming</div>
                 </div>
                 <div class="stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-times-circle"></i></div>
+              </div>
+            </div>
+
+            <div class="stat-card confirmation-card" id="cardStatusWrongNumber" style="border-left: 4px solid #E11D48; background: #FFF1F2; padding: 1rem 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;" onclick="filterByStatusQuick('wrong_number')" title="Click to filter Wrong Number students">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div class="stat-val" id="wrongNumberCount" style="color: #BE123C; font-size: 1.8rem; font-weight: 800; line-height: 1.1;">0</div>
+                  <div class="stat-label" style="color: #E11D48; font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">Wrong Number</div>
+                </div>
+                <div class="stat-icon" style="background: rgba(225, 29, 72, 0.15); color: #E11D48; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;"><i class="fas fa-phone-square-alt"></i></div>
               </div>
             </div>
 
@@ -2194,7 +2244,9 @@
                 <option value="">All Statuses</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="pending">Pending Calling</option>
+                <option value="unanswered">Unanswered Call</option>
                 <option value="not_coming">Not Coming</option>
+                <option value="wrong_number">Wrong Number</option>
                 <option value="duplicates">⚠️ Duplicates Only</option>
               </select>
             </div>
@@ -2826,11 +2878,13 @@
             <div style="text-align: right; font-size: 0.75rem; color: #334155; line-height: 1.45;">
               <div><strong>Filter Scope:</strong> <span id="a4DocScopeLabel">All Delegates</span></div>
               <div><strong>Generated Date:</strong> <span id="a4DocGeneratedDate">-</span></div>
-              <div style="margin-top: 3px; display: inline-flex; gap: 8px; font-weight: 700; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #CBD5E1;">
+              <div style="margin-top: 3px; display: inline-flex; gap: 8px; font-weight: 700; background: #F1F5F9; padding: 3px 8px; border-radius: 6px; border: 1px solid #CBD5E1; flex-wrap: wrap;">
                 <span>Total: <span id="a4DocTotalCount" style="color: #0F172A;">0</span></span>
                 <span>Confirmed: <span id="a4DocConfirmedCount" style="color: #15803D;">0</span></span>
                 <span>Pending: <span id="a4DocPendingCount" style="color: #B45309;">0</span></span>
+                <span>Unanswered: <span id="a4DocUnansweredCount" style="color: #4F46E5;">0</span></span>
                 <span>Not Coming: <span id="a4DocNotComingCount" style="color: #B91C1C;">0</span></span>
+                <span>Wrong No: <span id="a4DocWrongNumberCount" style="color: #BE123C;">0</span></span>
               </div>
             </div>
           </div>
@@ -3050,7 +3104,9 @@
             <select id="studentStatusInput" class="form-select">
               <option value="pending">⏳ Pending Calling</option>
               <option value="confirmed">✅ Confirmed</option>
+              <option value="unanswered">📞 Unanswered Call</option>
               <option value="not_coming">❌ Not Coming</option>
+              <option value="wrong_number">📵 Wrong Number</option>
             </select>
           </div>
         </div>
@@ -5320,7 +5376,9 @@
             <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" title="Change calling confirmation status">
               <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
               <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+              <option value="unanswered" ${currentStatus === 'unanswered' ? 'selected' : ''}>📞 Unanswered Call</option>
               <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
+              <option value="wrong_number" ${currentStatus === 'wrong_number' ? 'selected' : ''}>📵 Wrong Number</option>
             </select>
           </td>
           <td data-label="Actions">
@@ -5414,7 +5472,9 @@
                   <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" style="font-size:0.78rem; padding:0.35rem 1.6rem 0.35rem 0.7rem;">
                     <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
                     <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+                    <option value="unanswered" ${currentStatus === 'unanswered' ? 'selected' : ''}>📞 Unanswered Call</option>
                     <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
+                    <option value="wrong_number" ${currentStatus === 'wrong_number' ? 'selected' : ''}>📵 Wrong Number</option>
                   </select>
                 </div>
               </div>
@@ -5873,12 +5933,16 @@
       let confirmed = 0;
       let pending = 0;
       let notComing = 0;
+      let unanswered = 0;
+      let wrongNumber = 0;
       let duplicates = 0;
 
       baseList.forEach(r => {
         const st = (r.status || 'pending').toLowerCase();
         if (st === 'confirmed') confirmed++;
         else if (st === 'not_coming') notComing++;
+        else if (st === 'unanswered') unanswered++;
+        else if (st === 'wrong_number') wrongNumber++;
         else pending++;
 
         const rawPhone = (r["Student Mobile Number"] || r.phone || '').toString();
@@ -5891,11 +5955,15 @@
       const confEl = document.getElementById('confirmedCount');
       const pendEl = document.getElementById('pendingCallingCount');
       const notComEl = document.getElementById('notComingCount');
+      const unansEl = document.getElementById('unansweredCount');
+      const wrongEl = document.getElementById('wrongNumberCount');
       const dupEl = document.getElementById('duplicatesCount');
 
       if (confEl) confEl.textContent = confirmed;
       if (pendEl) pendEl.textContent = pending;
       if (notComEl) notComEl.textContent = notComing;
+      if (unansEl) unansEl.textContent = unanswered;
+      if (wrongEl) wrongEl.textContent = wrongNumber;
       if (dupEl) dupEl.textContent = duplicates;
 
       // Highlight active card
@@ -5903,7 +5971,9 @@
       const cards = {
         'confirmed': document.getElementById('cardStatusConfirmed'),
         'pending': document.getElementById('cardStatusPending'),
+        'unanswered': document.getElementById('cardStatusUnanswered'),
         'not_coming': document.getElementById('cardStatusNotComing'),
+        'wrong_number': document.getElementById('cardStatusWrongNumber'),
         'duplicates': document.getElementById('cardStatusDuplicates')
       };
       Object.keys(cards).forEach(key => {
@@ -6000,7 +6070,9 @@
       const statusLabels = {
         'confirmed': 'Confirmed',
         'pending': 'Pending Calling',
-        'not_coming': 'Not Coming'
+        'unanswered': 'Unanswered Call',
+        'not_coming': 'Not Coming',
+        'wrong_number': 'Wrong Number'
       };
       const label = statusLabels[normStatus] || normStatus;
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
@@ -7361,7 +7433,7 @@
 
       items.forEach(r => {
         const rawStatus = (r.status || 'pending').toLowerCase();
-        const displayStatus = rawStatus === 'confirmed' ? 'Confirmed' : (rawStatus === 'not_coming' ? 'Not Coming' : 'Pending Calling');
+        const displayStatus = rawStatus === 'confirmed' ? 'Confirmed' : (rawStatus === 'not_coming' ? 'Not Coming' : (rawStatus === 'unanswered' ? 'Unanswered Call' : (rawStatus === 'wrong_number' ? 'Wrong Number' : 'Pending Calling')));
         const distId = r.districtRegId || r["Registration ID"] || r.regId || '';
         const mandalId = r.mandalRegId || '';
         const pickupPt = r["Pickup Point"] || r.pickupPoint || r.pickup_point || '';
@@ -7570,7 +7642,10 @@
           if (zoneVal) parts.push('Zone: ' + zoneVal);
           if (unitVal) parts.push('Unit: ' + unitVal);
           if (classVal) parts.push('Class: ' + classVal);
-          if (statusVal) parts.push('Status: ' + (statusVal === 'not_coming' ? 'Not Coming' : (statusVal === 'confirmed' ? 'Confirmed' : 'Pending Calling')));
+          if (statusVal) {
+            const sMap = { 'confirmed': 'Confirmed', 'pending': 'Pending Calling', 'unanswered': 'Unanswered Call', 'not_coming': 'Not Coming', 'wrong_number': 'Wrong Number' };
+            parts.push('Status: ' + (sMap[statusVal] || statusVal));
+          }
           if (searchVal) parts.push('Search: "' + searchVal + '"');
 
           scopeLabelEl.textContent = parts.length > 0 ? parts.join(' | ') + ` (${items.length})` : 'Active Filtered View (' + items.length + ')';
@@ -7584,11 +7659,13 @@
       }
 
       // Count statuses
-      let confCount = 0, pendCount = 0, notCount = 0;
+      let confCount = 0, pendCount = 0, notCount = 0, unansCount = 0, wrongCount = 0;
       items.forEach(r => {
         const s = (r.status || 'pending').toLowerCase();
         if (s === 'confirmed') confCount++;
         else if (s === 'not_coming') notCount++;
+        else if (s === 'unanswered') unansCount++;
+        else if (s === 'wrong_number') wrongCount++;
         else pendCount++;
       });
 
@@ -7598,8 +7675,12 @@
       if (confEl) confEl.textContent = confCount;
       const pendEl = document.getElementById('a4DocPendingCount');
       if (pendEl) pendEl.textContent = pendCount;
+      const unansEl = document.getElementById('a4DocUnansweredCount');
+      if (unansEl) unansEl.textContent = unansCount;
       const notEl = document.getElementById('a4DocNotComingCount');
       if (notEl) notEl.textContent = notCount;
+      const wrongEl = document.getElementById('a4DocWrongNumberCount');
+      if (wrongEl) wrongEl.textContent = wrongCount;
 
       // Toggle attendance header cell
       document.querySelectorAll('.col-attendance').forEach(el => {
@@ -7635,6 +7716,10 @@
           statusBadge = '<span class="a4-status-pill a4-status-confirmed">Confirmed</span>';
         } else if (status === 'not_coming') {
           statusBadge = '<span class="a4-status-pill a4-status-not_coming">Not Coming</span>';
+        } else if (status === 'unanswered') {
+          statusBadge = '<span class="a4-status-pill a4-status-unanswered">Unanswered</span>';
+        } else if (status === 'wrong_number') {
+          statusBadge = '<span class="a4-status-pill a4-status-wrong_number">Wrong No</span>';
         }
 
         const tr = document.createElement('tr');
@@ -7675,11 +7760,13 @@
       const now = new Date();
       const dateText = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      let conf = 0, pend = 0, notC = 0;
+      let conf = 0, pend = 0, notC = 0, unans = 0, wrongN = 0;
       items.forEach(r => {
         const s = (r.status || 'pending').toLowerCase();
         if (s === 'confirmed') conf++;
         else if (s === 'not_coming') notC++;
+        else if (s === 'unanswered') unans++;
+        else if (s === 'wrong_number') wrongN++;
         else pend++;
       });
 
@@ -7698,8 +7785,21 @@
         const vehicle = item["Assigned Vehicle"] || item.assigned_vehicle || '-';
         const status = (item.status || 'pending').toLowerCase();
 
-        let statusText = status === 'confirmed' ? 'Confirmed' : (status === 'not_coming' ? 'Not Coming' : 'Pending');
-        let statusStyle = status === 'confirmed' ? 'background:#DCFCE7; color:#15803D;' : (status === 'not_coming' ? 'background:#FEE2E2; color:#B91C1C;' : 'background:#FEF3C7; color:#B45309;');
+        let statusText = 'Pending';
+        let statusStyle = 'background:#FEF3C7; color:#B45309;';
+        if (status === 'confirmed') {
+          statusText = 'Confirmed';
+          statusStyle = 'background:#DCFCE7; color:#15803D;';
+        } else if (status === 'not_coming') {
+          statusText = 'Not Coming';
+          statusStyle = 'background:#FEE2E2; color:#B91C1C;';
+        } else if (status === 'unanswered') {
+          statusText = 'Unanswered';
+          statusStyle = 'background:#E0E7FF; color:#4338CA;';
+        } else if (status === 'wrong_number') {
+          statusText = 'Wrong No';
+          statusStyle = 'background:#FFE4E6; color:#BE123C;';
+        }
 
         rowsHtml += `
           <tr>
@@ -7754,7 +7854,7 @@
     <div class="meta-box">
       <div><strong>Scope:</strong> ${escapeHtml(scopeText)}</div>
       <div><strong>Date:</strong> ${escapeHtml(dateText)}</div>
-      <div class="counts-pill">Total: ${items.length} | Confirmed: ${conf} | Pending: ${pend} | Not Coming: ${notC}</div>
+      <div class="counts-pill">Total: ${items.length} | Confirmed: ${conf} | Pending: ${pend} | Unanswered: ${unans} | Not Coming: ${notC} | Wrong No: ${wrongN}</div>
     </div>
   </div>
 
