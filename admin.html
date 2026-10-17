@@ -8853,11 +8853,43 @@
 
         // Sync fresh remote data into local registrations array
         if (Array.isArray(passengers)) {
+          const freshIdSet = new Set(passengers.map(p => p.id).filter(Boolean));
+          const cleanVehicleStr = String(vehicleId).trim().toLowerCase();
+
+          // 1. Reconcile: Clear vehicle assignment from any local delegate who is NOT in Supabase's fresh list
+          registrations.forEach(r => {
+            const v = (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase();
+            if (v === cleanVehicleStr) {
+              if (r.id && !freshIdSet.has(r.id)) {
+                r["Assigned Vehicle"] = "";
+                r.assignedVehicle = "";
+                r["Pickup Order"] = "";
+                r.pickupOrder = "";
+                r["Pickup Point"] = "";
+                r.pickupPoint = "";
+                r.pickup_point = "";
+                r["Pickup Time"] = "";
+                r.pickupTime = "";
+                r.pickup_time = "";
+                r["Picked Up"] = "false";
+                r.pickedUp = "false";
+              }
+            }
+          });
+
+          // 2. Map fresh passengers STRICTLY by unique database id first
           passengers.forEach(rp => {
-            const local = registrations.find(r => 
-              (rp.id && r.id === rp.id) || 
-              (rp.reg_id && (r.dbRegId === rp.reg_id || (r.regId && r.regId.replace(/\s+/g, '') === rp.reg_id)))
-            );
+            let local = null;
+            if (rp.id) {
+              local = registrations.find(r => r.id === rp.id);
+            }
+            if (!local && rp.reg_id) {
+              const cleanRpRegId = rp.reg_id.trim().toLowerCase();
+              local = registrations.find(r => 
+                (r.dbRegId && r.dbRegId.trim().toLowerCase() === cleanRpRegId) ||
+                (r.rawRegId && r.rawRegId.trim().toLowerCase() === cleanRpRegId)
+              );
+            }
             if (local) {
               local["Assigned Vehicle"] = rp.assigned_vehicle;
               local.assignedVehicle = rp.assigned_vehicle;
@@ -9550,7 +9582,14 @@
     }
 
     async function unassignPassenger(regId, vehicleId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      const numericId = parseInt(regId, 10);
+      let student = null;
+      if (!isNaN(numericId) && String(numericId) === String(regId).trim()) {
+        student = registrations.find(r => r.id === numericId);
+      }
+      if (!student) {
+        student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numericId);
+      }
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
 
       if (!confirm(`Are you sure you want to remove "${sName}" from vehicle ${vehicleId}?`)) {
@@ -9576,14 +9615,13 @@
           updateResult = await supabase.from('registrations').update(clearPayload).eq('id', studentNumId).select();
         }
         if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
-          updateResult = await supabase.from('registrations').update(clearPayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+          if (cleanDbRegId || rawDbRegId) {
+            updateResult = await supabase.from('registrations').update(clearPayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+          }
         }
 
         if (updateResult && updateResult.error) {
           throw updateResult.error;
-        }
-        if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
-          throw new Error("Student record was not found in database.");
         }
 
         // Clean up backup checkpoint row if any
