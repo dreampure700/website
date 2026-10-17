@@ -6435,17 +6435,30 @@
         }
       }
       
-      // Call Supabase API
+      // Persist picked_up status to Supabase using primary key
       const targetDbId = getRegistrationDbId(regId);
-      supabase
-        .from('registrations')
-        .update({ picked_up: newStatus })
-        .eq('reg_id', targetDbId)
-        .then(({ error }) => {
-          if (error) {
-            console.error('Failed to toggle pickup status on Supabase: ', error);
+      try {
+        let pickupQuery;
+        if (mainReg && mainReg.id) {
+          pickupQuery = supabase.from('registrations').update({ picked_up: newStatus }).eq('id', mainReg.id);
+        } else {
+          pickupQuery = supabase.from('registrations').update({ picked_up: newStatus }).eq('reg_id', targetDbId);
+        }
+        const { error: pickupErr } = await pickupQuery;
+        if (pickupErr) {
+          console.error('Failed to toggle pickup status on Supabase: ', pickupErr);
+          alert('⚠️ Could not save boarding status to database: ' + pickupErr.message);
+          // Rollback
+          if (mainReg) {
+            mainReg["Picked Up"] = isPickedUp ? "true" : "false";
+            mainReg.pickedUp = isPickedUp ? "true" : "false";
           }
-        });
+          if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+          if (typeof renderDataList === 'function') renderDataList();
+        }
+      } catch (err) {
+        console.error('Exception toggling pickup status:', err);
+      }
 
       if (mainReg && newStatus) {
         await saveCheckinToSupabase(mainReg, mainReg.checkinMethod || 'VEHICLE', mainReg.checkinVehicle, mainReg.checkinBy);
@@ -8620,11 +8633,11 @@
       modal.classList.add('active');
     }
 
-    function movePassenger(regId, direction, vehicleId) {
+    async function movePassenger(regId, direction, vehicleId) {
       const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
       if (!vehicle) return;
 
-      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === vehicleId.trim().toLowerCase());
       passengers.sort((a, b) => {
         const oA = parseInt(a["Pickup Order"] || a.pickupOrder) || 999999;
         const oB = parseInt(b["Pickup Order"] || b.pickupOrder) || 999999;
@@ -8677,13 +8690,19 @@
           .eq('reg_id', targetDbId);
       });
 
-      Promise.all(updatePromises)
-        .then(results => {
-          const errRes = results.find(r => r.error);
-          if (errRes) {
-            console.error('Reordering failed on Supabase: ', errRes.error);
-          }
-        });
+      try {
+        const results = await Promise.all(updatePromises);
+        const errRes = results.find(r => r.error);
+        if (errRes) {
+          console.error('Reordering failed on Supabase: ', errRes.error);
+          alert('⚠️ Could not save passenger order to database: ' + errRes.error.message + '\n\nReloading fresh data...');
+          loadData();
+        }
+      } catch (err) {
+        console.error('Exception saving passenger reorder:', err);
+        alert('⚠️ Network error saving passenger order. Reloading fresh data...');
+        loadData();
+      }
     }
 
     function closePassengerListModal() {
@@ -9090,7 +9109,7 @@
     }
 
     // Assign Form Submit
-    document.getElementById('assignForm').addEventListener('submit', (e) => {
+    document.getElementById('assignForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const regId = document.getElementById('assignRegId').value;
       const vehicleId = document.getElementById('assignVehicleSelect').value;
@@ -9106,8 +9125,8 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
 
-      // Calculate next pickup order for this vehicle
-      const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      // Calculate next pickup order for this vehicle (case-insensitive match)
+      const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === vehicleId.trim().toLowerCase());
       let maxOrder = 0;
       vehiclePassengers.forEach(p => {
         const ord = parseInt(p["Pickup Order"] || p.pickupOrder, 10);
@@ -9123,6 +9142,12 @@
 
       const targetDbId = getRegistrationDbId(regId);
       const student = findRegistration(regId);
+
+      // Save previous state for rollback
+      const prevV = student ? (student["Assigned Vehicle"] || "") : "";
+      const prevO = student ? (student["Pickup Order"] || "") : "";
+      const prevPP = student ? (student["Pickup Point"] || "") : "";
+      const prevPT = student ? (student["Pickup Time"] || "") : "";
 
       let query;
       if (student && student.id) {
@@ -9154,20 +9179,43 @@
       renderTransportation();
       showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
 
-      // 2. BACKGROUND PERSISTENCE TO SUPABASE
-      query.then(({ error }) => {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
+      // 2. AWAITED PERSISTENCE TO SUPABASE
+      try {
+        const { error } = await query;
         if (error) {
           console.error('Error updating assignment on Supabase:', error);
-          alert('Database notice: ' + error.message);
-          loadData();
+          alert('⚠️ Failed to save vehicle assignment to database: ' + error.message + '\n\nThe assignment has been rolled back. Please try again.');
+          // Rollback local changes
+          if (student) {
+            student["Assigned Vehicle"] = prevV;
+            student.assignedVehicle = prevV;
+            student["Pickup Order"] = prevO;
+            student.pickupOrder = prevO;
+            student["Pickup Point"] = prevPP;
+            student.pickupPoint = prevPP;
+            student.pickup_point = prevPP;
+            student["Pickup Time"] = prevPT;
+            student.pickupTime = prevPT;
+            student.pickup_time = prevPT;
+          }
+          renderDataList();
+          renderTransportation();
         }
-      }).catch(err => {
+      } catch (err) {
+        console.error('Exception updating assignment on Supabase:', err);
+        alert('⚠️ Network error saving vehicle assignment. The assignment has been rolled back. Please try again.');
+        if (student) {
+          student["Assigned Vehicle"] = prevV;
+          student.assignedVehicle = prevV;
+          student["Pickup Order"] = prevO;
+          student.pickupOrder = prevO;
+        }
+        renderDataList();
+        renderTransportation();
+      } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
-        console.error('Exception updating assignment on Supabase:', err);
-      });
+      }
     });
 
     // ==========================================
@@ -10312,30 +10360,45 @@
           return;
         }
 
-        // Step B: Unassign delegates in background (non-blocking)
+        // Step B: Unassign delegates (awaited, with per-student fallback)
         if (assignedCount > 0) {
-          supabase
+          const unassignPayload = { 
+            assigned_vehicle: null, 
+            pickup_order: null, 
+            pickup_point: null, 
+            pickup_time: null, 
+            picked_up: false 
+          };
+
+          // First try bulk unassign by vehicle ID
+          const { error: regErr } = await supabase
             .from('registrations')
-            .update({ 
-              assigned_vehicle: null, 
-              pickup_order: null, 
-              pickup_point: null, 
-              pickup_time: null, 
-              picked_up: false 
-            })
-            .eq('assigned_vehicle', vId)
-            .then(({ error: regErr }) => {
-              if (regErr) {
-                // Backward-compatibility fallback if pickup columns do not exist yet
-                supabase
-                  .from('registrations')
-                  .update({ assigned_vehicle: null, pickup_order: null, picked_up: false })
-                  .eq('assigned_vehicle', vId);
-              }
+            .update(unassignPayload)
+            .eq('assigned_vehicle', vId);
+
+          if (regErr) {
+            console.warn("Bulk unassign failed, falling back to per-student updates:", regErr);
+            // Fallback: unassign each passenger individually using primary key
+            const affectedStudents = registrations.filter(r => {
+              const rV = (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase();
+              return rV === String(vId).trim().toLowerCase() || rV === '';
             });
+            for (const s of affectedStudents) {
+              try {
+                if (s.id) {
+                  await supabase.from('registrations').update({ assigned_vehicle: null, pickup_order: null, picked_up: false }).eq('id', s.id);
+                } else {
+                  const sDbId = s.dbRegId || getRegistrationDbId(s["Registration ID"] || s.regId);
+                  await supabase.from('registrations').update({ assigned_vehicle: null, pickup_order: null, picked_up: false }).eq('reg_id', sDbId);
+                }
+              } catch(e) {}
+            }
+          }
         }
       } catch (err) {
         console.error("Exception in deleteVehicle:", err);
+        alert("Error deleting vehicle: " + err.message);
+        loadData();
       }
     }
 
