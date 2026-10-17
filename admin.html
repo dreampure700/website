@@ -4915,29 +4915,34 @@
 
         // Build map of student check-in records from SYS_CHECKIN_ records
         const studentCheckinMap = new Map();
-        sysCheckinRecs.forEach(r => {
-          const sId = r.reg_id.replace('SYS_CHECKIN_', '');
-          studentCheckinMap.set(sId, {
-            method: r.school || 'DIRECT',
-            time: r.timestamp || r.created_at || new Date().toISOString(),
-            by: r.place || 'Admin',
-            vehicle: r.assigned_vehicle || '',
-            status: r.status || 'CHECKED_IN'
-          });
-        });
+        const registerCheckinRecord = (rec) => {
+          if (!rec || !rec.reg_id) return;
+          const sId = rec.reg_id.replace(/^SYS_CHECKIN_/i, '').trim();
+          const info = {
+            method: rec.school || 'DIRECT',
+            time: rec.timestamp || rec.created_at || new Date().toISOString(),
+            by: rec.place || 'Admin',
+            vehicle: rec.assigned_vehicle || '',
+            status: rec.status || 'CHECKED_IN'
+          };
+          if (sId) {
+            studentCheckinMap.set(sId, info);
+            studentCheckinMap.set(sId.toLowerCase(), info);
+            studentCheckinMap.set(sId.replace(/\s+/g, ''), info);
+            studentCheckinMap.set(sId.replace(/\s+/g, '').toLowerCase(), info);
+          }
+          if (rec.phone) {
+            const p = String(rec.phone).trim();
+            studentCheckinMap.set(p, info);
+            studentCheckinMap.set(p.replace(/[^0-9]/g, ''), info);
+          }
+        };
+
+        sysCheckinRecs.forEach(registerCheckinRecord);
         try {
           const { data: directCheckins } = await supabase.from('registrations').select('*').ilike('reg_id', 'SYS_CHECKIN_%');
           if (directCheckins) {
-            directCheckins.forEach(dc => {
-              const sId = dc.reg_id.replace('SYS_CHECKIN_', '');
-              studentCheckinMap.set(sId, {
-                method: dc.school || 'DIRECT',
-                time: dc.timestamp || dc.created_at || new Date().toISOString(),
-                by: dc.place || 'Admin',
-                vehicle: dc.assigned_vehicle || '',
-                status: dc.status || 'CHECKED_IN'
-              });
-            });
+            directCheckins.forEach(registerCheckinRecord);
           }
         } catch(e) {}
 
@@ -4991,11 +4996,31 @@
             const validVObj = (rawV && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === rawV.toLowerCase()) : null;
             let validVehicleId = validVObj ? validVObj["Vehicle ID"] : rawV;
 
-            // Resolve check-in state
-            const checkinInfo = studentCheckinMap.get(String(d.id)) ||
-                                studentCheckinMap.get(d.reg_id) ||
-                                (districtRegId ? studentCheckinMap.get(districtRegId) : null) ||
-                                (mandalRegId ? studentCheckinMap.get(mandalRegId) : null);
+            // Resolve check-in state across all possible normalized identifiers
+            const idVariations = [
+              String(d.id),
+              d.reg_id,
+              d.reg_id ? d.reg_id.replace(/\s+/g, '') : null,
+              d.reg_id ? d.reg_id.toLowerCase() : null,
+              d.district_id,
+              d.district_id ? d.district_id.replace(/\s+/g, '') : null,
+              districtRegId,
+              districtRegId ? districtRegId.replace(/\s+/g, '') : null,
+              d.zone_id,
+              d.zone_id ? d.zone_id.replace(/\s+/g, '') : null,
+              mandalRegId,
+              mandalRegId ? mandalRegId.replace(/\s+/g, '') : null,
+              d.phone,
+              d.phone ? String(d.phone).replace(/[^0-9]/g, '') : null
+            ].filter(Boolean);
+
+            let checkinInfo = null;
+            for (const vKey of idVariations) {
+              if (studentCheckinMap.has(vKey)) {
+                checkinInfo = studentCheckinMap.get(vKey);
+                break;
+              }
+            }
 
             // Self-healing fallback: If delegate was checked in to a vehicle, recover vehicle assignment
             if (!validVehicleId && checkinInfo && checkinInfo.vehicle) {
@@ -5004,12 +5029,13 @@
               validVehicleId = chkVObj ? chkVObj["Vehicle ID"] : chkV;
             }
 
-            const isVehiclePickedUp = validVehicleId ? (d.picked_up === true || d.picked_up === "true") : false;
-            const isCheckedIn = !!checkinInfo || isVehiclePickedUp;
-            const resolvedMethod = checkinInfo ? (checkinInfo.method || 'DIRECT') : (isVehiclePickedUp ? 'VEHICLE' : '');
-            const resolvedTime = checkinInfo ? checkinInfo.time : (isVehiclePickedUp ? (d.timestamp || new Date().toISOString()) : '');
-            const resolvedBy = checkinInfo ? checkinInfo.by : (isVehiclePickedUp ? 'Vehicle Coordinator' : '');
-            const resolvedVehicle = checkinInfo ? (checkinInfo.vehicle || validVehicleId) : (isVehiclePickedUp ? validVehicleId : '');
+            const isDbPickedUp = (d.picked_up === true || d.picked_up === "true");
+            const isVehiclePickedUp = validVehicleId ? isDbPickedUp : false;
+            const isCheckedIn = !!checkinInfo || isDbPickedUp;
+            const resolvedMethod = checkinInfo ? (checkinInfo.method || (validVehicleId ? 'VEHICLE' : 'DIRECT')) : (validVehicleId ? 'VEHICLE' : (isDbPickedUp ? 'DIRECT' : ''));
+            const resolvedTime = checkinInfo ? checkinInfo.time : (isDbPickedUp ? (d.timestamp || new Date().toISOString()) : '');
+            const resolvedBy = checkinInfo ? checkinInfo.by : (isDbPickedUp ? (validVehicleId ? 'Vehicle Coordinator' : 'Admin') : '');
+            const resolvedVehicle = checkinInfo ? (checkinInfo.vehicle || validVehicleId) : validVehicleId;
 
             return {
               Timestamp: d.timestamp,
@@ -5051,8 +5077,8 @@
               "Pickup Time": validVehicleId ? (d.pickup_time || "") : "",
               pickupTime: validVehicleId ? (d.pickup_time || "") : "",
               pickup_time: validVehicleId ? (d.pickup_time || "") : "",
-              "Picked Up": validVehicleId ? (d.picked_up ? "true" : "false") : "false",
-              pickedUp: validVehicleId ? (d.picked_up ? "true" : "false") : "false",
+              "Picked Up": validVehicleId ? (isDbPickedUp ? "true" : "false") : (isDbPickedUp ? "true" : "false"),
+              pickedUp: isDbPickedUp ? "true" : "false",
               status: d.status || studentStatusMap.get(d.reg_id) || "pending",
               checkedIn: isCheckedIn,
               checkinStatus: isCheckedIn ? 'CHECKED_IN' : 'PENDING',
@@ -6447,63 +6473,62 @@
 
     async function toggleStudentPickup(regId, isPickedUp, vehicleId) {
       const newStatus = isPickedUp ? false : true;
-      
-      // Update local state immediately for instant feedback
-      const mainReg = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
-      if (mainReg) {
+      const mainReg = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      if (!mainReg) {
+        alert("⚠️ Delegate record not found.");
+        return;
+      }
+
+      const sName = mainReg["Student Name"] || mainReg.name || 'Delegate';
+      const targetVehicle = vehicleId || mainReg["Assigned Vehicle"] || mainReg.assignedVehicle || '';
+      const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Vehicle Operator';
+
+      try {
+        // 1. DIRECT SUPABASE DATABASE UPDATE FIRST
+        if (newStatus) {
+          await saveCheckinToSupabase(mainReg, 'VEHICLE', targetVehicle, operator);
+        } else {
+          await removeCheckinFromSupabase(mainReg);
+        }
+
+        // 2. UPDATE LOCAL MEMORY ONLY AFTER VERIFIED DATABASE WRITE
         mainReg["Picked Up"] = newStatus ? "true" : "false";
         mainReg.pickedUp = newStatus ? "true" : "false";
 
         if (newStatus) {
-          // Vehicle boarding = venue check-in confirmation
           mainReg.checkedIn = true;
           mainReg.checkinStatus = 'CHECKED_IN';
-          if (!mainReg.checkinMethod) mainReg.checkinMethod = 'VEHICLE';
-          if (!mainReg.checkinTime) mainReg.checkinTime = new Date().toISOString();
-          if (!mainReg.checkinBy) mainReg.checkinBy = sessionUser ? (sessionUser.username || sessionUser.role) : 'Vehicle Operator';
-          if (!mainReg.checkinVehicle) mainReg.checkinVehicle = vehicleId || mainReg["Assigned Vehicle"] || mainReg.assignedVehicle || '';
-        }
-      }
-      
-      // Re-render immediately
-      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-      if (typeof renderCheckinSection === 'function') renderCheckinSection();
-      if (typeof renderVehicles === 'function') renderVehicles();
-      if (typeof renderDataList === 'function') renderDataList();
-      if (vehicleId && typeof openPassengerListModal === 'function') {
-        const modal = document.getElementById('passengerListModal');
-        if (modal && modal.classList.contains('active')) {
-          openPassengerListModal(vehicleId);
-        }
-      }
-      
-      // Persist picked_up status to Supabase using primary key
-      const targetDbId = getRegistrationDbId(regId);
-      try {
-        let pickupQuery;
-        if (mainReg && mainReg.id) {
-          pickupQuery = supabase.from('registrations').update({ picked_up: newStatus }).eq('id', mainReg.id);
+          mainReg.checkinMethod = 'VEHICLE';
+          mainReg.checkinTime = new Date().toISOString();
+          mainReg.checkinBy = operator;
+          mainReg.checkinVehicle = targetVehicle;
         } else {
-          pickupQuery = supabase.from('registrations').update({ picked_up: newStatus }).eq('reg_id', targetDbId);
+          mainReg.checkedIn = false;
+          mainReg.checkinStatus = 'PENDING';
+          mainReg.checkinMethod = '';
+          mainReg.checkinTime = '';
+          mainReg.checkinBy = '';
+          mainReg.checkinVehicle = '';
         }
-        const { error: pickupErr } = await pickupQuery;
-        if (pickupErr) {
-          console.error('Failed to toggle pickup status on Supabase: ', pickupErr);
-          alert('⚠️ Could not save boarding status to database: ' + pickupErr.message);
-          // Rollback
-          if (mainReg) {
-            mainReg["Picked Up"] = isPickedUp ? "true" : "false";
-            mainReg.pickedUp = isPickedUp ? "true" : "false";
-          }
-          if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-          if (typeof renderDataList === 'function') renderDataList();
-        }
-      } catch (err) {
-        console.error('Exception toggling pickup status:', err);
-      }
 
-      if (mainReg && newStatus) {
-        await saveCheckinToSupabase(mainReg, mainReg.checkinMethod || 'VEHICLE', mainReg.checkinVehicle, mainReg.checkinBy);
+        // 3. REAL-TIME UI SYNC
+        if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+        if (typeof renderCheckinSection === 'function') renderCheckinSection();
+        if (typeof renderVehicles === 'function') renderVehicles();
+        if (typeof renderDataList === 'function') renderDataList();
+        if (targetVehicle && typeof openPassengerListModal === 'function') {
+          const modal = document.getElementById('passengerListModal');
+          if (modal && modal.classList.contains('active')) {
+            await loadPassengerList(targetVehicle);
+            await openPassengerListModal(targetVehicle, true);
+          }
+        }
+
+        showToast(newStatus ? `🎉 Boarded & checked in "${sName}"!` : `↩️ Unboarded "${sName}"`);
+
+      } catch (err) {
+        console.error("Exception in toggleStudentPickup:", err);
+        alert("⚠️ Database Error: Boarding status could not be saved to Supabase:\n\n" + (err.message || err) + "\n\nNo changes were made to the student record.");
       }
     }
 
@@ -6556,64 +6581,111 @@
       switchCheckinSubTab(currentCheckinSubTab);
     }
 
-    // Persist Check-in record to Supabase using SYS_CHECKIN_ pattern
+    // Persist Check-in record directly to Supabase with strict validation
     async function saveCheckinToSupabase(student, method, vehicleId, operatorName) {
-      if (!student) return;
-      try {
-        const targetDbId = student.id ? student.id.toString() : (student.dbRegId || getRegistrationDbId(student.regId));
-        const nowIso = student.checkinTime || new Date().toISOString();
-        const opName = operatorName || (sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin');
-        const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || null;
+      if (!student) throw new Error("No student record provided for check-in.");
+      
+      const studentNumId = student.id ? student.id : null;
+      const rawDbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(student.regId);
+      const cleanDbRegId = rawDbRegId ? rawDbRegId.replace(/\s+/g, '') : '';
+      const nowIso = student.checkinTime || new Date().toISOString();
+      const opName = operatorName || (sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin');
+      const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || null;
 
-        const sysPayload = {
-          reg_id: 'SYS_CHECKIN_' + targetDbId,
-          name: student["Student Name"] || student.name || 'Delegate',
-          phone: student["Student Mobile Number"] || student.phone || '0000000000',
-          school: method || 'DIRECT', // Check-in method: VEHICLE, DIRECT, WALK_IN
-          place: opName, // Operator/User who performed check-in
-          assigned_vehicle: vId,
-          status: 'CHECKED_IN',
-          timestamp: nowIso
-        };
-
-        const { error } = await supabase.from('registrations').upsert([sysPayload], { onConflict: 'reg_id' });
-        if (error) console.error("Notice saving check-in to Supabase:", error);
-
-        // Also if method is VEHICLE, update picked_up: true
-        if (method === 'VEHICLE') {
-          if (student.id) {
-            await supabase.from('registrations').update({ picked_up: true }).eq('id', student.id);
-          } else {
-            await supabase.from('registrations').update({ picked_up: true }).eq('reg_id', targetDbId);
-          }
-        }
-      } catch (err) {
-        console.error("Error saving checkin to Supabase:", err);
+      // 1. Update the student's primary record in registrations table
+      // Mark picked_up: true as the persistent database flag for physical check-in presence
+      const studentUpdatePayload = {
+        picked_up: true
+      };
+      if (vId) {
+        studentUpdatePayload.assigned_vehicle = vId;
       }
+
+      let updateResult = null;
+      if (studentNumId) {
+        updateResult = await supabase.from('registrations').update(studentUpdatePayload).eq('id', studentNumId).select();
+      }
+      if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
+        updateResult = await supabase.from('registrations').update(studentUpdatePayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+      }
+
+      if (updateResult && updateResult.error) {
+        throw new Error("Failed to update student check-in status in database: " + updateResult.error.message);
+      }
+      if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
+        throw new Error("Student record was not found in Supabase database. Check-in cannot be saved.");
+      }
+
+      // 2. Upsert the detailed check-in audit checkpoint row (SYS_CHECKIN_)
+      const targetDbId = studentNumId ? studentNumId.toString() : cleanDbRegId;
+      const sysPayload = {
+        reg_id: 'SYS_CHECKIN_' + targetDbId,
+        name: student["Student Name"] || student.name || 'Delegate',
+        phone: student["Student Mobile Number"] || student.phone || '0000000000',
+        school: method || 'DIRECT', // Check-in method: VEHICLE, DIRECT, WALK_IN
+        place: opName, // Operator/User who performed check-in
+        assigned_vehicle: vId,
+        status: 'CHECKED_IN',
+        timestamp: nowIso
+      };
+
+      const { error: chkErr } = await supabase.from('registrations').upsert([sysPayload], { onConflict: 'reg_id' });
+      if (chkErr) {
+        console.warn("Checkpoint audit row notice:", chkErr);
+      }
+
+      // 3. Re-query from Supabase to guarantee that the record is persisted
+      const verifiedId = updateResult.data[0].id;
+      const { data: verifiedData, error: verifyErr } = await supabase
+        .from('registrations')
+        .select('*')
+        .eq('id', verifiedId)
+        .single();
+
+      if (verifyErr || !verifiedData) {
+        throw new Error("Verification failed: Could not read back check-in status from database.");
+      }
+
+      return verifiedData;
     }
 
     // Remove Check-in record from Supabase (Administrative Correction / Undo)
     async function removeCheckinFromSupabase(student) {
-      if (!student) return;
-      try {
-        const targetDbId = student.id ? student.id.toString() : (student.dbRegId || getRegistrationDbId(student.regId));
-        await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + targetDbId);
-        if (student.dbRegId && student.dbRegId !== targetDbId) {
-          await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + student.dbRegId);
-        }
-        if (student.id) {
-          await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + student.id);
-        }
+      if (!student) throw new Error("No student record provided for check-in cancellation.");
+      
+      const studentNumId = student.id ? student.id : null;
+      const rawDbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(student.regId);
+      const cleanDbRegId = rawDbRegId ? rawDbRegId.replace(/\s+/g, '') : '';
 
-        // Also reset picked_up if vehicle
-        if (student.id) {
-          await supabase.from('registrations').update({ picked_up: false }).eq('id', student.id);
-        } else {
-          await supabase.from('registrations').update({ picked_up: false }).eq('reg_id', targetDbId);
-        }
-      } catch (err) {
-        console.error("Error removing checkin from Supabase:", err);
+      // 1. Reset picked_up to false on the primary student row
+      let resetResult = null;
+      if (studentNumId) {
+        resetResult = await supabase.from('registrations').update({ picked_up: false }).eq('id', studentNumId).select();
       }
+      if (!resetResult || !resetResult.data || resetResult.data.length === 0) {
+        resetResult = await supabase.from('registrations').update({ picked_up: false }).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+      }
+
+      if (resetResult && resetResult.error) {
+        throw new Error("Failed to reset check-in status in database: " + resetResult.error.message);
+      }
+
+      // 2. Delete any matching SYS_CHECKIN_ records
+      const delTargets = [];
+      if (studentNumId) delTargets.push(`SYS_CHECKIN_${studentNumId}`);
+      if (cleanDbRegId) delTargets.push(`SYS_CHECKIN_${cleanDbRegId}`);
+      if (rawDbRegId && rawDbRegId !== cleanDbRegId) delTargets.push(`SYS_CHECKIN_${rawDbRegId}`);
+      if (student.districtRegId) delTargets.push(`SYS_CHECKIN_${student.districtRegId.replace(/\s+/g, '')}`);
+      if (student.mandalRegId) delTargets.push(`SYS_CHECKIN_${student.mandalRegId.replace(/\s+/g, '')}`);
+
+      for (const dt of [...new Set(delTargets)]) {
+        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', dt);
+        if (delErr) {
+          console.warn("Notice deleting checkpoint row " + dt + ":", delErr);
+        }
+      }
+
+      return true;
     }
 
     // 1. Render Check-in Dashboard (District & Zone overview)
@@ -7122,52 +7194,81 @@
       pendingCheckinAction = null;
     }
 
-    // Execute Check-in confirmed from modal
+    // Execute Check-in confirmed from modal (Direct Check-in or Vehicle Check-in)
     async function executeConfirmedCheckin() {
       if (!pendingCheckinAction) return;
 
       const { regId, method, vehicleId } = pendingCheckinAction;
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
-      if (!student) return;
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      if (!student) {
+        alert("⚠️ Error: Delegate record not found in system.");
+        closeCheckinConfirmModal();
+        return;
+      }
+
+      const confirmBtn = document.getElementById('btnExecuteCheckinConfirm');
+      const originalBtnHtml = confirmBtn ? confirmBtn.innerHTML : '';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving to Database...';
+      }
 
       const nowIso = new Date().toISOString();
       const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin';
+      const targetVehicle = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
 
-      // 1. Instant local update (0ms latency)
-      student.checkedIn = true;
-      student.checkinStatus = 'CHECKED_IN';
-      student.checkinMethod = method;
-      student.checkinTime = nowIso;
-      student.checkinBy = operator;
-      student.checkinVehicle = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
+      try {
+        // 1. DIRECT SUPABASE INTEGRATION FIRST:
+        // Perform asynchronous database write and verify completion
+        const verifiedData = await saveCheckinToSupabase(student, method, targetVehicle, operator);
 
-      if (method === 'VEHICLE') {
-        student["Picked Up"] = "true";
+        // 2. UPDATE LOCAL IN-MEMORY STATE ONLY AFTER DATABASE SUCCESS
+        student.checkedIn = true;
+        student.checkinStatus = 'CHECKED_IN';
+        student.checkinMethod = method;
+        student.checkinTime = nowIso;
+        student.checkinBy = operator;
+        student.checkinVehicle = targetVehicle;
         student.pickedUp = "true";
+        student["Picked Up"] = "true";
+        if (targetVehicle) {
+          student.assignedVehicle = targetVehicle;
+          student["Assigned Vehicle"] = targetVehicle;
+        }
+
+        // Close modal
+        closeCheckinConfirmModal();
+
+        // 3. REAL-TIME UI SYNC
+        if (typeof renderCheckinSection === 'function') renderCheckinSection();
+        if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
+        if (typeof openPassengerListModal === 'function' && targetVehicle) {
+          const modal = document.getElementById('passengerListModal');
+          if (modal && modal.classList.contains('active')) {
+            await loadPassengerList(targetVehicle);
+            await openPassengerListModal(targetVehicle, true);
+          }
+        }
+        if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+        if (typeof renderVehicles === 'function') renderVehicles();
+        if (typeof renderDataList === 'function') renderDataList();
+
+        showToast(`🎉 "${student["Student Name"] || student.name}" checked in successfully via ${method}!`);
+
+      } catch (err) {
+        console.error("Check-in persistence failed:", err);
+        alert("⚠️ Check-in Failed!\n\nCould not save check-in to Supabase database:\n" + (err.message || err) + "\n\nNo changes were saved. Please check your internet connection and try again.");
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalBtnHtml;
+        }
       }
-
-      closeCheckinConfirmModal();
-
-      // Re-render relevant views immediately
-      if (typeof renderCheckinSection === 'function') renderCheckinSection();
-      if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
-      if (typeof openPassengerListModal === 'function' && vehicleId) {
-        const modal = document.getElementById('passengerListModal');
-        if (modal && modal.classList.contains('active')) openPassengerListModal(vehicleId);
-      }
-      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-      if (typeof renderVehicles === 'function') renderVehicles();
-      if (typeof renderDataList === 'function') renderDataList();
-
-      showToast(`🎉 "${student["Student Name"] || student.name}" checked in successfully via ${method}!`);
-
-      // 2. Background Persistence to Supabase
-      await saveCheckinToSupabase(student, method, student.checkinVehicle, operator);
     }
 
     // Cancel / Undo Check-in (Administrative correction)
     function promptCancelCheckin(regId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       if (!student) return;
 
       const sName = student["Student Name"] || student.name || 'Delegate';
@@ -7179,34 +7280,46 @@
     }
 
     async function executeCancelCheckin(regId, vehicleId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       if (!student) return;
 
-      // 1. Instant local update
-      student.checkedIn = false;
-      student.checkinStatus = 'PENDING';
-      student.checkinMethod = '';
-      student.checkinTime = '';
-      student.checkinBy = '';
-      student.checkinVehicle = '';
-      student["Picked Up"] = "false";
-      student.pickedUp = "false";
+      const sName = student["Student Name"] || student.name || 'Delegate';
 
-      // Re-render UI immediately
-      if (typeof renderCheckinSection === 'function') renderCheckinSection();
-      if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
-      if (vehicleId && typeof openPassengerListModal === 'function') {
-        const modal = document.getElementById('passengerListModal');
-        if (modal && modal.classList.contains('active')) openPassengerListModal(vehicleId);
+      try {
+        // 1. SUPABASE REMOVAL FIRST
+        await removeCheckinFromSupabase(student);
+
+        // 2. UPDATE LOCAL STATE ONLY AFTER SUCCESSFUL DATABASE REMOVAL
+        student.checkedIn = false;
+        student.checkinStatus = 'PENDING';
+        student.checkinMethod = '';
+        student.checkinTime = '';
+        student.checkinBy = '';
+        student.checkinVehicle = '';
+        student["Picked Up"] = "false";
+        student.pickedUp = "false";
+
+        // 3. REAL-TIME UI SYNC
+        if (typeof renderCheckinSection === 'function') renderCheckinSection();
+        if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
+        const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
+        if (vId && typeof openPassengerListModal === 'function') {
+          const modal = document.getElementById('passengerListModal');
+          if (modal && modal.classList.contains('active')) {
+            await loadPassengerList(vId);
+            await openPassengerListModal(vId, true);
+          }
+        }
+        if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+        if (typeof renderVehicles === 'function') renderVehicles();
+        if (typeof renderDataList === 'function') renderDataList();
+
+        showToast(`↩️ Check-in cancelled for "${sName}"`);
+
+      } catch (err) {
+        console.error("Cancel checkin failed on Supabase:", err);
+        alert("⚠️ Database Error: Could not cancel check-in in Supabase:\n\n" + (err.message || err) + "\n\nStatus remains unchanged.");
       }
-      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-      if (typeof renderVehicles === 'function') renderVehicles();
-      if (typeof renderDataList === 'function') renderDataList();
-
-      showToast(`Check-in cancelled for "${student["Student Name"] || student.name}"`);
-
-      // 2. Background Supabase cleanup
-      await removeCheckinFromSupabase(student);
     }
 
     // 5. Add Student & Check-in (Walk-in Delegates Workflow)
@@ -7457,7 +7570,7 @@
           unit: unit,
           zone: zone,
           assigned_vehicle: null,
-          picked_up: false,
+          picked_up: true,
           status: 'confirmed',
           timestamp: nowIso
         };
@@ -7513,8 +7626,8 @@
           "Pickup Time": "",
           pickupTime: "",
           pickup_time: "",
-          "Picked Up": "false",
-          pickedUp: "false",
+          "Picked Up": "true",
+          pickedUp: "true",
           status: "confirmed",
           checkedIn: true,
           checkinStatus: "CHECKED_IN",
@@ -8892,7 +9005,33 @@
       }
 
       try {
-        const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+        const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+        const studentNumId = student && student.id ? student.id : null;
+        const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+        const cleanDbRegId = targetDbId.replace(/\s+/g, '');
+
+        const pickupPayload = {
+          pickup_point: pickupLocation || null,
+          pickup_time: pickupTime || null
+        };
+
+        // 1. Direct Supabase update FIRST
+        let result = null;
+        if (studentNumId) {
+          result = await supabase.from('registrations').update(pickupPayload).eq('id', studentNumId).select();
+        }
+        if (!result || !result.data || result.data.length === 0) {
+          result = await supabase.from('registrations').update(pickupPayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${targetDbId}`).select();
+        }
+
+        if (result && result.error) {
+          throw result.error;
+        }
+        if (!result || !result.data || result.data.length === 0) {
+          throw new Error("Student record was not found in database.");
+        }
+
+        // 2. Update local state ONLY on database success
         if (student) {
           student["Pickup Point"] = pickupLocation;
           student.pickupPoint = pickupLocation;
@@ -8902,39 +9041,23 @@
           student.pickup_time = pickupTime;
         }
 
-        const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
-        
-        let query;
-        if (student && student.id) {
-          query = supabase
-            .from('registrations')
-            .update({ pickup_point: pickupLocation, pickup_time: pickupTime })
-            .eq('id', student.id);
-        } else {
-          query = supabase
-            .from('registrations')
-            .update({ pickup_point: pickupLocation, pickup_time: pickupTime })
-            .eq('reg_id', targetDbId);
-        }
-
-        const { error } = await query;
-        if (error) {
-          console.error("Database error saving pickup point/time: ", error);
-          alert("Saved locally! Supabase returned: " + error.message + "\\n(Please make sure you have executed the SQL script in Supabase to add the pickup_point and pickup_time columns.)");
-        }
-
         closePassengerPickupModal();
 
-        // Refresh relevant views
-        if (vehicleId) {
-          openPassengerListModal(vehicleId);
+        // 3. Refresh relevant views
+        if (vehicleId && typeof openPassengerListModal === 'function') {
+          await loadPassengerList(vehicleId);
+          await openPassengerListModal(vehicleId, true);
         }
-        if (sessionUser && sessionUser.role === 'Bus Coordinator') {
+        if (sessionUser && sessionUser.role === 'Bus Coordinator' && typeof renderCoordinatorDashboard === 'function') {
           renderCoordinatorDashboard();
         }
+        if (typeof renderDataList === 'function') renderDataList();
+
+        showToast("Pickup details saved to database.");
+
       } catch (err) {
         console.error("Exception in savePassengerPickupDetails:", err);
-        alert("Error saving pickup details: " + err.message);
+        alert("⚠️ Failed to save pickup details to database:\n" + (err.message || err) + "\n\nNo changes were saved. Please try again.");
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
@@ -9084,7 +9207,7 @@
       const cleanDbRegId = rawDbRegId ? rawDbRegId.replace(/\s+/g, '') : '';
 
       try {
-        // 1. SUPABASE INSERTION / UPDATE
+        // 1. SUPABASE INSERTION / UPDATE FIRST
         // Perform asynchronous database update with explicit error handling
         let updateResult = null;
         if (studentNumId) {
@@ -9097,29 +9220,15 @@
         if (updateResult && updateResult.error) {
           throw updateResult.error;
         }
-
-        // Also insert/upsert the checkpoint record for multi-layer redundancy
-        const checkpointPayload = {
-          reg_id: 'SYS_CHECKIN_' + (studentNumId ? studentNumId.toString() : cleanDbRegId),
-          name: student["Student Name"] || student.name || 'Delegate',
-          phone: student["Student Mobile Number"] || student.phone || '0000000000',
-          school: 'DIRECT',
-          place: sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin',
-          assigned_vehicle: vehicleId,
-          pickup_order: nextOrder,
-          status: 'CHECKED_IN',
-          timestamp: new Date().toISOString()
-        };
-        const { error: insertErr } = await supabase.from('registrations').upsert([checkpointPayload], { onConflict: 'reg_id' });
-        if (insertErr) {
-          console.warn("Checkpoint insertion warning:", insertErr);
+        if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
+          throw new Error(`Student record not found in database (ID: ${studentNumId || cleanDbRegId}). No rows were updated.`);
         }
 
         // 2. REAL-TIME UI SYNC:
         // Immediately fetch the updated passenger list from Supabase and re-render the UI
         await loadPassengerList(vehicleId);
 
-        // Update local reference to reflect current assignment across all views
+        // Update local reference only after verified database success
         student["Assigned Vehicle"] = vehicleId;
         student.assignedVehicle = vehicleId;
         student["Pickup Order"] = nextOrder;
@@ -9156,9 +9265,6 @@
         return;
       }
 
-      const prevV = student ? (student["Assigned Vehicle"] || "") : "";
-      const prevO = student ? (student["Pickup Order"] || "") : "";
-
       const clearPayload = {
         assigned_vehicle: null,
         pickup_order: null,
@@ -9172,14 +9278,23 @@
       const cleanDbRegId = rawDbRegId ? rawDbRegId.replace(/\s+/g, '') : '';
 
       try {
+        // 1. SUPABASE REMOVAL FIRST
+        let updateResult = null;
         if (studentNumId) {
-          await supabase.from('registrations').update(clearPayload).eq('id', studentNumId);
+          updateResult = await supabase.from('registrations').update(clearPayload).eq('id', studentNumId).select();
         }
-        if (cleanDbRegId || rawDbRegId) {
-          await supabase.from('registrations').update(clearPayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`);
+        if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
+          updateResult = await supabase.from('registrations').update(clearPayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
         }
 
-        // Clean up backup checkpoint row
+        if (updateResult && updateResult.error) {
+          throw updateResult.error;
+        }
+        if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
+          throw new Error("Student record was not found in database.");
+        }
+
+        // Clean up backup checkpoint row if any
         try {
           const delTargets = [];
           if (studentNumId) delTargets.push(`SYS_CHECKIN_${studentNumId}`);
@@ -9192,7 +9307,7 @@
           console.warn("Notice cleaning checkpoint row:", cErr);
         }
 
-        // Sync local reference
+        // 2. UPDATE LOCAL REFERENCE ONLY AFTER DATABASE SUCCESS
         if (student) {
           student["Assigned Vehicle"] = "";
           student.assignedVehicle = "";
@@ -9206,7 +9321,7 @@
           student.pickedUp = "false";
         }
 
-        // Fetch fresh passengers and re-render
+        // 3. Fetch fresh passengers from Supabase and re-render
         await loadPassengerList(vehicleId);
         await openPassengerListModal(vehicleId, true);
         renderDataList();
@@ -9216,17 +9331,7 @@
 
       } catch (err) {
         console.error("Exception in unassignPassenger:", err);
-        alert("Database notice: Could not remove passenger: " + err.message);
-        // Rollback
-        if (student) {
-          student["Assigned Vehicle"] = prevV;
-          student.assignedVehicle = prevV;
-          student["Pickup Order"] = prevO;
-          student.pickupOrder = prevO;
-        }
-        await openPassengerListModal(vehicleId, true);
-        renderDataList();
-        renderTransportation();
+        alert("⚠️ Database notice: Could not remove passenger: " + (err.message || err));
       }
     }
 
@@ -9247,7 +9352,12 @@
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
 
-      // Calculate next pickup order for this vehicle (case-insensitive match)
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      const studentNumId = student && student.id ? student.id : null;
+      const targetDbId = getRegistrationDbId(regId);
+      const cleanDbRegId = (student && student.dbRegId) ? student.dbRegId.replace(/\s+/g, '') : targetDbId.replace(/\s+/g, '');
+
+      // Calculate next pickup order for this vehicle
       const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === vehicleId.trim().toLowerCase());
       let maxOrder = 0;
       vehiclePassengers.forEach(p => {
@@ -9262,87 +9372,50 @@
       if (pickupPoint) updateData.pickup_point = pickupPoint;
       if (pickupTime) updateData.pickup_time = pickupTime;
 
-      const targetDbId = getRegistrationDbId(regId);
-      const student = findRegistration(regId);
-
-      // Save previous state for rollback
-      const prevV = student ? (student["Assigned Vehicle"] || "") : "";
-      const prevO = student ? (student["Pickup Order"] || "") : "";
-      const prevPP = student ? (student["Pickup Point"] || "") : "";
-      const prevPT = student ? (student["Pickup Time"] || "") : "";
-
-      // 1. INSTANT LOCAL UPDATE (0ms)
-      if (student) {
-        student["Assigned Vehicle"] = vehicleId;
-        student.assignedVehicle = vehicleId;
-        student["Pickup Order"] = nextOrder;
-        student.pickupOrder = nextOrder;
-        if (pickupPoint) {
-          student["Pickup Point"] = pickupPoint;
-          student.pickupPoint = pickupPoint;
-          student.pickup_point = pickupPoint;
-        }
-        if (pickupTime) {
-          student["Pickup Time"] = pickupTime;
-          student.pickupTime = pickupTime;
-          student.pickup_time = pickupTime;
-        }
-      }
-
-      closeAssignModal();
-      renderDataList();
-      renderTransportation();
-      showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
-
-      // 2. AWAITED PERSISTENCE TO SUPABASE WITH DUAL-LAYER PERSISTENCE
+      // 1. DIRECT SUPABASE INTEGRATION FIRST
       try {
-        const studentNumId = student && student.id ? student.id : null;
         let primaryResult = null;
         if (studentNumId) {
           primaryResult = await supabase.from('registrations').update(updateData).eq('id', studentNumId).select();
         }
         if (!primaryResult || !primaryResult.data || primaryResult.data.length === 0) {
-          primaryResult = await supabase.from('registrations').update(updateData).eq('reg_id', targetDbId).select();
+          primaryResult = await supabase.from('registrations').update(updateData).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${targetDbId}`).select();
         }
 
         if (primaryResult && primaryResult.error) {
           throw primaryResult.error;
         }
+        if (!primaryResult || !primaryResult.data || primaryResult.data.length === 0) {
+          throw new Error("Student record was not found in Supabase database.");
+        }
 
-        // Layer 2: Redundant cloud backup checkpoint row (SYS_CHECKIN_)
-        try {
-          const checkpointPayload = {
-            reg_id: 'SYS_CHECKIN_' + (studentNumId ? studentNumId.toString() : targetDbId),
-            name: student ? (student["Student Name"] || student.name || 'Delegate') : 'Delegate',
-            phone: student ? (student["Student Mobile Number"] || student.phone || '0000000000') : '0000000000',
-            school: 'DIRECT',
-            place: sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin',
-            assigned_vehicle: vehicleId,
-            status: 'CHECKED_IN',
-            timestamp: new Date().toISOString()
-          };
-          await supabase.from('registrations').upsert([checkpointPayload], { onConflict: 'reg_id' });
-        } catch (chkErr) {
-          console.warn("Checkpoint dual-write notice in assignForm:", chkErr);
-        }
-      } catch (err) {
-        console.error('Exception updating assignment on Supabase:', err);
-        alert('⚠️ Failed to save vehicle assignment to database: ' + err.message + '\n\nThe assignment has been rolled back. Please try again.');
-        // Rollback local changes
+        // 2. UPDATE LOCAL REFERENCE ONLY AFTER DATABASE SUCCESS
         if (student) {
-          student["Assigned Vehicle"] = prevV;
-          student.assignedVehicle = prevV;
-          student["Pickup Order"] = prevO;
-          student.pickupOrder = prevO;
-          student["Pickup Point"] = prevPP;
-          student.pickupPoint = prevPP;
-          student.pickup_point = prevPP;
-          student["Pickup Time"] = prevPT;
-          student.pickupTime = prevPT;
-          student.pickup_time = prevPT;
+          student["Assigned Vehicle"] = vehicleId;
+          student.assignedVehicle = vehicleId;
+          student["Pickup Order"] = nextOrder;
+          student.pickupOrder = nextOrder;
+          if (pickupPoint) {
+            student["Pickup Point"] = pickupPoint;
+            student.pickupPoint = pickupPoint;
+            student.pickup_point = pickupPoint;
+          }
+          if (pickupTime) {
+            student["Pickup Time"] = pickupTime;
+            student.pickupTime = pickupTime;
+            student.pickup_time = pickupTime;
+          }
         }
+
+        closeAssignModal();
+        await loadPassengerList(vehicleId);
         renderDataList();
         renderTransportation();
+        showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
+
+      } catch (err) {
+        console.error('Exception updating assignment on Supabase:', err);
+        alert('⚠️ Failed to save vehicle assignment to database: ' + (err.message || err) + '\n\nNo changes were saved. Please try again.');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
