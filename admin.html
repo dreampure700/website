@@ -3472,6 +3472,7 @@
 
       <form id="studentForm">
         <input type="hidden" id="studentMode" value="add">
+        <input type="hidden" id="studentDbIdInput">
         <input type="hidden" id="studentRegIdInput">
         <input type="hidden" id="convertFromDonatedRegId" value="">
 
@@ -8000,13 +8001,16 @@
 
       // 5. Persist to Supabase registrations table
       try {
-        // Try updating the student record directly on registrations table
-        const { error: updErr } = await supabase.from('registrations')
-          .update({ status: normStatus })
-          .eq('reg_id', targetDbId);
+        let updQuery;
+        if (student && student.id) {
+          updQuery = supabase.from('registrations').update({ status: normStatus }).eq('id', student.id);
+        } else {
+          updQuery = supabase.from('registrations').update({ status: normStatus }).eq('reg_id', targetDbId);
+        }
+        const { error: updErr } = await updQuery;
 
         if (updErr) {
-          // Fallback if status column hasn't been added to registrations table yet
+          // Fallback if direct update failed
           const sysRegId = 'SYS_STATUS_' + targetDbId;
           await supabase.from('registrations').upsert([{
             reg_id: sysRegId,
@@ -8017,7 +8021,7 @@
         } else {
           // If direct update succeeded, clean up any legacy SYS_STATUS_ row
           try {
-            await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + targetDbId);
+            await supabase.from('registrations').delete().or(`reg_id.eq.SYS_STATUS_${targetDbId},reg_id.eq.SYS_STATUS_${student ? student.id : targetDbId}`);
           } catch(e) {}
         }
       } catch (err) {
@@ -10355,6 +10359,8 @@
       document.getElementById('convertFromDonatedRegId').value = '';
 
       document.getElementById('studentMode').value = 'add';
+      const dbIdInput = document.getElementById('studentDbIdInput');
+      if (dbIdInput) dbIdInput.value = '';
       
       const randomId = 'TS26-' + Math.floor(10000 + Math.random() * 90000);
       document.getElementById('studentRegIdInput').value = randomId;
@@ -10384,6 +10390,8 @@
       document.getElementById('convertFromDonatedRegId').value = '';
 
       document.getElementById('studentMode').value = 'edit';
+      const editDbIdInput = document.getElementById('studentDbIdInput');
+      if (editDbIdInput) editDbIdInput.value = student.id || '';
       document.getElementById('studentRegIdInput').value = student.dbRegId || regId;
 
       document.getElementById('studentNameInput').value = student["Student Name"] || student.name || '';
@@ -10781,22 +10789,26 @@
           }]);
       } else {
         calculatedRegId = targetDbId || regId;
-        dbQuery = supabase
-          .from('registrations')
-          .update({
-            name: name,
-            phone: phone,
-            parent_phone: parentPhone || null,
-            student_class: studentClass,
-            school: school || 'N/A',
-            place: place,
-            panchayath: panchayath,
-            ward: ward,
-            unit: unit,
-            zone: zone,
-            assigned_vehicle: assignedVehicle || null
-          })
-          .eq('reg_id', calculatedRegId);
+        const studentDbId = document.getElementById('studentDbIdInput')?.value;
+        const updatePayload = {
+          name: name,
+          phone: phone,
+          parent_phone: parentPhone || null,
+          student_class: studentClass,
+          school: school || 'N/A',
+          place: place,
+          panchayath: panchayath,
+          ward: ward,
+          unit: unit,
+          zone: zone,
+          assigned_vehicle: assignedVehicle || null
+        };
+
+        if (studentDbId) {
+          dbQuery = supabase.from('registrations').update(updatePayload).eq('id', studentDbId);
+        } else {
+          dbQuery = supabase.from('registrations').update(updatePayload).eq('reg_id', calculatedRegId);
+        }
       }
 
       const { error } = await dbQuery;
@@ -10833,6 +10845,7 @@
       const student = findRegistration(regId) || registrations.find(r => (r.regId === regId || r["Registration ID"] === regId || r.reg_id === regId));
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
       const dbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
+      const studentDbId = (student && student.id) ? student.id : null;
       const distId = student ? (student.districtRegId || student.regId) : regId;
       const mandalId = student ? (student.mandalRegId || '') : '';
       const displayLabel = mandalId ? `${sName} (${distId} · ${mandalId})` : `${sName} (${distId})`;
@@ -10845,9 +10858,12 @@
         // Fetch complete current row from registrations
         let fullRecord = student || {};
         try {
-          const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', dbRegId);
-          if (dbRows && dbRows.length > 0) {
-            fullRecord = dbRows[0];
+          if (studentDbId) {
+            const { data: dbRows } = await supabase.from('registrations').select('*').or(`id.eq.${studentDbId},reg_id.eq.${dbRegId}`);
+            if (dbRows && dbRows.length > 0) fullRecord = dbRows[0];
+          } else {
+            const { data: dbRows } = await supabase.from('registrations').select('*').eq('reg_id', dbRegId);
+            if (dbRows && dbRows.length > 0) fullRecord = dbRows[0];
           }
         } catch(e) {}
 
@@ -10888,11 +10904,21 @@
         }
 
         // 2. Delete from active registrations table
-        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', dbRegId);
+        let delQuery;
+        if (studentDbId) {
+          delQuery = supabase.from('registrations').delete().or(`id.eq.${studentDbId},reg_id.eq.${dbRegId}`);
+        } else {
+          delQuery = supabase.from('registrations').delete().eq('reg_id', dbRegId);
+        }
+        const { error: delErr } = await delQuery;
         if (delErr) throw delErr;
 
         try {
-          await supabase.from('registrations').delete().eq('reg_id', 'SYS_STATUS_' + dbRegId);
+          if (studentDbId) {
+            await supabase.from('registrations').delete().or(`reg_id.eq.SYS_STATUS_${dbRegId},reg_id.eq.SYS_CHECKIN_${studentDbId},reg_id.eq.SYS_CHECKIN_${dbRegId}`);
+          } else {
+            await supabase.from('registrations').delete().or(`reg_id.eq.SYS_STATUS_${dbRegId},reg_id.eq.SYS_CHECKIN_${dbRegId}`);
+          }
         } catch(sErr) {}
 
         alert(`Delegate "${sName}" moved to Trash successfully. Active registration numbers have been automatically shifted and re-sequenced.`);
