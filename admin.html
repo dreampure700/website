@@ -5876,6 +5876,17 @@
     }
     window.renderVehicles = renderVehicles;
 
+    // Alias renderDataList to renderDirectory & renderDashboard for universal compatibility
+    function renderDataList(filteredRegs) {
+      if (typeof renderDirectory === 'function') {
+        renderDirectory(filteredRegs);
+      }
+      if (typeof renderDashboard === 'function') {
+        renderDashboard();
+      }
+    }
+    window.renderDataList = renderDataList;
+
     // Helper to generate a soft background circle avatar with the student's first initial
     function getStudentAvatarHtml(name) {
       const initial = name ? name.trim().charAt(0).toUpperCase() : 'S';
@@ -9515,8 +9526,10 @@
 
         input.value = '';
         await openPassengerListModal(vehicleId, true);
-        renderDataList();
-        renderTransportation();
+        if (typeof renderTransportation === 'function') renderTransportation();
+        if (typeof renderDirectory === 'function') renderDirectory();
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderCheckinSection === 'function') renderCheckinSection();
         showToast(`Added ${sName} to vehicle ${vehicleId}`);
 
       } catch (err) {
@@ -9603,8 +9616,9 @@
         // 3. Fetch fresh passengers from Supabase and re-render
         await loadPassengerList(vehicleId);
         await openPassengerListModal(vehicleId, true);
-        renderDataList();
-        renderTransportation();
+        if (typeof renderTransportation === 'function') renderTransportation();
+        if (typeof renderDirectory === 'function') renderDirectory();
+        if (typeof renderDashboard === 'function') renderDashboard();
         if (typeof renderCheckinSection === 'function') renderCheckinSection();
         showToast(`Removed "${sName}" from vehicle ${vehicleId}`);
 
@@ -9688,8 +9702,10 @@
 
         closeAssignModal();
         await loadPassengerList(vehicleId);
-        renderDataList();
-        renderTransportation();
+        if (typeof renderTransportation === 'function') renderTransportation();
+        if (typeof renderDirectory === 'function') renderDirectory();
+        if (typeof renderDashboard === 'function') renderDashboard();
+        if (typeof renderCheckinSection === 'function') renderCheckinSection();
         showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
 
       } catch (err) {
@@ -10952,8 +10968,9 @@
         vehicles = vehicles.filter(v => (v["Vehicle ID"] || '').trim().toLowerCase() !== String(vId).trim().toLowerCase());
         
         // 4. RE-RENDER UI
-        renderTransportation();
-        renderDataList();
+        if (typeof renderTransportation === 'function') renderTransportation();
+        if (typeof renderDirectory === 'function') renderDirectory();
+        if (typeof renderDashboard === 'function') renderDashboard();
         showToast(`Vehicle ${vId} deleted successfully.`);
 
       } catch (err) {
