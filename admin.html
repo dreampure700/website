@@ -1493,6 +1493,97 @@
       color: var(--cyan);
       font-weight: 800;
     }
+
+    /* ================= DELEGATE CHECK-IN MODULE STYLES ================= */
+    .checkin-subtabs {
+      display: flex;
+      gap: 0.4rem;
+      background: #F8FAFC;
+      padding: 0.35rem;
+      border-radius: 14px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      flex-wrap: wrap;
+    }
+    .checkin-subtabs .subtab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .checkin-subtabs .subtab-btn:hover {
+      color: var(--magenta);
+      background: rgba(230, 0, 103, 0.05);
+    }
+    .checkin-subtabs .subtab-btn.active {
+      background: var(--grad-primary);
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(230, 0, 103, 0.25);
+    }
+    .checkin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+    .checkin-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      border-radius: 18px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .checkin-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+    }
+    .badge-checkin-method {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .badge-checkin-vehicle {
+      background: rgba(0, 168, 232, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 168, 232, 0.25);
+    }
+    .badge-checkin-direct {
+      background: rgba(124, 58, 237, 0.12);
+      color: #7C3AED;
+      border: 1px solid rgba(124, 58, 237, 0.25);
+    }
+    .badge-checkin-walkin {
+      background: rgba(245, 158, 11, 0.12);
+      color: #D97706;
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #E2E8F0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 0.4rem;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
   </style>
 </head>
 <body>
@@ -1549,6 +1640,7 @@
           <button class="tab-link active" onclick="switchTab('tab-overview')"><i class="fas fa-chart-line"></i> Dashboard</button>
           <button class="tab-link" onclick="switchTab('tab-directory')"><i class="fas fa-users-cog"></i> Delegate</button>
           <button class="tab-link" onclick="switchTab('tab-transport')"><i class="fas fa-bus"></i> Vehicle</button>
+          <button class="tab-link" id="tabCheckinLink" onclick="switchTab('tab-checkin')"><i class="fas fa-user-check"></i> Check-in</button>
           <button class="tab-link" id="tabDonatedLink" onclick="switchTab('tab-donated')"><i class="fas fa-hand-holding-heart text-cyan"></i> Donated Contacts <span id="donatedCountNavBadge" class="badge" style="background: rgba(0, 168, 232, 0.15); color: var(--cyan); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 6px; margin-left: 0.25rem;">0</span></button>
           <button class="tab-link" id="tabMediaLink" onclick="switchTab('tab-media')" style="display: none;"><i class="fas fa-images"></i> Media Management</button>
         </div>
@@ -2149,6 +2241,361 @@
                 <!-- Populated dynamically -->
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SECTION: DELEGATE VENUE CHECK-IN ================= -->
+      <div id="tab-checkin" class="dashboard-section" style="display: none;">
+        <!-- Check-in Header & Navigation -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.45rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+              <i class="fas fa-user-check text-cyan"></i> Delegate Venue Check-in
+            </h2>
+            <p style="color:var(--text-muted); font-size: 0.85rem; margin:0.25rem 0 0 0;">
+              Real-time event venue arrival confirmation • Vehicle boarding, Direct venue check-in & Walk-ins
+            </p>
+          </div>
+          
+          <div class="checkin-subtabs">
+            <button type="button" class="subtab-btn active" id="subtabBtnCheckinDashboard" onclick="switchCheckinSubTab('dashboard')">
+              <i class="fas fa-chart-pie"></i> Dashboard
+            </button>
+            <button type="button" class="subtab-btn" id="subtabBtnCheckinDirect" onclick="switchCheckinSubTab('direct')">
+              <i class="fas fa-search"></i> Direct Check-in
+            </button>
+            <button type="button" class="subtab-btn" id="subtabBtnCheckinWalkin" onclick="switchCheckinSubTab('walkin')">
+              <i class="fas fa-user-plus"></i> Add Student & Check-in
+            </button>
+            <button type="button" class="subtab-btn" id="subtabBtnCheckinHistory" onclick="switchCheckinSubTab('history')">
+              <i class="fas fa-history"></i> Check-in History & Reports
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= SUB-TAB 1: CHECK-IN DASHBOARD ================= -->
+        <div id="checkinPaneDashboard" class="checkin-pane">
+          <!-- District Level Summary Cards (Thrissur District) -->
+          <div class="stats-grid" style="margin-bottom: 1.5rem;">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(0, 168, 232, 0.08); color: var(--cyan);"><i class="fas fa-users"></i></div>
+              <div>
+                <div class="stat-val" id="checkinStatTotalReg">0</div>
+                <div class="stat-label">Total Registered</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(34, 197, 94, 0.08); color: #15803D;"><i class="fas fa-check-circle"></i></div>
+              <div>
+                <div class="stat-val" id="checkinStatTotalCheckedIn" style="color: #15803D;">0</div>
+                <div class="stat-label">Checked In at Venue</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(245, 158, 11, 0.08); color: #D97706;"><i class="fas fa-clock"></i></div>
+              <div>
+                <div class="stat-val" id="checkinStatPending" style="color: #D97706;">0</div>
+                <div class="stat-label">Pending Arrival</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(230, 0, 103, 0.08); color: var(--magenta);"><i class="fas fa-walking"></i></div>
+              <div>
+                <div class="stat-val" id="checkinStatWalkins" style="color: var(--magenta);">0</div>
+                <div class="stat-label">Walk-in Delegates</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: rgba(124, 58, 237, 0.08); color: #7C3AED;"><i class="fas fa-percentage"></i></div>
+              <div>
+                <div class="stat-val" id="checkinStatPercentage" style="color: #7C3AED;">0%</div>
+                <div class="stat-label">Arrival Rate</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Method Breakdown Banner & Quick Actions -->
+          <div style="background:#FFFFFF; border:1px solid rgba(15,23,42,0.08); border-radius:16px; padding:1.25rem; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+              <span style="font-size:0.85rem; font-weight:700; color:var(--text-main);"><i class="fas fa-filter text-cyan"></i> Check-in Methods:</span>
+              <span class="badge-checkin-method badge-checkin-vehicle"><i class="fas fa-bus"></i> Vehicle Boarding: <strong id="checkinMethodVehicleCount" style="margin-left:0.25rem;">0</strong></span>
+              <span class="badge-checkin-method badge-checkin-direct"><i class="fas fa-search-location"></i> Direct Venue: <strong id="checkinMethodDirectCount" style="margin-left:0.25rem;">0</strong></span>
+              <span class="badge-checkin-method badge-checkin-walkin"><i class="fas fa-user-plus"></i> Walk-ins: <strong id="checkinMethodWalkinCount" style="margin-left:0.25rem;">0</strong></span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" style="color:#22C55E; border-color:rgba(34,197,94,0.3); font-weight:600;" onclick="shareCheckinWhatsApp()"><i class="fab fa-whatsapp"></i> Share WhatsApp Report</button>
+              <button class="btn btn-outline btn-sm" style="font-weight:600;" onclick="exportCheckinToCSV()"><i class="fas fa-download"></i> Export Attendance CSV</button>
+            </div>
+          </div>
+
+          <!-- Mandalam-level Monitoring Table -->
+          <div class="table-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-map-marked-alt text-cyan"></i> Mandalam Arrival Monitoring (Thrissur District)</h3>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Click any Mandalam or "Drilldown" to view and check in individual delegates</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mandalam (Zone)</th>
+                    <th>Code</th>
+                    <th>Registered</th>
+                    <th>Checked In</th>
+                    <th>Pending</th>
+                    <th>Walk-ins</th>
+                    <th>Arrival %</th>
+                    <th style="min-width: 140px;">Progress</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="checkinMandalamTableBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SUB-TAB 2: DIRECT CHECK-IN ================= -->
+        <div id="checkinPaneDirect" class="checkin-pane" style="display: none;">
+          <div style="background:#FFFFFF; border:1px solid rgba(15,23,42,0.08); border-radius:18px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 4px 16px rgba(15,23,42,0.02);">
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+              <div style="flex:2; min-width:280px; position:relative;">
+                <i class="fas fa-search" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:1rem;"></i>
+                <input type="text" id="directCheckinSearchInput" class="form-input" style="padding-left:2.5rem; height:46px; font-size:0.95rem; border-radius:12px;" placeholder="Search by student name, phone, or ID (e.g. REG 101, KPM 101)..." oninput="handleDirectCheckinSearch()" autocomplete="off">
+              </div>
+              <div style="flex:1; min-width:160px;">
+                <select id="directCheckinZoneFilter" class="form-input" style="height:46px; border-radius:12px;" onchange="handleDirectCheckinSearch()">
+                  <option value="">All Mandalams (Zones)</option>
+                  <option value="Chavakkad">Chavakkad</option>
+                  <option value="Pavaratty">Pavaratty</option>
+                  <option value="Kunnamkulam">Kunnamkulam</option>
+                  <option value="Guruvayoor">Guruvayoor</option>
+                  <option value="Thrissur City">Thrissur City</option>
+                  <option value="Kodungallur">Kodungallur</option>
+                  <option value="Kaipamangalam">Kaipamangalam</option>
+                </select>
+              </div>
+              <div style="flex:1; min-width:160px;">
+                <select id="directCheckinStatusFilter" class="form-input" style="height:46px; border-radius:12px;" onchange="handleDirectCheckinSearch()">
+                  <option value="all">All Arrival Status</option>
+                  <option value="pending" selected>Pending Arrival</option>
+                  <option value="checked_in">Checked In</option>
+                </select>
+              </div>
+              <button class="btn btn-outline" style="height:46px; padding:0 1rem; border-radius:12px;" onclick="resetDirectCheckinFilters()" title="Reset search & filters">
+                <i class="fas fa-redo"></i> Reset
+              </button>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div id="directCheckinCountInfo" style="font-size:0.85rem; color:var(--text-dim); font-weight:600;">
+                Showing 0 matching delegates
+              </div>
+              <!-- Quick Filter Pills -->
+              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('')" style="font-size:0.75rem;">All</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Chavakkad')" style="font-size:0.75rem;">Chavakkad</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Pavaratty')" style="font-size:0.75rem;">Pavaratty</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kunnamkulam')" style="font-size:0.75rem;">Kunnamkulam</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Guruvayoor')" style="font-size:0.75rem;">Guruvayoor</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Thrissur City')" style="font-size:0.75rem;">Thrissur City</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kodungallur')" style="font-size:0.75rem;">Kodungallur</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kaipamangalam')" style="font-size:0.75rem;">Kaipamangalam</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Grid -->
+          <div class="checkin-grid" id="directCheckinResultsContainer">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- ================= SUB-TAB 3: ADD STUDENT & CHECK-IN ================= -->
+        <div id="checkinPaneWalkin" class="checkin-pane" style="display: none;">
+          <div style="max-width: 800px; margin: 0 auto; background: #FFFFFF; border: 1px solid rgba(15,23,42,0.08); border-radius: 20px; padding: 2rem; box-shadow: 0 6px 24px rgba(15,23,42,0.03);">
+            <div style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-light); padding-bottom: 1rem;">
+              <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin:0 0 0.35rem 0; display:flex; align-items:center; gap:0.5rem;">
+                <i class="fas fa-user-plus text-magenta"></i> Add Walk-in Student & Instant Check-in
+              </h3>
+              <p style="color:var(--text-muted); font-size:0.85rem; margin:0;">
+                Register delegates who arrive at the venue without prior registration. They will be added to the official delegate registry and automatically marked as checked in.
+              </p>
+            </div>
+
+            <!-- Inline Live Duplicate Alert (Updates as phone number is entered) -->
+            <div id="walkinLiveDuplicateWarning" style="display:none; background:#FEF3C7; border:1px solid #F59E0B; border-radius:12px; padding:0.85rem 1rem; margin-bottom:1.25rem; font-size:0.85rem; color:#92400E;">
+              <div style="font-weight:700; display:flex; align-items:center; gap:0.4rem; margin-bottom:0.25rem;">
+                <i class="fas fa-exclamation-triangle text-amber"></i> Possible Duplicate Delegate Found!
+              </div>
+              <div id="walkinLiveDuplicateText"></div>
+            </div>
+
+            <form id="walkinCheckinForm" onsubmit="handleWalkinFormSubmit(event)">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="walkinStudentName" style="font-weight:700;">Student Full Name *</label>
+                  <input type="text" id="walkinStudentName" class="form-input" required placeholder="Enter student full name" autocomplete="off" oninput="checkWalkinDuplicatesLive()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="walkinStudentPhone" style="font-weight:700;">Student Mobile Number (10 digits) *</label>
+                  <input type="tel" id="walkinStudentPhone" class="form-input" required pattern="[0-9]{10}" placeholder="10-digit mobile number" maxlength="10" autocomplete="off" oninput="checkWalkinDuplicatesLive()">
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="walkinParentPhone">Parent Mobile Number (Optional)</label>
+                  <input type="tel" id="walkinParentPhone" class="form-input" pattern="[0-9]{10}" placeholder="10-digit parent mobile" maxlength="10" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="walkinStudentClass" style="font-weight:700;">Class *</label>
+                  <select id="walkinStudentClass" class="form-input" required>
+                    <option value="10th">10th Standard</option>
+                    <option value="11th" selected>11th Standard</option>
+                    <option value="12th">12th Standard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="walkinDistrict">District</label>
+                  <input type="text" id="walkinDistrict" class="form-input" value="Thrissur" readonly style="background:#F1F5F9; color:var(--text-muted); cursor:not-allowed;">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="walkinZone" style="font-weight:700;">Mandalam (Zone) *</label>
+                  <select id="walkinZone" class="form-input" required onchange="handleWalkinZoneChange()">
+                    <option value="">Select Mandalam</option>
+                    <option value="Chavakkad">Chavakkad</option>
+                    <option value="Pavaratty">Pavaratty</option>
+                    <option value="Kunnamkulam">Kunnamkulam</option>
+                    <option value="Guruvayoor">Guruvayoor</option>
+                    <option value="Thrissur City">Thrissur City</option>
+                    <option value="Kodungallur">Kodungallur</option>
+                    <option value="Kaipamangalam">Kaipamangalam</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="walkinPanchayath" style="font-weight:700;">Panchayath / Municipality *</label>
+                  <select id="walkinPanchayath" class="form-input" required onchange="handleWalkinPanchayathChange()">
+                    <option value="">Select Panchayath</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="walkinWard" style="font-weight:700;">Ward *</label>
+                  <select id="walkinWard" class="form-input" required onchange="handleWalkinWardChange()">
+                    <option value="">Select Ward</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1.5rem;">
+                <div class="form-group">
+                  <label class="form-label" for="walkinUnit" style="font-weight:700;">Unit *</label>
+                  <select id="walkinUnit" class="form-input" required>
+                    <option value="">Select Unit</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="walkinPlace" style="font-weight:700;">Place / Locality *</label>
+                  <input type="text" id="walkinPlace" class="form-input" required placeholder="Enter student place" autocomplete="off">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:1.5rem;">
+                <label class="form-label" for="walkinSchool">School / College Name (Optional)</label>
+                <input type="text" id="walkinSchool" class="form-input" placeholder="Enter school name" autocomplete="off">
+              </div>
+
+              <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-outline" onclick="resetWalkinForm()">Reset Form</button>
+                <button type="submit" id="btnSubmitWalkin" class="btn btn-primary" style="min-width:220px; font-weight:700; height:46px;">
+                  <i class="fas fa-check-circle"></i> Save & Check In Delegate
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ================= SUB-TAB 4: CHECK-IN HISTORY & REPORTS ================= -->
+        <div id="checkinPaneHistory" class="checkin-pane" style="display: none;">
+          <div class="table-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-history text-cyan"></i> Check-in Activity & Attendance Log</h3>
+                <p style="color:var(--text-muted); font-size:0.8rem; margin:0.2rem 0 0 0;" id="checkinHistorySummaryText">
+                  Filter, search, inspect check-in sources, and export attendance records.
+                </p>
+              </div>
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="exportCheckinToCSV()"><i class="fas fa-file-csv"></i> Download CSV</button>
+                <button class="btn btn-outline btn-sm" style="color:#22C55E; border-color:rgba(34,197,94,0.3);" onclick="shareCheckinWhatsApp()"><i class="fab fa-whatsapp"></i> WhatsApp Summary</button>
+              </div>
+            </div>
+
+            <!-- Filters Bar -->
+            <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.06); padding:1rem; border-radius:14px; margin-bottom:1.25rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+              <div style="flex:2; min-width:220px;">
+                <input type="text" id="historySearchInput" class="form-input" placeholder="Search by name, phone, or ID..." oninput="renderCheckinHistory()" autocomplete="off">
+              </div>
+              <div style="flex:1; min-width:140px;">
+                <select id="historyMandalamFilter" class="form-input" onchange="renderCheckinHistory()">
+                  <option value="">All Mandalams</option>
+                  <option value="Chavakkad">Chavakkad</option>
+                  <option value="Pavaratty">Pavaratty</option>
+                  <option value="Kunnamkulam">Kunnamkulam</option>
+                  <option value="Guruvayoor">Guruvayoor</option>
+                  <option value="Thrissur City">Thrissur City</option>
+                  <option value="Kodungallur">Kodungallur</option>
+                  <option value="Kaipamangalam">Kaipamangalam</option>
+                </select>
+              </div>
+              <div style="flex:1; min-width:140px;">
+                <select id="historyMethodFilter" class="form-input" onchange="renderCheckinHistory()">
+                  <option value="">All Check-in Methods</option>
+                  <option value="VEHICLE">Vehicle Check-in</option>
+                  <option value="DIRECT">Direct Venue Check-in</option>
+                  <option value="WALK_IN">Walk-in Check-in</option>
+                </select>
+              </div>
+              <div style="flex:1; min-width:140px;">
+                <select id="historyStatusFilter" class="form-input" onchange="renderCheckinHistory()">
+                  <option value="CHECKED_IN" selected>Checked In Only</option>
+                  <option value="all">All (Checked In & Pending)</option>
+                  <option value="PENDING">Pending Only</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- History Table -->
+            <div style="overflow-x: auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Reg ID</th>
+                    <th>Delegate Name</th>
+                    <th>Phone</th>
+                    <th>Mandalam / Unit</th>
+                    <th>Check-in Status</th>
+                    <th>Source Method</th>
+                    <th>Check-in Time</th>
+                    <th>Operator</th>
+                    <th style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="checkinHistoryTableBody">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -3293,6 +3740,134 @@
     </div>
   </div>
 
+  <!-- CHECK-IN CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="checkinConfirmModal">
+    <div class="modal-content" style="max-width: 500px; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closeCheckinConfirmModal()"><i class="fas fa-times"></i></button>
+      
+      <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(34,197,94,0.1); color: #15803D; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem;">
+        <i class="fas fa-user-check"></i>
+      </div>
+
+      <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.35rem;" id="checkinConfirmModalTitle">
+        Confirm Venue Check-in
+      </h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;" id="checkinConfirmModalSubtitle">
+        Confirm that the delegate has arrived at the event venue.
+      </p>
+
+      <div id="checkinConfirmContextBox" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:1rem; margin-bottom:1.5rem; font-size:0.88rem; line-height:1.6;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div style="display:flex; gap:0.75rem;">
+        <button type="button" class="btn btn-outline" style="flex:1;" onclick="closeCheckinConfirmModal()">Cancel</button>
+        <button type="button" id="btnExecuteCheckinConfirm" class="btn btn-primary" style="flex:2; font-weight:700;">
+          <i class="fas fa-check"></i> Confirm Check-in
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECK-IN DRILLDOWN MODAL -->
+  <div class="modal-overlay" id="checkinDrilldownModal">
+    <div class="modal-content" style="max-width: 900px; padding: 2rem; border-radius: 20px; max-height: 90vh; overflow-y: auto;">
+      <button class="modal-close" onclick="closeCheckinDrilldownModal()"><i class="fas fa-times"></i></button>
+      
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <div>
+          <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.25rem;" id="drilldownZoneTitle">
+            <i class="fas fa-map-marker-alt text-cyan"></i> Mandalam Drilldown
+          </h3>
+          <p style="color:var(--text-muted); font-size: 0.85rem; margin:0;" id="drilldownZoneSubtitle">
+            Live delegate arrival status and direct check-in actions.
+          </p>
+        </div>
+        <button class="btn btn-outline btn-sm" style="color:#22C55E; border-color:rgba(34,197,94,0.3);" onclick="shareDrilldownMandalamWhatsApp()">
+          <i class="fab fa-whatsapp"></i> Share Mandalam Report
+        </button>
+      </div>
+
+      <!-- Mandalam Stats Overview Cards -->
+      <div class="stats-grid" id="drilldownStatsGrid" style="margin-bottom: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Filter Controls -->
+      <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.06); padding:0.75rem 1rem; border-radius:12px; margin-bottom:1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
+        <div style="flex:2; min-width:200px;">
+          <input type="text" id="drilldownSearchInput" class="form-input" style="height:38px; font-size:0.85rem;" placeholder="Search delegates in this mandalam..." oninput="renderDrilldownDelegatesList()" autocomplete="off">
+        </div>
+        <div style="flex:1; min-width:140px;">
+          <select id="drilldownStatusFilter" class="form-input" style="height:38px; font-size:0.85rem;" onchange="renderDrilldownDelegatesList()">
+            <option value="all">All Delegates</option>
+            <option value="pending" selected>Pending Arrival</option>
+            <option value="checked_in">Checked In</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Delegates Table -->
+      <div style="overflow-x: auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Reg ID</th>
+              <th>Delegate Name</th>
+              <th>Phone</th>
+              <th>Unit</th>
+              <th>Vehicle</th>
+              <th>Status</th>
+              <th style="text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="drilldownTableBody">
+            <!-- Populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 1.5rem; text-align: right;">
+        <button type="button" class="btn btn-outline" onclick="closeCheckinDrilldownModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECK-IN DUPLICATE WARNING MODAL -->
+  <div class="modal-overlay" id="checkinDuplicateModal">
+    <div class="modal-content" style="max-width: 520px; padding: 2rem; border-radius: 20px;">
+      <button class="modal-close" onclick="closeCheckinDuplicateModal()"><i class="fas fa-times"></i></button>
+      
+      <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(245,158,11,0.1); color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+
+      <h3 style="font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.35rem;">
+        Possible Duplicate Delegate
+      </h3>
+      <p style="color:var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
+        A registered delegate with matching details was already found in the database.
+      </p>
+
+      <div id="duplicateCompareBox" style="background:#FFFBEB; border:1px solid #FDE68A; border-radius:14px; padding:1rem; margin-bottom:1.5rem; font-size:0.85rem; line-height:1.6; color:#92400E;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <button type="button" id="btnDuplicateViewExisting" class="btn btn-primary" style="font-weight:700;">
+          <i class="fas fa-user-check"></i> View & Check In Existing Delegate
+        </button>
+        <button type="button" id="btnDuplicateProceedAnyway" class="btn btn-outline" style="font-weight:600; color:var(--text-main);">
+          <i class="fas fa-plus"></i> Proceed with Walk-in Registration Anyway
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeCheckinDuplicateModal()" style="color:var(--text-muted); border:none;">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="js/registration.js?v=1.5"></script>
   <script>
@@ -4151,6 +4726,12 @@
           delegateStats.style.display = 'none';
         }
       }
+
+      if (tabId === 'tab-checkin') {
+        if (typeof renderCheckinSection === 'function') {
+          renderCheckinSection();
+        }
+      }
     }
 
     // Load Data
@@ -4224,6 +4805,7 @@
         const sysDonatedRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_DON_'));
         const sysMapRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_MAP_'));
         const sysStatusRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_STATUS_'));
+        const sysCheckinRecs = (regData || []).filter(d => d.reg_id && d.reg_id.startsWith('SYS_CHECKIN_'));
         const studentRegData = (regData || []).filter(d => !d.reg_id || !d.reg_id.startsWith('SYS_'));
 
         // Apply SYS_MAP overrides to mapping table
@@ -4292,6 +4874,34 @@
           }
         } catch(e) {}
 
+        // Build map of student check-in records from SYS_CHECKIN_ records
+        const studentCheckinMap = new Map();
+        sysCheckinRecs.forEach(r => {
+          const sId = r.reg_id.replace('SYS_CHECKIN_', '');
+          studentCheckinMap.set(sId, {
+            method: r.school || 'DIRECT',
+            time: r.timestamp || r.created_at || new Date().toISOString(),
+            by: r.place || 'Admin',
+            vehicle: r.assigned_vehicle || '',
+            status: r.status || 'CHECKED_IN'
+          });
+        });
+        try {
+          const { data: directCheckins } = await supabase.from('registrations').select('*').ilike('reg_id', 'SYS_CHECKIN_%');
+          if (directCheckins) {
+            directCheckins.forEach(dc => {
+              const sId = dc.reg_id.replace('SYS_CHECKIN_', '');
+              studentCheckinMap.set(sId, {
+                method: dc.school || 'DIRECT',
+                time: dc.timestamp || dc.created_at || new Date().toISOString(),
+                by: dc.place || 'Admin',
+                vehicle: dc.assigned_vehicle || '',
+                status: dc.status || 'CHECKED_IN'
+              });
+            });
+          }
+        } catch(e) {}
+
         // Sort strictly by registration timestamp (oldest first) so continuous ordering is guaranteed
         studentRegData.sort((a, b) => {
           const tA = new Date(a.timestamp || a.created_at || 0).getTime();
@@ -4342,6 +4952,18 @@
             const validVObj = (rawV && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === rawV.toLowerCase()) : null;
             const validVehicleId = validVObj ? validVObj["Vehicle ID"] : "";
 
+            // Resolve check-in state
+            const checkinInfo = studentCheckinMap.get(String(d.id)) ||
+                                studentCheckinMap.get(d.reg_id) ||
+                                (districtRegId ? studentCheckinMap.get(districtRegId) : null) ||
+                                (mandalRegId ? studentCheckinMap.get(mandalRegId) : null);
+            const isVehiclePickedUp = validVehicleId ? (d.picked_up === true || d.picked_up === "true") : false;
+            const isCheckedIn = !!checkinInfo || isVehiclePickedUp;
+            const resolvedMethod = checkinInfo ? (checkinInfo.method || 'DIRECT') : (isVehiclePickedUp ? 'VEHICLE' : '');
+            const resolvedTime = checkinInfo ? checkinInfo.time : (isVehiclePickedUp ? (d.timestamp || new Date().toISOString()) : '');
+            const resolvedBy = checkinInfo ? checkinInfo.by : (isVehiclePickedUp ? 'Vehicle Coordinator' : '');
+            const resolvedVehicle = checkinInfo ? (checkinInfo.vehicle || validVehicleId) : (isVehiclePickedUp ? validVehicleId : '');
+
             return {
               Timestamp: d.timestamp,
               id: d.id,
@@ -4384,7 +5006,13 @@
               pickup_time: validVehicleId ? (d.pickup_time || "") : "",
               "Picked Up": validVehicleId ? (d.picked_up ? "true" : "false") : "false",
               pickedUp: validVehicleId ? (d.picked_up ? "true" : "false") : "false",
-              status: d.status || studentStatusMap.get(d.reg_id) || "pending"
+              status: d.status || studentStatusMap.get(d.reg_id) || "pending",
+              checkedIn: isCheckedIn,
+              checkinStatus: isCheckedIn ? 'CHECKED_IN' : 'PENDING',
+              checkinMethod: resolvedMethod,
+              checkinTime: resolvedTime,
+              checkinBy: resolvedBy,
+              checkinVehicle: resolvedVehicle
             };
         });
 
@@ -4519,6 +5147,9 @@
           if (coordSec) coordSec.classList.remove('active');
           
           renderDashboard();
+          if (typeof renderCheckinSection === 'function') {
+            renderCheckinSection();
+          }
         }
 
       } catch (err) {
@@ -5373,13 +6004,22 @@
           <td data-label="Zone / Unit">${item["Organization Zone"] || 'N/A'} / ${item["Organization Unit"] || 'N/A'}</td>
           <td data-label="Vehicle">${vehicleBadge}</td>
           <td data-label="Status">
-            <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" title="Change calling confirmation status">
-              <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
-              <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
-              <option value="unanswered" ${currentStatus === 'unanswered' ? 'selected' : ''}>📞 Unanswered Call</option>
-              <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
-              <option value="wrong_number" ${currentStatus === 'wrong_number' ? 'selected' : ''}>📵 Wrong Number</option>
-            </select>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" title="Change calling confirmation status">
+                <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
+                <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>✅ Confirmed</option>
+                <option value="unanswered" ${currentStatus === 'unanswered' ? 'selected' : ''}>📞 Unanswered Call</option>
+                <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
+                <option value="wrong_number" ${currentStatus === 'wrong_number' ? 'selected' : ''}>📵 Wrong Number</option>
+              </select>
+              ${item.checkedIn ? `
+                <div>
+                  <span class="badge-checkin-method ${item.checkinMethod === 'VEHICLE' ? 'badge-checkin-vehicle' : (item.checkinMethod === 'WALK_IN' ? 'badge-checkin-walkin' : 'badge-checkin-direct')}" style="font-size:0.68rem; padding:0.12rem 0.4rem; white-space:nowrap;" title="Checked in at venue via ${item.checkinMethod || 'DIRECT'}">
+                    <i class="fas fa-check-circle" style="color:#10B981;"></i> Venue In (${item.checkinMethod || 'DIRECT'})
+                  </span>
+                </div>
+              ` : ''}
+            </div>
           </td>
           <td data-label="Actions">
             <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${studentId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
@@ -5467,7 +6107,7 @@
 
               <div class="detail-row" style="align-items: center; justify-content: space-between; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-light);">
                 <i class="fas fa-user-check detail-icon" style="color: #6366F1;"></i>
-                <div class="detail-text" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div class="detail-text" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:0.4rem;">
                   <span>Calling Status:</span>
                   <select class="status-select status-${currentStatus}" data-reg-id="${studentId}" onchange="updateStudentStatus('${studentId}', this.value, this)" style="font-size:0.78rem; padding:0.35rem 1.6rem 0.35rem 0.7rem;">
                     <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>⏳ Pending Calling</option>
@@ -5476,6 +6116,13 @@
                     <option value="not_coming" ${currentStatus === 'not_coming' ? 'selected' : ''}>❌ Not Coming</option>
                     <option value="wrong_number" ${currentStatus === 'wrong_number' ? 'selected' : ''}>📵 Wrong Number</option>
                   </select>
+                  ${item.checkedIn ? `
+                    <div style="width:100%; display:flex; justify-content:flex-end; margin-top:0.25rem;">
+                      <span class="badge-checkin-method ${item.checkinMethod === 'VEHICLE' ? 'badge-checkin-vehicle' : (item.checkinMethod === 'WALK_IN' ? 'badge-checkin-walkin' : 'badge-checkin-direct')}" style="font-size:0.72rem; padding:0.15rem 0.5rem;" title="Checked in at venue via ${item.checkinMethod || 'DIRECT'}">
+                        <i class="fas fa-check-double" style="color:#10B981;"></i> Venue In (${item.checkinMethod || 'DIRECT'})
+                      </span>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             </div>
@@ -5739,7 +6386,7 @@
       });
     }
 
-    function toggleStudentPickup(regId, isPickedUp) {
+    async function toggleStudentPickup(regId, isPickedUp, vehicleId) {
       const newStatus = isPickedUp ? false : true;
       
       // Update local state immediately for instant feedback
@@ -5747,10 +6394,29 @@
       if (mainReg) {
         mainReg["Picked Up"] = newStatus ? "true" : "false";
         mainReg.pickedUp = newStatus ? "true" : "false";
+
+        if (newStatus) {
+          // Vehicle boarding = venue check-in confirmation
+          mainReg.checkedIn = true;
+          mainReg.checkinStatus = 'CHECKED_IN';
+          if (!mainReg.checkinMethod) mainReg.checkinMethod = 'VEHICLE';
+          if (!mainReg.checkinTime) mainReg.checkinTime = new Date().toISOString();
+          if (!mainReg.checkinBy) mainReg.checkinBy = sessionUser ? (sessionUser.username || sessionUser.role) : 'Vehicle Operator';
+          if (!mainReg.checkinVehicle) mainReg.checkinVehicle = vehicleId || mainReg["Assigned Vehicle"] || mainReg.assignedVehicle || '';
+        }
       }
       
       // Re-render immediately
-      renderCoordinatorDashboard();
+      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+      if (typeof renderCheckinSection === 'function') renderCheckinSection();
+      if (typeof renderVehicles === 'function') renderVehicles();
+      if (typeof renderDataList === 'function') renderDataList();
+      if (vehicleId && typeof openPassengerListModal === 'function') {
+        const modal = document.getElementById('passengerListModal');
+        if (modal && modal.classList.contains('active')) {
+          openPassengerListModal(vehicleId);
+        }
+      }
       
       // Call Supabase API
       const targetDbId = getRegistrationDbId(regId);
@@ -5763,6 +6429,1242 @@
             console.error('Failed to toggle pickup status on Supabase: ', error);
           }
         });
+
+      if (mainReg && newStatus) {
+        await saveCheckinToSupabase(mainReg, mainReg.checkinMethod || 'VEHICLE', mainReg.checkinVehicle, mainReg.checkinBy);
+      }
+    }
+
+    // =========================================================================
+    // DELEGATE VENUE CHECK-IN MANAGEMENT SYSTEM
+    // =========================================================================
+    let currentCheckinSubTab = 'dashboard';
+    let pendingCheckinAction = null;
+    let pendingDuplicateWalkinPayload = null;
+    let drilldownActiveZone = '';
+
+    // Switch between Check-in Subtabs (Dashboard, Direct, Walkin, History)
+    function switchCheckinSubTab(tabName) {
+      currentCheckinSubTab = tabName;
+      
+      // Update subtab buttons
+      const subtabs = [
+        { name: 'dashboard', btnId: 'subtabBtnCheckinDashboard', paneId: 'checkinPaneDashboard' },
+        { name: 'direct', btnId: 'subtabBtnCheckinDirect', paneId: 'checkinPaneDirect' },
+        { name: 'walkin', btnId: 'subtabBtnCheckinWalkin', paneId: 'checkinPaneWalkin' },
+        { name: 'history', btnId: 'subtabBtnCheckinHistory', paneId: 'checkinPaneHistory' }
+      ];
+
+      subtabs.forEach(st => {
+        const btn = document.getElementById(st.btnId);
+        const pane = document.getElementById(st.paneId);
+        if (btn) {
+          if (st.name === tabName) btn.classList.add('active');
+          else btn.classList.remove('active');
+        }
+        if (pane) {
+          if (st.name === tabName) pane.style.display = 'block';
+          else pane.style.display = 'none';
+        }
+      });
+
+      if (tabName === 'dashboard') {
+        renderCheckinDashboard();
+      } else if (tabName === 'direct') {
+        handleDirectCheckinSearch();
+      } else if (tabName === 'walkin') {
+        populateWalkinDropdowns();
+      } else if (tabName === 'history') {
+        renderCheckinHistory();
+      }
+    }
+
+    // Refresh entire checkin section
+    function renderCheckinSection() {
+      switchCheckinSubTab(currentCheckinSubTab);
+    }
+
+    // Persist Check-in record to Supabase using SYS_CHECKIN_ pattern
+    async function saveCheckinToSupabase(student, method, vehicleId, operatorName) {
+      if (!student) return;
+      try {
+        const targetDbId = student.id ? student.id.toString() : (student.dbRegId || getRegistrationDbId(student.regId));
+        const nowIso = student.checkinTime || new Date().toISOString();
+        const opName = operatorName || (sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin');
+        const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || null;
+
+        const sysPayload = {
+          reg_id: 'SYS_CHECKIN_' + targetDbId,
+          name: student["Student Name"] || student.name || 'Delegate',
+          phone: student["Student Mobile Number"] || student.phone || '0000000000',
+          school: method || 'DIRECT', // Check-in method: VEHICLE, DIRECT, WALK_IN
+          place: opName, // Operator/User who performed check-in
+          assigned_vehicle: vId,
+          status: 'CHECKED_IN',
+          timestamp: nowIso
+        };
+
+        const { error } = await supabase.from('registrations').upsert([sysPayload], { onConflict: 'reg_id' });
+        if (error) console.error("Notice saving check-in to Supabase:", error);
+
+        // Also if method is VEHICLE, update picked_up: true
+        if (method === 'VEHICLE') {
+          if (student.id) {
+            await supabase.from('registrations').update({ picked_up: true }).eq('id', student.id);
+          } else {
+            await supabase.from('registrations').update({ picked_up: true }).eq('reg_id', targetDbId);
+          }
+        }
+      } catch (err) {
+        console.error("Error saving checkin to Supabase:", err);
+      }
+    }
+
+    // Remove Check-in record from Supabase (Administrative Correction / Undo)
+    async function removeCheckinFromSupabase(student) {
+      if (!student) return;
+      try {
+        const targetDbId = student.id ? student.id.toString() : (student.dbRegId || getRegistrationDbId(student.regId));
+        await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + targetDbId);
+        if (student.dbRegId && student.dbRegId !== targetDbId) {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + student.dbRegId);
+        }
+        if (student.id) {
+          await supabase.from('registrations').delete().eq('reg_id', 'SYS_CHECKIN_' + student.id);
+        }
+
+        // Also reset picked_up if vehicle
+        if (student.id) {
+          await supabase.from('registrations').update({ picked_up: false }).eq('id', student.id);
+        } else {
+          await supabase.from('registrations').update({ picked_up: false }).eq('reg_id', targetDbId);
+        }
+      } catch (err) {
+        console.error("Error removing checkin from Supabase:", err);
+      }
+    }
+
+    // 1. Render Check-in Dashboard (District & Mandalam overview)
+    function renderCheckinDashboard() {
+      const mandalams = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      
+      // Calculate District Level Statistics
+      const totalReg = registrations.length;
+      const checkedInStudents = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      const totalCheckedIn = checkedInStudents.length;
+      const pending = Math.max(0, totalReg - totalCheckedIn);
+      const walkins = registrations.filter(r => r.checkinMethod === 'WALK_IN').length;
+      const percentage = totalReg > 0 ? Math.round((totalCheckedIn / totalReg) * 100) : 0;
+
+      const vehicleCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
+      const directCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
+      const walkinCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
+
+      // Update Summary DOM Cards
+      const elTotal = document.getElementById('checkinStatTotalReg');
+      const elCheckedIn = document.getElementById('checkinStatTotalCheckedIn');
+      const elPending = document.getElementById('checkinStatPending');
+      const elWalkins = document.getElementById('checkinStatWalkins');
+      const elPct = document.getElementById('checkinStatPercentage');
+
+      if (elTotal) elTotal.textContent = totalReg;
+      if (elCheckedIn) elCheckedIn.textContent = totalCheckedIn;
+      if (elPending) elPending.textContent = pending;
+      if (elWalkins) elWalkins.textContent = walkins;
+      if (elPct) elPct.textContent = percentage + '%';
+
+      // Update Method Breakdown Pills
+      const elMV = document.getElementById('checkinMethodVehicleCount');
+      const elMD = document.getElementById('checkinMethodDirectCount');
+      const elMW = document.getElementById('checkinMethodWalkinCount');
+      if (elMV) elMV.textContent = vehicleCount;
+      if (elMD) elMD.textContent = directCount;
+      if (elMW) elMW.textContent = walkinCount;
+
+      // Render Mandalam-level table
+      const tbody = document.getElementById('checkinMandalamTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      mandalams.forEach(m => {
+        const prefix = getZonePrefix(m);
+        const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === m);
+        const zTotal = zStudents.length;
+        const zCheckedIn = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
+        const zPending = Math.max(0, zTotal - zCheckedIn);
+        const zWalkins = zStudents.filter(r => r.checkinMethod === 'WALK_IN').length;
+        const zPct = zTotal > 0 ? Math.round((zCheckedIn / zTotal) * 100) : 0;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td data-label="Mandalam" style="font-weight:700;">
+            <a href="javascript:void(0)" onclick="openMandalamDrilldown('${m}')" style="color:var(--text-main); text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem;">
+              <i class="fas fa-map-marker-alt text-cyan"></i> ${m}
+            </a>
+          </td>
+          <td data-label="Code"><span class="badge-reg" style="background:#F1F5F9; color:var(--text-main);">${prefix}</span></td>
+          <td data-label="Registered"><strong>${zTotal}</strong></td>
+          <td data-label="Checked In"><span style="color:#15803D; font-weight:700;">${zCheckedIn}</span></td>
+          <td data-label="Pending"><span style="color:#D97706; font-weight:600;">${zPending}</span></td>
+          <td data-label="Walk-ins"><span style="color:var(--magenta); font-weight:600;">${zWalkins}</span></td>
+          <td data-label="Arrival %"><strong>${zPct}%</strong></td>
+          <td data-label="Progress">
+            <div class="progress-bar-container" style="background:#F1F5F9;">
+              <div class="progress-bar-fill" style="width:${zPct}%; background:${zPct >= 80 ? '#15803D' : (zPct >= 40 ? 'var(--cyan)' : 'var(--magenta)')};"></div>
+            </div>
+          </td>
+          <td data-label="Action" style="text-align: right;">
+            <button class="btn btn-outline btn-xs" style="color:var(--cyan); border-color:rgba(0,168,232,0.3); font-weight:700;" onclick="openMandalamDrilldown('${m}')">
+              <i class="fas fa-eye"></i> Drilldown
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // 2. Mandalam Drilldown Modal
+    function openMandalamDrilldown(mandalamName) {
+      drilldownActiveZone = mandalamName;
+      const modal = document.getElementById('checkinDrilldownModal');
+      if (!modal) return;
+
+      const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === mandalamName);
+      const zTotal = zStudents.length;
+      const zCheckedIn = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
+      const zPending = Math.max(0, zTotal - zCheckedIn);
+      const zWalkins = zStudents.filter(r => r.checkinMethod === 'WALK_IN').length;
+      const zPct = zTotal > 0 ? Math.round((zCheckedIn / zTotal) * 100) : 0;
+
+      document.getElementById('drilldownZoneTitle').innerHTML = `<i class="fas fa-map-marker-alt text-cyan"></i> ${mandalamName} Mandalam Drilldown`;
+      document.getElementById('drilldownZoneSubtitle').textContent = `Tracking venue check-in progress for delegates from ${mandalamName} zone.`;
+
+      // Render mini stat cards
+      const statsGrid = document.getElementById('drilldownStatsGrid');
+      if (statsGrid) {
+        statsGrid.innerHTML = `
+          <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:0.75rem 1rem;">
+            <div style="font-size:0.75rem; color:var(--text-muted);">Registered</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--text-main);">${zTotal}</div>
+          </div>
+          <div style="background:#FFFFFF; border:1px solid #DCFCE7; border-radius:12px; padding:0.75rem 1rem;">
+            <div style="font-size:0.75rem; color:#15803D;">Checked In</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#15803D;">${zCheckedIn}</div>
+          </div>
+          <div style="background:#FFFFFF; border:1px solid #FEF3C7; border-radius:12px; padding:0.75rem 1rem;">
+            <div style="font-size:0.75rem; color:#D97706;">Pending</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#D97706;">${zPending}</div>
+          </div>
+          <div style="background:#FFFFFF; border:1px solid rgba(230,0,103,0.15); border-radius:12px; padding:0.75rem 1rem;">
+            <div style="font-size:0.75rem; color:var(--magenta);">Walk-ins</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--magenta);">${zWalkins}</div>
+          </div>
+          <div style="background:#FFFFFF; border:1px solid #EDE9FE; border-radius:12px; padding:0.75rem 1rem;">
+            <div style="font-size:0.75rem; color:#7C3AED;">Arrival Rate</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#7C3AED;">${zPct}%</div>
+          </div>
+        `;
+      }
+
+      const searchInput = document.getElementById('drilldownSearchInput');
+      if (searchInput) searchInput.value = '';
+      const statusSelect = document.getElementById('drilldownStatusFilter');
+      if (statusSelect) statusSelect.value = 'all';
+
+      renderDrilldownDelegatesList();
+      modal.classList.add('active');
+    }
+
+    function closeCheckinDrilldownModal() {
+      const modal = document.getElementById('checkinDrilldownModal');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function renderDrilldownDelegatesList() {
+      const tbody = document.getElementById('drilldownTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const searchVal = (document.getElementById('drilldownSearchInput')?.value || '').trim().toLowerCase();
+      const statusFilter = document.getElementById('drilldownStatusFilter')?.value || 'all';
+
+      let list = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === drilldownActiveZone);
+
+      if (statusFilter === 'pending') {
+        list = list.filter(r => !r.checkedIn);
+      } else if (statusFilter === 'checked_in') {
+        list = list.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      }
+
+      if (searchVal) {
+        list = list.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          const dId = (r.districtRegId || '').toLowerCase();
+          const mId = (r.mandalRegId || '').toLowerCase();
+          const unit = (r["Organization Unit"] || r.unit || '').toLowerCase();
+          return name.includes(searchVal) || phone.includes(searchVal) || dId.includes(searchVal) || mId.includes(searchVal) || unit.includes(searchVal);
+        });
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:2rem; color:var(--text-muted);"><i class="fas fa-search" style="font-size:1.5rem; margin-bottom:0.5rem; display:block;"></i>No delegates matching current filter.</td></tr>`;
+        return;
+      }
+
+      list.forEach((item, idx) => {
+        const isChecked = item.checkedIn === true || item.checkedIn === 'true';
+        const method = item.checkinMethod || (isChecked ? 'DIRECT' : '');
+        const vId = item["Assigned Vehicle"] || item.assignedVehicle || '';
+        const regDisplay = item.mandalRegId ? `${item.mandalRegId} <span style="font-size:0.75rem; color:var(--text-muted);">(${item.districtRegId || ''})</span>` : (item.districtRegId || item.regId || 'N/A');
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td data-label="#">#${idx + 1}</td>
+          <td data-label="Reg ID"><span class="badge-reg">${regDisplay}</span></td>
+          <td data-label="Name">
+            <strong>${item["Student Name"] || item.name || 'N/A'}</strong>
+          </td>
+          <td data-label="Phone">
+            <div style="display:inline-flex; align-items:center; gap:0.35rem;">
+              <span>${item["Student Mobile Number"] || item.phone || 'N/A'}</span>
+              ${item.phone ? `<a href="https://wa.me/91${item.phone}" target="_blank" style="color:#22C55E;"><i class="fab fa-whatsapp"></i></a>` : ''}
+            </div>
+          </td>
+          <td data-label="Unit">${item["Organization Unit"] || item.unit || 'N/A'}</td>
+          <td data-label="Vehicle">${vId ? `<span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.75rem;"><i class="fas fa-bus"></i> ${vId}</span>` : '<span style="color:#94a3b8; font-size:0.75rem;">Direct</span>'}</td>
+          <td data-label="Status">
+            ${isChecked ? `<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:0.7rem; font-weight:700;"><i class="fas fa-check-circle"></i> Checked In (${method})</span>` : `<span class="badge" style="background:#FEF3C7; color:#D97706; font-size:0.7rem; font-weight:700;"><i class="fas fa-clock"></i> Pending</span>`}
+          </td>
+          <td data-label="Action" style="text-align: right;">
+            ${isChecked ? `
+              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-undo"></i> Undo
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-check"></i> Check In
+              </button>
+            `}
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function shareDrilldownMandalamWhatsApp() {
+      if (!drilldownActiveZone) return;
+      const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === drilldownActiveZone);
+      const zTotal = zStudents.length;
+      const zCheckedIn = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
+      const zPending = Math.max(0, zTotal - zCheckedIn);
+      const zWalkins = zStudents.filter(r => r.checkinMethod === 'WALK_IN').length;
+      const zPct = zTotal > 0 ? Math.round((zCheckedIn / zTotal) * 100) : 0;
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      const text = `*TEENSPACE 2026 - MANDALAM CHECK-IN REPORT*%0A` +
+        `*Mandalam:* ${drilldownActiveZone}%0A` +
+        `*Time:* ${nowStr}%0A%0A` +
+        `*Total Registered:* ${zTotal}%0A` +
+        `*Checked In:* ${zCheckedIn} (${zPct}%%)%0A` +
+        `*Pending Arrival:* ${zPending}%0A` +
+        `*Walk-ins Added:* ${zWalkins}%0A%0A` +
+        `_Generated via TEENSPACE Admin Portal_`;
+
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    // 3. Direct Check-in Search & Card Listing
+    function handleDirectCheckinSearch() {
+      const searchVal = (document.getElementById('directCheckinSearchInput')?.value || '').trim().toLowerCase();
+      const zoneFilter = document.getElementById('directCheckinZoneFilter')?.value || '';
+      const statusFilter = document.getElementById('directCheckinStatusFilter')?.value || 'all';
+
+      const container = document.getElementById('directCheckinResultsContainer');
+      const countInfo = document.getElementById('directCheckinCountInfo');
+      if (!container) return;
+
+      let filtered = registrations.slice();
+
+      // Zone filter
+      if (zoneFilter) {
+        filtered = filtered.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === zoneFilter);
+      }
+
+      // Status filter
+      if (statusFilter === 'pending') {
+        filtered = filtered.filter(r => !r.checkedIn);
+      } else if (statusFilter === 'checked_in') {
+        filtered = filtered.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      }
+
+      // Search keyword
+      if (searchVal) {
+        filtered = filtered.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          const pPhone = (r["Parent Mobile Number"] || r.parent_phone || '').toLowerCase();
+          const dId = (r.districtRegId || '').toLowerCase();
+          const mId = (r.mandalRegId || '').toLowerCase();
+          const regId = (r["Registration ID"] || r.regId || '').toLowerCase();
+          const place = (r.Place || r.place || '').toLowerCase();
+          const panchayath = (r.Panchayath || r.panchayath || '').toLowerCase();
+          const unit = (r["Organization Unit"] || r.unit || '').toLowerCase();
+          const zone = (r["Organization Zone"] || r.zone || '').toLowerCase();
+
+          return name.includes(searchVal) || phone.includes(searchVal) || pPhone.includes(searchVal) ||
+                 dId.includes(searchVal) || mId.includes(searchVal) || regId.includes(searchVal) ||
+                 place.includes(searchVal) || panchayath.includes(searchVal) || unit.includes(searchVal) ||
+                 zone.includes(searchVal);
+        });
+      }
+
+      if (countInfo) {
+        countInfo.textContent = `Showing ${filtered.length} matching delegates`;
+      }
+
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding:3rem 1.5rem; background:#FFFFFF; border:1px dashed var(--border-light); border-radius:18px;">
+            <i class="fas fa-search" style="font-size:2.5rem; color:#CBD5E1; margin-bottom:1rem; display:block;"></i>
+            <h4 style="margin:0 0 0.5rem 0; color:var(--text-main);">No matching delegates found</h4>
+            <p style="margin:0; font-size:0.88rem; color:var(--text-muted);">
+              Try checking your spelling, search by phone number or ID, or clear active filters.
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render cards (show first 50 results for fast performance)
+      const renderLimit = Math.min(filtered.length, 50);
+      for (let i = 0; i < renderLimit; i++) {
+        const item = filtered[i];
+        const isChecked = item.checkedIn === true || item.checkedIn === 'true';
+        const method = item.checkinMethod || 'DIRECT';
+        const methodClass = method === 'VEHICLE' ? 'badge-checkin-vehicle' : (method === 'WALK_IN' ? 'badge-checkin-walkin' : 'badge-checkin-direct');
+        const vId = item["Assigned Vehicle"] || item.assignedVehicle || '';
+        const phone = item["Student Mobile Number"] || item.phone || '';
+        const sName = item["Student Name"] || item.name || 'Delegate';
+        const checkinTimeFormatted = item.checkinTime ? new Date(item.checkinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : '';
+
+        const card = document.createElement('div');
+        card.className = 'checkin-card';
+        card.innerHTML = `
+          <div>
+            <!-- Header: Name + Badges -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.75rem; gap:0.5rem;">
+              <div>
+                <h4 style="margin:0 0 0.25rem 0; font-size:1.05rem; color:var(--text-main); font-weight:700;">${sName}</h4>
+                <div style="display:flex; gap:0.35rem; flex-wrap:wrap; align-items:center;">
+                  ${item.mandalRegId ? `<span class="badge-reg" style="font-size:0.72rem; padding:0.15rem 0.4rem;">${item.mandalRegId}</span>` : ''}
+                  ${item.districtRegId ? `<span class="badge-reg" style="font-size:0.72rem; padding:0.15rem 0.4rem; background:#F1F5F9; color:var(--text-dim);">${item.districtRegId}</span>` : ''}
+                </div>
+              </div>
+              <div>
+                ${isChecked ? `
+                  <span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:700; font-size:0.72rem; padding:0.25rem 0.5rem;"><i class="fas fa-check-circle"></i> Checked In</span>
+                ` : `
+                  <span class="badge" style="background:#FEF3C7; color:#D97706; font-weight:700; font-size:0.72rem; padding:0.25rem 0.5rem;"><i class="fas fa-clock"></i> Pending</span>
+                `}
+              </div>
+            </div>
+
+            <!-- Details List -->
+            <div style="font-size:0.82rem; color:var(--text-dim); line-height:1.6; margin-bottom:1rem;">
+              <div><i class="fas fa-map-marker-alt text-cyan" style="width:16px;"></i> <strong>${item["Organization Zone"] || item.zone || 'N/A'}</strong> ${item["Organization Unit"] ? '• ' + item["Organization Unit"] : ''}</div>
+              <div><i class="fas fa-home" style="width:16px; color:#64748B;"></i> ${item.Place || item.place || ''}${item.Panchayath ? ', ' + item.Panchayath : ''}</div>
+              <div><i class="fas fa-graduation-cap" style="width:16px; color:#7C3AED;"></i> Class: <strong>${item.Class || item.student_class || 'N/A'}</strong> ${item.School ? '(' + item.School + ')' : ''}</div>
+              <div style="display:flex; align-items:center; gap:0.4rem; margin-top:0.25rem;">
+                <i class="fas fa-phone-alt" style="width:16px; color:#2563EB;"></i> 
+                <span>${phone || 'N/A'}</span>
+                ${phone ? `
+                  <a href="tel:${phone}" style="color:#2563EB; font-size:0.75rem;"><i class="fas fa-phone"></i></a>
+                  <a href="https://wa.me/91${phone}" target="_blank" style="color:#22C55E; font-size:0.85rem;"><i class="fab fa-whatsapp"></i></a>
+                ` : ''}
+              </div>
+              <div style="margin-top:0.35rem;">
+                <i class="fas fa-bus" style="width:16px; color:var(--cyan);"></i> 
+                ${vId ? `<span class="badge" style="background:rgba(0,168,232,0.08); color:var(--cyan); font-size:0.72rem; font-weight:700;"><i class="fas fa-bus"></i> Assigned to ${vId}</span>` : `<span style="color:#94a3b8; font-size:0.75rem;"><i class="fas fa-walking"></i> No bus (Direct Venue Arrival)</span>`}
+              </div>
+            </div>
+
+            <!-- Check-in Status Banner -->
+            ${isChecked ? `
+              <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:0.6rem 0.85rem; font-size:0.78rem; color:#166534; margin-bottom:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span><i class="fas fa-check-circle"></i> Venue Arrival Confirmed</span>
+                  <span class="badge-checkin-method ${methodClass}">${method}</span>
+                </div>
+                ${checkinTimeFormatted ? `<div style="font-size:0.72rem; color:#15803D; margin-top:0.2rem;"><i class="fas fa-clock"></i> Arrived at ${checkinTimeFormatted} ${item.checkinBy ? '• Confirmed by ' + item.checkinBy : ''}</div>` : ''}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div style="border-top:1px solid var(--border-light); padding-top:0.75rem; margin-top:0.5rem;">
+            ${isChecked ? `
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <button class="btn btn-outline" disabled style="flex:1; height:38px; font-size:0.85rem; font-weight:700; color:#15803D; border-color:#86EFAC; background:#F0FDF4; cursor:default;">
+                  <i class="fas fa-check-double"></i> Checked In
+                </button>
+                <button class="btn btn-outline btn-xs" style="margin-left:0.5rem; height:38px; color:#DC2626; border-color:rgba(220,38,38,0.25); padding:0 0.65rem;" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')" title="Undo check-in for correction">
+                  <i class="fas fa-undo"></i> Undo
+                </button>
+              </div>
+            ` : `
+              <button class="btn btn-primary" style="width:100%; height:44px; font-size:0.95rem; font-weight:700; display:flex; justify-content:center; align-items:center; gap:0.5rem;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-user-check"></i> Check In Delegate
+              </button>
+            `}
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function resetDirectCheckinFilters() {
+      const searchInput = document.getElementById('directCheckinSearchInput');
+      const zoneSelect = document.getElementById('directCheckinZoneFilter');
+      const statusSelect = document.getElementById('directCheckinStatusFilter');
+      if (searchInput) searchInput.value = '';
+      if (zoneSelect) zoneSelect.value = '';
+      if (statusSelect) statusSelect.value = 'pending';
+      handleDirectCheckinSearch();
+    }
+
+    function quickFilterDirectMandalam(mandalamName) {
+      const zoneSelect = document.getElementById('directCheckinZoneFilter');
+      if (zoneSelect) zoneSelect.value = mandalamName;
+      handleDirectCheckinSearch();
+    }
+
+    // 4. Check-in Confirmation Dialogs
+    function promptDirectCheckin(regId) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      if (student.checkedIn === true || student.checkedIn === 'true') {
+        alert(`This delegate (${student["Student Name"] || student.name}) is already checked in at venue!`);
+        return;
+      }
+
+      const sName = student["Student Name"] || student.name || 'Delegate';
+      const dId = student.districtRegId || 'N/A';
+      const mId = student.mandalRegId || 'N/A';
+      const zone = student["Organization Zone"] || student.zone || 'N/A';
+      const unit = student["Organization Unit"] || student.unit || 'N/A';
+      const phone = student["Student Mobile Number"] || student.phone || 'N/A';
+      const vId = student["Assigned Vehicle"] || student.assignedVehicle || '';
+
+      const modal = document.getElementById('checkinConfirmModal');
+      const title = document.getElementById('checkinConfirmModalTitle');
+      const sub = document.getElementById('checkinConfirmModalSubtitle');
+      const context = document.getElementById('checkinConfirmContextBox');
+      const confirmBtn = document.getElementById('btnExecuteCheckinConfirm');
+
+      if (title) title.innerHTML = '<i class="fas fa-user-check text-cyan"></i> Confirm Direct Check-in';
+      if (sub) sub.textContent = 'Confirm venue arrival for this registered delegate.';
+      if (context) {
+        context.innerHTML = `
+          <div style="font-size:1.05rem; font-weight:800; color:var(--text-main); margin-bottom:0.5rem;">${sName}</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem;">
+            <div><strong>District ID:</strong> <span class="badge-reg">${dId}</span></div>
+            <div><strong>Mandal ID:</strong> <span class="badge-reg">${mId}</span></div>
+            <div><strong>Mandalam:</strong> ${zone}</div>
+            <div><strong>Unit:</strong> ${unit}</div>
+            <div><strong>Mobile:</strong> ${phone}</div>
+            <div><strong>Vehicle:</strong> ${vId ? vId : '<em style="color:#94a3b8;">Direct Venue</em>'}</div>
+          </div>
+          <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #CBD5E1; font-weight:700; color:#15803D;">
+            <i class="fas fa-tag"></i> Source Method: <span class="badge-checkin-method badge-checkin-direct">DIRECT</span>
+          </div>
+        `;
+      }
+
+      pendingCheckinAction = { regId, method: 'DIRECT', vehicleId: '', action: 'checkin' };
+      if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Direct Check-in';
+        confirmBtn.onclick = executeConfirmedCheckin;
+      }
+      if (modal) modal.classList.add('active');
+    }
+
+    function promptVehicleCheckin(regId, vehicleId, isCurrentlyBoarded) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      const sName = student["Student Name"] || student.name || 'Delegate';
+
+      if (isCurrentlyBoarded) {
+        if (!confirm(`Are you sure you want to undo boarding & check-in for "${sName}" on vehicle ${vehicleId}?`)) {
+          return;
+        }
+        toggleStudentPickup(regId, true, vehicleId);
+        return;
+      }
+
+      const dId = student.districtRegId || 'N/A';
+      const mId = student.mandalRegId || 'N/A';
+      const zone = student["Organization Zone"] || student.zone || 'N/A';
+      const unit = student["Organization Unit"] || student.unit || 'N/A';
+
+      const modal = document.getElementById('checkinConfirmModal');
+      const title = document.getElementById('checkinConfirmModalTitle');
+      const sub = document.getElementById('checkinConfirmModalSubtitle');
+      const context = document.getElementById('checkinConfirmContextBox');
+      const confirmBtn = document.getElementById('btnExecuteCheckinConfirm');
+
+      if (title) title.innerHTML = '<i class="fas fa-bus text-cyan"></i> Confirm Vehicle Check-in';
+      if (sub) sub.textContent = 'Vehicle boarding is treated as confirmation of venue check-in for this event.';
+      if (context) {
+        context.innerHTML = `
+          <div style="font-size:1.05rem; font-weight:800; color:var(--text-main); margin-bottom:0.5rem;">${sName}</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem;">
+            <div><strong>Delegate ID:</strong> <span class="badge-reg">${mId} (${dId})</span></div>
+            <div><strong>Vehicle:</strong> <strong style="color:var(--cyan);">${vehicleId}</strong></div>
+            <div><strong>Mandalam:</strong> ${zone}</div>
+            <div><strong>Unit:</strong> ${unit}</div>
+          </div>
+          <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #CBD5E1; font-weight:700; color:#15803D;">
+            <i class="fas fa-tag"></i> Source Method: <span class="badge-checkin-method badge-checkin-vehicle">VEHICLE</span>
+          </div>
+        `;
+      }
+
+      pendingCheckinAction = { regId, method: 'VEHICLE', vehicleId, action: 'checkin' };
+      if (confirmBtn) {
+        confirmBtn.innerHTML = '<i class="fas fa-bus"></i> Confirm & Board Passenger';
+        confirmBtn.onclick = executeConfirmedCheckin;
+      }
+      if (modal) modal.classList.add('active');
+    }
+
+    function closeCheckinConfirmModal() {
+      const modal = document.getElementById('checkinConfirmModal');
+      if (modal) modal.classList.remove('active');
+      pendingCheckinAction = null;
+    }
+
+    // Execute Check-in confirmed from modal
+    async function executeConfirmedCheckin() {
+      if (!pendingCheckinAction) return;
+
+      const { regId, method, vehicleId } = pendingCheckinAction;
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      const nowIso = new Date().toISOString();
+      const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin';
+
+      // 1. Instant local update (0ms latency)
+      student.checkedIn = true;
+      student.checkinStatus = 'CHECKED_IN';
+      student.checkinMethod = method;
+      student.checkinTime = nowIso;
+      student.checkinBy = operator;
+      student.checkinVehicle = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
+
+      if (method === 'VEHICLE') {
+        student["Picked Up"] = "true";
+        student.pickedUp = "true";
+      }
+
+      closeCheckinConfirmModal();
+
+      // Re-render relevant views immediately
+      if (typeof renderCheckinSection === 'function') renderCheckinSection();
+      if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
+      if (typeof openPassengerListModal === 'function' && vehicleId) {
+        const modal = document.getElementById('passengerListModal');
+        if (modal && modal.classList.contains('active')) openPassengerListModal(vehicleId);
+      }
+      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+      if (typeof renderVehicles === 'function') renderVehicles();
+      if (typeof renderDataList === 'function') renderDataList();
+
+      showToast(`🎉 "${student["Student Name"] || student.name}" checked in successfully via ${method}!`);
+
+      // 2. Background Persistence to Supabase
+      await saveCheckinToSupabase(student, method, student.checkinVehicle, operator);
+    }
+
+    // Cancel / Undo Check-in (Administrative correction)
+    function promptCancelCheckin(regId) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      const sName = student["Student Name"] || student.name || 'Delegate';
+      if (!confirm(`Are you sure you want to CANCEL / UNDO venue check-in for "${sName}"?\n\nThis will return the delegate's status to Pending Arrival.`)) {
+        return;
+      }
+
+      executeCancelCheckin(regId);
+    }
+
+    async function executeCancelCheckin(regId, vehicleId) {
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      if (!student) return;
+
+      // 1. Instant local update
+      student.checkedIn = false;
+      student.checkinStatus = 'PENDING';
+      student.checkinMethod = '';
+      student.checkinTime = '';
+      student.checkinBy = '';
+      student.checkinVehicle = '';
+      student["Picked Up"] = "false";
+      student.pickedUp = "false";
+
+      // Re-render UI immediately
+      if (typeof renderCheckinSection === 'function') renderCheckinSection();
+      if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
+      if (vehicleId && typeof openPassengerListModal === 'function') {
+        const modal = document.getElementById('passengerListModal');
+        if (modal && modal.classList.contains('active')) openPassengerListModal(vehicleId);
+      }
+      if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+      if (typeof renderVehicles === 'function') renderVehicles();
+      if (typeof renderDataList === 'function') renderDataList();
+
+      showToast(`Check-in cancelled for "${student["Student Name"] || student.name}"`);
+
+      // 2. Background Supabase cleanup
+      await removeCheckinFromSupabase(student);
+    }
+
+    // 5. Add Student & Check-in (Walk-in Delegates Workflow)
+    function populateWalkinDropdowns() {
+      const pSelect = document.getElementById('walkinPanchayath');
+      const zSelect = document.getElementById('walkinZone');
+      const uSelect = document.getElementById('walkinUnit');
+
+      if (!pSelect || !zSelect || !uSelect) return;
+
+      const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
+      pSelect.innerHTML = '<option value="">Select Panchayath</option>';
+      panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
+
+      // If zone already selected, update units
+      if (zSelect.value) {
+        handleWalkinZoneChange();
+      }
+    }
+
+    function handleWalkinPanchayathChange() {
+      const pVal = (document.getElementById('walkinPanchayath')?.value || '').trim();
+      const wardSelect = document.getElementById('walkinWard');
+      if (!wardSelect) return;
+
+      wardSelect.innerHTML = '<option value="">Select Ward</option>';
+      if (!pVal) return;
+
+      const matching = mapping.filter(m => (m.Panchayath || '').trim().toLowerCase() === pVal.toLowerCase());
+      const wards = [...new Set(matching.map(m => m.Ward))].filter(Boolean).sort();
+      wards.forEach(w => wardSelect.appendChild(new Option(w, w)));
+    }
+
+    function handleWalkinWardChange() {
+      const pVal = (document.getElementById('walkinPanchayath')?.value || '').trim().toLowerCase();
+      const wVal = (document.getElementById('walkinWard')?.value || '').trim().toLowerCase();
+      const zSelect = document.getElementById('walkinZone');
+      const uSelect = document.getElementById('walkinUnit');
+
+      if (!pVal || !wVal || !zSelect || !uSelect) return;
+
+      const match = mapping.find(m => (m.Panchayath || '').trim().toLowerCase() === pVal && (m.Ward || '').trim().toLowerCase() === wVal);
+      if (match && match.Zone) {
+        const cZone = canonicalZone(match.Zone);
+        zSelect.value = cZone;
+        handleWalkinZoneChange();
+        if (match.Unit) {
+          const cUnit = canonicalUnit(match.Unit);
+          uSelect.value = cUnit;
+        }
+      }
+    }
+
+    function handleWalkinZoneChange() {
+      const zVal = document.getElementById('walkinZone')?.value || '';
+      const uSelect = document.getElementById('walkinUnit');
+      if (!uSelect) return;
+
+      uSelect.innerHTML = '<option value="">Select Unit</option>';
+      if (!zVal) return;
+
+      const units = ORGANIZATIONAL_MAP[zVal] || [];
+      units.forEach(u => uSelect.appendChild(new Option(u, u)));
+    }
+
+    function checkWalkinDuplicatesLive() {
+      const phoneInput = document.getElementById('walkinStudentPhone');
+      const nameInput = document.getElementById('walkinStudentName');
+      const warningBox = document.getElementById('walkinLiveDuplicateWarning');
+      const warningText = document.getElementById('walkinLiveDuplicateText');
+
+      if (!phoneInput || !warningBox || !warningText) return;
+
+      const phone = (phoneInput.value || '').trim();
+      const name = (nameInput?.value || '').trim().toLowerCase();
+
+      if (phone.length === 10) {
+        const match = registrations.find(r => {
+          const p = (r["Student Mobile Number"] || r.phone || '').trim();
+          return p === phone;
+        });
+
+        if (match) {
+          warningBox.style.display = 'block';
+          const isChk = match.checkedIn === true || match.checkedIn === 'true';
+          warningText.innerHTML = `
+            <strong>${match["Student Name"] || match.name}</strong> is already registered with this phone number.<br>
+            • ID: <span class="badge-reg">${match.mandalRegId || match.districtRegId || match.regId}</span> • Mandalam: <strong>${match["Organization Zone"] || match.zone}</strong><br>
+            • Status: <strong style="color:${isChk ? '#15803D' : '#D97706'};">${isChk ? '✓ Already Checked In' : '⏳ Pending Arrival'}</strong>
+          `;
+          return;
+        }
+      }
+
+      warningBox.style.display = 'none';
+    }
+
+    function resetWalkinForm() {
+      const form = document.getElementById('walkinCheckinForm');
+      if (form) form.reset();
+      const warningBox = document.getElementById('walkinLiveDuplicateWarning');
+      if (warningBox) warningBox.style.display = 'none';
+      populateWalkinDropdowns();
+    }
+
+    // Handle Walk-in Submission
+    async function handleWalkinFormSubmit(e) {
+      e.preventDefault();
+
+      const name = (document.getElementById('walkinStudentName')?.value || '').trim();
+      const phone = (document.getElementById('walkinStudentPhone')?.value || '').trim();
+      const parentPhone = (document.getElementById('walkinParentPhone')?.value || '').trim();
+      const studentClass = document.getElementById('walkinStudentClass')?.value || '11th';
+      const zone = document.getElementById('walkinZone')?.value || '';
+      const unit = document.getElementById('walkinUnit')?.value || '';
+      const panchayath = document.getElementById('walkinPanchayath')?.value || '';
+      const ward = document.getElementById('walkinWard')?.value || '';
+      const place = (document.getElementById('walkinPlace')?.value || '').trim();
+      const school = (document.getElementById('walkinSchool')?.value || '').trim();
+
+      if (!name || !phone || !zone || !unit || !panchayath || !ward || !place) {
+        alert("Please complete all mandatory fields (*)");
+        return;
+      }
+
+      // Check duplicates
+      const dupPhoneMatch = registrations.find(r => (r["Student Mobile Number"] || r.phone || '').trim() === phone);
+      const dupNameMatch = registrations.find(r => {
+        const sName = (r["Student Name"] || r.name || '').trim().toLowerCase();
+        const sZone = canonicalZone(r["Organization Zone"] || r.zone);
+        return sName === name.toLowerCase() && sZone === zone;
+      });
+
+      const dupMatch = dupPhoneMatch || dupNameMatch;
+      if (dupMatch) {
+        pendingDuplicateWalkinPayload = { name, phone, parentPhone, studentClass, zone, unit, panchayath, ward, place, school };
+        
+        const modal = document.getElementById('checkinDuplicateModal');
+        const compBox = document.getElementById('duplicateCompareBox');
+        const viewExistBtn = document.getElementById('btnDuplicateViewExisting');
+        const proceedAnywayBtn = document.getElementById('btnDuplicateProceedAnyway');
+
+        const isChk = dupMatch.checkedIn === true || dupMatch.checkedIn === 'true';
+        if (compBox) {
+          compBox.innerHTML = `
+            <div style="margin-bottom:0.75rem;">
+              <strong style="font-size:0.95rem; color:#92400E;">Existing Registered Record:</strong>
+              <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:10px; padding:0.75rem; margin-top:0.35rem;">
+                <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${dupMatch["Student Name"] || dupMatch.name}</div>
+                <div>ID: <span class="badge-reg">${dupMatch.mandalRegId || dupMatch.districtRegId || dupMatch.regId}</span> • Phone: <strong>${dupMatch["Student Mobile Number"] || dupMatch.phone}</strong></div>
+                <div>Mandalam: <strong>${dupMatch["Organization Zone"] || dupMatch.zone}</strong> • Unit: ${dupMatch["Organization Unit"] || dupMatch.unit}</div>
+                <div>Status: <strong style="color:${isChk ? '#15803D' : '#D97706'};">${isChk ? 'Checked In' : 'Pending Arrival'}</strong></div>
+              </div>
+            </div>
+            <div>
+              <strong style="font-size:0.95rem; color:#92400E;">New Walk-in Info Entered:</strong>
+              <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:10px; padding:0.75rem; margin-top:0.35rem;">
+                <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${name}</div>
+                <div>Phone: <strong>${phone}</strong> • Mandalam: <strong>${zone}</strong> • Unit: ${unit}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (viewExistBtn) {
+          viewExistBtn.onclick = () => {
+            closeCheckinDuplicateModal();
+            switchCheckinSubTab('direct');
+            const searchInput = document.getElementById('directCheckinSearchInput');
+            if (searchInput) searchInput.value = dupMatch.mandalRegId || dupMatch.phone || dupMatch.name;
+            handleDirectCheckinSearch();
+          };
+        }
+
+        if (proceedAnywayBtn) {
+          proceedAnywayBtn.onclick = () => {
+            closeCheckinDuplicateModal();
+            executeWalkinSave(pendingDuplicateWalkinPayload);
+          };
+        }
+
+        if (modal) modal.classList.add('active');
+        return;
+      }
+
+      // No duplicate, proceed directly
+      await executeWalkinSave({ name, phone, parentPhone, studentClass, zone, unit, panchayath, ward, place, school });
+    }
+
+    function closeCheckinDuplicateModal() {
+      const modal = document.getElementById('checkinDuplicateModal');
+      if (modal) modal.classList.remove('active');
+      pendingDuplicateWalkinPayload = null;
+    }
+
+    async function executeWalkinSave(payload) {
+      const btn = document.getElementById('btnSubmitWalkin');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering & Checking in...';
+      }
+
+      try {
+        const { name, phone, parentPhone, studentClass, zone, unit, panchayath, ward, place, school } = payload;
+        const nowIso = new Date().toISOString();
+        const prefix = getZonePrefix(zone);
+
+        // 1. Calculate continuous District and Mandal sequential numbering
+        let maxDistNum = 100;
+        registrations.forEach(r => {
+          const dId = r.districtRegId || r.districtId || r["Registration ID"] || '';
+          const match = dId.match(/REG\s*(\d+)/i);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxDistNum) maxDistNum = num;
+          }
+        });
+        const nextDistSeq = maxDistNum + 1;
+        const newDistrictRegId = `REG ${nextDistSeq}`;
+
+        let maxMandalNum = 100;
+        registrations.forEach(r => {
+          const mId = r.mandalRegId || r.zoneRegId || r.zoneId || '';
+          const regex = new RegExp(`^${prefix}\\s*(\\d+)`, 'i');
+          const match = mId.match(regex);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxMandalNum) maxMandalNum = num;
+          }
+        });
+        const nextMandalSeq = maxMandalNum + 1;
+        const newMandalRegId = `${prefix} ${nextMandalSeq}`;
+        const newDbRegId = `${prefix}${nextMandalSeq}`;
+
+        // 2. Insert into Supabase registrations table
+        const insertPayload = {
+          reg_id: newDbRegId,
+          district_id: newDistrictRegId,
+          zone_id: newMandalRegId,
+          name: name,
+          phone: phone,
+          parent_phone: parentPhone || null,
+          student_class: studentClass,
+          school: school || 'N/A',
+          place: place,
+          panchayath: panchayath,
+          ward: ward,
+          unit: unit,
+          zone: zone,
+          assigned_vehicle: null,
+          picked_up: false,
+          status: 'confirmed',
+          timestamp: nowIso
+        };
+
+        const { data: insertedData, error: insertError } = await supabase.from('registrations').insert([insertPayload]).select();
+        if (insertError) throw insertError;
+
+        const generatedId = (insertedData && insertedData[0]) ? insertedData[0].id : Date.now();
+        const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin';
+
+        // 3. Create in-memory registration object
+        const isZoneOrUnit = sessionUser && (sessionUser.role === 'Zone' || sessionUser.role === 'Unit');
+        const primaryRegId = isZoneOrUnit ? newMandalRegId : newDistrictRegId;
+        const secondaryRegId = isZoneOrUnit ? newDistrictRegId : newMandalRegId;
+
+        const newStudent = {
+          Timestamp: nowIso,
+          id: generatedId,
+          dbRegId: newDbRegId,
+          rawRegId: newDbRegId,
+          "Registration ID": primaryRegId,
+          regId: primaryRegId,
+          districtRegId: newDistrictRegId,
+          districtId: newDistrictRegId,
+          districtSeq: nextDistSeq,
+          mandalRegId: newMandalRegId,
+          zoneRegId: newMandalRegId,
+          zoneId: newMandalRegId,
+          mandalSeq: nextMandalSeq,
+          mandalPrefix: prefix,
+          secondaryRegId: secondaryRegId,
+          "Student Name": name,
+          name: name,
+          "Student Mobile Number": phone,
+          phone: phone,
+          "Parent Mobile Number": parentPhone || "",
+          Class: studentClass,
+          School: school || "",
+          Place: place,
+          Panchayath: panchayath,
+          Ward: ward,
+          "Organization Unit": unit,
+          unit: unit,
+          "Organization Zone": zone,
+          zone: zone,
+          "Assigned Vehicle": "",
+          assignedVehicle: "",
+          "Pickup Order": "",
+          pickupOrder: "",
+          "Pickup Point": "",
+          pickupPoint: "",
+          pickup_point: "",
+          "Pickup Time": "",
+          pickupTime: "",
+          pickup_time: "",
+          "Picked Up": "false",
+          pickedUp: "false",
+          status: "confirmed",
+          checkedIn: true,
+          checkinStatus: "CHECKED_IN",
+          checkinMethod: "WALK_IN",
+          checkinTime: nowIso,
+          checkinBy: operator,
+          checkinVehicle: ""
+        };
+
+        registrations.push(newStudent);
+
+        // 4. Record Check-in on Supabase
+        await saveCheckinToSupabase(newStudent, 'WALK_IN', '', operator);
+
+        // Reset form
+        resetWalkinForm();
+
+        alert(`🎉 Success! Walk-in delegate "${name}" registered and checked in successfully!\n\n• Mandal ID: ${newMandalRegId}\n• District ID: ${newDistrictRegId}\n• Mandalam: ${zone}\n• Source: WALK_IN`);
+
+        // Re-render checkin section
+        renderCheckinSection();
+        if (typeof renderDashboard === 'function') renderDashboard();
+      } catch (err) {
+        console.error("Error creating walk-in delegate:", err);
+        alert("Failed to add walk-in delegate: " + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> Save & Check In Delegate';
+        }
+      }
+    }
+
+    // 6. Check-in History & Reports
+    function renderCheckinHistory() {
+      const searchVal = (document.getElementById('historySearchInput')?.value || '').trim().toLowerCase();
+      const mandalamFilter = document.getElementById('historyMandalamFilter')?.value || '';
+      const methodFilter = document.getElementById('historyMethodFilter')?.value || '';
+      const statusFilter = document.getElementById('historyStatusFilter')?.value || 'CHECKED_IN';
+
+      const tbody = document.getElementById('checkinHistoryTableBody');
+      const summaryText = document.getElementById('checkinHistorySummaryText');
+      if (!tbody) return;
+
+      tbody.innerHTML = '';
+
+      let list = registrations.slice();
+
+      // Mandalam filter
+      if (mandalamFilter) {
+        list = list.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === mandalamFilter);
+      }
+
+      // Status filter
+      if (statusFilter === 'CHECKED_IN') {
+        list = list.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      } else if (statusFilter === 'PENDING') {
+        list = list.filter(r => !r.checkedIn);
+      }
+
+      // Method filter
+      if (methodFilter) {
+        list = list.filter(r => r.checkinMethod === methodFilter);
+      }
+
+      // Search keyword
+      if (searchVal) {
+        list = list.filter(r => {
+          const name = (r["Student Name"] || r.name || '').toLowerCase();
+          const phone = (r["Student Mobile Number"] || r.phone || '').toLowerCase();
+          const dId = (r.districtRegId || '').toLowerCase();
+          const mId = (r.mandalRegId || '').toLowerCase();
+          return name.includes(searchVal) || phone.includes(searchVal) || dId.includes(searchVal) || mId.includes(searchVal);
+        });
+      }
+
+      // Sort checked-in records newest first
+      list.sort((a, b) => {
+        if (a.checkedIn && b.checkedIn) {
+          const tA = new Date(a.checkinTime || 0).getTime();
+          const tB = new Date(b.checkinTime || 0).getTime();
+          return tB - tA;
+        }
+        return (a.checkedIn ? -1 : 1);
+      });
+
+      const totalChecked = list.filter(r => r.checkedIn).length;
+      const vCount = list.filter(r => r.checkedIn && r.checkinMethod === 'VEHICLE').length;
+      const dCount = list.filter(r => r.checkedIn && r.checkinMethod === 'DIRECT').length;
+      const wCount = list.filter(r => r.checkedIn && r.checkinMethod === 'WALK_IN').length;
+
+      if (summaryText) {
+        summaryText.innerHTML = `Showing <strong>${list.length}</strong> records (<strong>${totalChecked}</strong> Checked In: 🚌 Vehicle: ${vCount} | 🏢 Direct: ${dCount} | 🚶 Walk-in: ${wCount})`;
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2.5rem; color:var(--text-muted);"><i class="fas fa-history" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:#CBD5E1;"></i>No check-in records found matching current filters.</td></tr>`;
+        return;
+      }
+
+      // Show first 100 records for performance
+      const renderLimit = Math.min(list.length, 100);
+      for (let i = 0; i < renderLimit; i++) {
+        const item = list[i];
+        const isChecked = item.checkedIn === true || item.checkedIn === 'true';
+        const method = item.checkinMethod || (isChecked ? 'DIRECT' : '');
+        const methodClass = method === 'VEHICLE' ? 'badge-checkin-vehicle' : (method === 'WALK_IN' ? 'badge-checkin-walkin' : 'badge-checkin-direct');
+        const timeFormatted = item.checkinTime ? new Date(item.checkinTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + ', ' + new Date(item.checkinTime).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'N/A';
+        const regDisplay = item.mandalRegId ? `${item.mandalRegId} <span style="font-size:0.75rem; color:var(--text-muted);">(${item.districtRegId || ''})</span>` : (item.districtRegId || item.regId || 'N/A');
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td data-label="#">#${i + 1}</td>
+          <td data-label="Reg ID"><span class="badge-reg">${regDisplay}</span></td>
+          <td data-label="Delegate Name"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
+          <td data-label="Phone">${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
+          <td data-label="Mandalam / Unit">${item["Organization Zone"] || item.zone || 'N/A'} ${item["Organization Unit"] ? '• ' + item["Organization Unit"] : ''}</td>
+          <td data-label="Status">${isChecked ? '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:700;"><i class="fas fa-check-circle"></i> Checked In</span>' : '<span class="badge" style="background:#FEF3C7; color:#D97706; font-weight:700;"><i class="fas fa-clock"></i> Pending</span>'}</td>
+          <td data-label="Method">${isChecked ? `<span class="badge-checkin-method ${methodClass}">${method}</span>` : '<span style="color:#94a3b8;">-</span>'}</td>
+          <td data-label="Time" style="font-size:0.8rem;">${isChecked ? timeFormatted : '-'}</td>
+          <td data-label="Operator" style="font-size:0.8rem;">${isChecked ? (item.checkinBy || 'Admin') : '-'}</td>
+          <td data-label="Action" style="text-align: right;">
+            ${isChecked ? `
+              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-undo"></i> Undo
+              </button>
+            ` : `
+              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+                <i class="fas fa-check"></i> Check In
+              </button>
+            `}
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    // Export Check-in Attendance Records to CSV
+    function exportCheckinToCSV() {
+      const checkedInList = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      if (checkedInList.length === 0) {
+        alert("No delegates have been checked in yet.");
+        return;
+      }
+
+      const headers = [
+        "Sl No", "District ID", "Mandal ID", "Student Name", "Mobile Number", "Parent Mobile",
+        "Mandalam", "Unit", "Class", "School", "Panchayath", "Ward", "Place",
+        "Check-in Status", "Source Method", "Check-in Timestamp", "Confirmed By", "Assigned Vehicle"
+      ];
+
+      const csvRows = [headers.join(",")];
+
+      checkedInList.forEach((r, idx) => {
+        const row = [
+          idx + 1,
+          `"${r.districtRegId || ''}"`,
+          `"${r.mandalRegId || ''}"`,
+          `"${(r["Student Name"] || r.name || '').replace(/"/g, '""')}"`,
+          `"${r["Student Mobile Number"] || r.phone || ''}"`,
+          `"${r["Parent Mobile Number"] || r.parent_phone || ''}"`,
+          `"${r["Organization Zone"] || r.zone || ''}"`,
+          `"${r["Organization Unit"] || r.unit || ''}"`,
+          `"${r.Class || r.student_class || ''}"`,
+          `"${(r.School || '').replace(/"/g, '""')}"`,
+          `"${r.Panchayath || ''}"`,
+          `"${r.Ward || ''}"`,
+          `"${(r.Place || r.place || '').replace(/"/g, '""')}"`,
+          `"CHECKED_IN"`,
+          `"${r.checkinMethod || 'DIRECT'}"`,
+          `"${r.checkinTime || ''}"`,
+          `"${r.checkinBy || 'Admin'}"`,
+          `"${r.checkinVehicle || r["Assigned Vehicle"] || ''}"`
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      const blob = new Blob([csvRows.join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `teenspace_checkin_attendance_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Share District & Mandalam Check-in status to WhatsApp
+    function shareCheckinWhatsApp() {
+      const mandalams = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      const totalReg = registrations.length;
+      const checkedInStudents = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      const totalCheckedIn = checkedInStudents.length;
+      const pending = Math.max(0, totalReg - totalCheckedIn);
+      const percentage = totalReg > 0 ? Math.round((totalCheckedIn / totalReg) * 100) : 0;
+
+      const vCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
+      const dCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
+      const wCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
+
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      let text = `*TEENSPACE 2026 - EVENT VENUE CHECK-IN REPORT*%0A` +
+        `*Time:* ${nowStr}%0A` +
+        `*District:* Thrissur%0A%0A` +
+        `*Total Registered:* ${totalReg}%0A` +
+        `*Checked In at Venue:* ${totalCheckedIn} (${percentage}%%)%0A` +
+        `*Pending Arrivals:* ${pending}%0A%0A` +
+        `*Check-in by Source:*%0A` +
+        `🚌 Vehicle Boarding: ${vCount}%0A` +
+        `🏢 Direct Venue Check-in: ${dCount}%0A` +
+        `🚶 Walk-in Registrations: ${wCount}%0A%0A` +
+        `*Mandalam Breakdown:*%0A`;
+
+      mandalams.forEach(m => {
+        const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === m);
+        const zTotal = zStudents.length;
+        const zChecked = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
+        const zPct = zTotal > 0 ? Math.round((zChecked / zTotal) * 100) : 0;
+        text += `• ${m}: ${zChecked}/${zTotal} (${zPct}%%)%0A`;
+      });
+
+      text += `%0A_Generated via TEENSPACE Admin Portal_`;
+      window.open(`https://wa.me/?text=${text}`, '_blank');
     }
 
     // Populate advanced search/filters options
@@ -6593,9 +8495,22 @@
             : `<span style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">Fixed</span>`;
 
           const isPickedUp = item["Picked Up"] === 'true' || item.pickedUp === 'true';
-          const boardingStatusHtml = isPickedUp
-            ? `<span class="badge" style="background:#DCFCE7; color:#15803D; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-check-circle"></i> Boarded</span>`
-            : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.65rem; border:none; padding:0.15rem 0.35rem; font-weight:700;"><i class="fas fa-clock"></i> Waiting</span>`;
+          const isCheckedIn = item.checkedIn === true || item.checkedIn === 'true' || isPickedUp;
+          const methodLabel = item.checkinMethod ? item.checkinMethod : (isPickedUp ? 'VEHICLE' : '');
+          const boardingStatusHtml = isCheckedIn
+            ? `<div style="display:flex; flex-direction:column; gap:0.2rem;">
+                <span class="badge" style="background:#DCFCE7; color:#15803D; font-size:0.68rem; border:none; padding:0.18rem 0.45rem; font-weight:700;"><i class="fas fa-check-circle"></i> Checked In</span>
+                ${methodLabel ? `<span style="font-size:0.62rem; color:#15803D; font-weight:600;"><i class="fas fa-tag"></i> via ${methodLabel}</span>` : ''}
+               </div>`
+            : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.68rem; border:none; padding:0.18rem 0.45rem; font-weight:700;"><i class="fas fa-clock"></i> Pending Arrival</span>`;
+
+          const checkinActionBtn = isPickedUp
+            ? `<button class="btn btn-outline" style="padding:0.25rem 0.45rem; font-size:0.65rem; color:#15803D; border-color:#86EFAC; background:#F0FDF4; font-weight:700;" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', true)" title="Boarded & Venue Checked In - Click to undo">
+                 <i class="fas fa-check-double"></i> Boarded
+               </button>`
+            : `<button class="btn btn-primary" style="padding:0.25rem 0.55rem; font-size:0.65rem; font-weight:700; border-radius:6px; background:var(--grad-primary);" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', false)" title="Confirm delegate boarding & venue check-in">
+                 <i class="fas fa-bus"></i> Check-in via Vehicle
+               </button>`;
 
           const pickupPt = item["Pickup Point"] || item.pickupPoint || item.pickup_point || '';
           const pickupTm = item["Pickup Time"] || item.pickupTime || item.pickup_time || '';
@@ -6639,6 +8554,7 @@
             <td data-label="Status" style="padding:0.75rem 0.5rem;">${boardingStatusHtml}</td>
             <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
               <div style="display:inline-flex; align-items:center; gap:0.3rem;">
+                ${checkinActionBtn}
                 <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Edit Pickup Location & Time">
                   <i class="fas fa-map-pin"></i> Pickup
                 </button>
@@ -7078,6 +8994,7 @@
       openPassengerListModal(vehicleId);
       renderDataList();
       renderVehicles();
+      if (typeof renderCheckinSection === 'function') renderCheckinSection();
       showToast(`Removed "${sName}" from vehicle ${vehicleId}`);
 
       // 2. BACKGROUND PERSISTENCE TO SUPABASE
@@ -12185,6 +14102,10 @@ CREATE POLICY "Allow anon delete on trash" ON public.trash FOR DELETE TO anon US
     <button class="bottom-nav-item" id="bottomTabTransportLink" onclick="switchTab('tab-transport')">
       <i class="fas fa-bus"></i>
       <span>Vehicle</span>
+    </button>
+    <button class="bottom-nav-item" id="bottomTabCheckinLink" onclick="switchTab('tab-checkin')">
+      <i class="fas fa-user-check"></i>
+      <span>Check-in</span>
     </button>
     <button class="bottom-nav-item" id="bottomTabDonatedLink" onclick="switchTab('tab-donated')">
       <i class="fas fa-hand-holding-heart"></i>
