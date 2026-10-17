@@ -2285,7 +2285,7 @@
             <h2 style="font-family: var(--font-heading); font-size: 1.45rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
               <i class="fas fa-user-check text-cyan"></i> Delegate Venue Check-in
             </h2>
-            <p style="color:var(--text-muted); font-size: 0.85rem; margin:0.25rem 0 0 0;">
+            <p style="color:var(--text-muted); font-size: 0.85rem; margin:0.25rem 0 0 0;" id="checkinSectionSubtitle">
               Real-time event venue arrival confirmation • Vehicle boarding, Direct venue check-in & Walk-ins
             </p>
           </div>
@@ -2364,7 +2364,7 @@
           <!-- Zone-level Monitoring Table -->
           <div class="table-container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
-              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-map-marked-alt text-cyan"></i> Zone Arrival Monitoring (Thrissur District)</h3>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;" id="checkinZoneTableHeading"><i class="fas fa-map-marked-alt text-cyan"></i> Zone Arrival Monitoring (Thrissur District)</h3>
               <span style="font-size:0.8rem; color:var(--text-muted);">Click any Zone or "Drilldown" to view and check in individual delegates</span>
             </div>
             <div style="overflow-x: auto;">
@@ -2427,7 +2427,7 @@
                 Showing 0 matching delegates
               </div>
               <!-- Quick Filter Pills -->
-              <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+              <div id="directCheckinZonePills" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
                 <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('')" style="font-size:0.75rem;">All</button>
                 <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Chavakkad')" style="font-size:0.75rem;">Chavakkad</button>
                 <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Pavaratty')" style="font-size:0.75rem;">Pavaratty</button>
@@ -6485,6 +6485,15 @@
         return;
       }
 
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(mainReg["Organization Zone"] || mainReg.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
+
       const sName = mainReg["Student Name"] || mainReg.name || 'Delegate';
       const targetVehicle = vehicleId || mainReg["Assigned Vehicle"] || mainReg.assignedVehicle || '';
       const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Vehicle Operator';
@@ -6582,14 +6591,76 @@
       }
     }
 
+    // Apply role-based visibility and access restrictions to Check-in Section
+    function applyCheckinRoleRestrictions() {
+      const isZone = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZone ? canonicalZone(sessionUser.target) : '';
+
+      // 1. Direct Check-in Zone Filter & Quick Pills
+      const directZoneSelect = document.getElementById('directCheckinZoneFilter');
+      if (directZoneSelect) {
+        if (isZone) {
+          directZoneSelect.innerHTML = `<option value="${userZone}">${userZone} Zone</option>`;
+          directZoneSelect.value = userZone;
+          directZoneSelect.disabled = true;
+        } else {
+          directZoneSelect.disabled = false;
+        }
+      }
+
+      const directPills = document.getElementById('directCheckinZonePills');
+      if (directPills) {
+        if (isZone) {
+          directPills.innerHTML = `<button type="button" class="btn btn-outline btn-xs" style="font-size:0.75rem; background:rgba(0,168,232,0.1); color:var(--cyan); border-color:var(--cyan); font-weight:700;"><i class="fas fa-map-marker-alt"></i> ${userZone} Zone</button>`;
+        }
+      }
+
+      // 2. History Zone Filter
+      const historyZoneSelect = document.getElementById('historyZoneFilter');
+      if (historyZoneSelect) {
+        if (isZone) {
+          historyZoneSelect.innerHTML = `<option value="${userZone}">${userZone} Zone</option>`;
+          historyZoneSelect.value = userZone;
+          historyZoneSelect.disabled = true;
+        } else {
+          historyZoneSelect.disabled = false;
+        }
+      }
+
+      // 3. Section Titles & Subtitles
+      const mainSub = document.getElementById('checkinSectionSubtitle');
+      if (mainSub) {
+        mainSub.textContent = isZone 
+          ? `Real-time event venue arrival confirmation • Dedicated view for ${userZone} Zone`
+          : 'Real-time event venue arrival confirmation • Vehicle boarding, Direct venue check-in & Walk-ins';
+      }
+
+      const tableHeading = document.getElementById('checkinZoneTableHeading');
+      if (tableHeading) {
+        tableHeading.innerHTML = isZone
+          ? `<i class="fas fa-map-marked-alt text-cyan"></i> ${userZone} Zone Arrival Monitoring`
+          : `<i class="fas fa-map-marked-alt text-cyan"></i> Zone Arrival Monitoring (Thrissur District)`;
+      }
+    }
+
     // Refresh entire checkin section
     function renderCheckinSection() {
+      applyCheckinRoleRestrictions();
       switchCheckinSubTab(currentCheckinSubTab);
     }
 
     // Persist Check-in record directly to Supabase with strict validation
     async function saveCheckinToSupabase(student, method, vehicleId, operatorName) {
       if (!student) throw new Error("No student record provided for check-in.");
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          throw new Error(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
+        }
+      }
       
       const studentNumId = student.id ? student.id : null;
       const rawDbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(student.regId);
@@ -6658,6 +6729,15 @@
     // Remove Check-in record from Supabase (Administrative Correction / Undo)
     async function removeCheckinFromSupabase(student) {
       if (!student) throw new Error("No student record provided for check-in cancellation.");
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          throw new Error(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
+        }
+      }
       
       const studentNumId = student.id ? student.id : null;
       const rawDbRegId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(student.regId);
@@ -6696,19 +6776,27 @@
 
     // 1. Render Check-in Dashboard (District & Zone overview)
     function renderCheckinDashboard() {
-      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      applyCheckinRoleRestrictions();
+
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+      const zones = isZoneUser ? [userZone] : ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       
-      // Calculate District Level Statistics
-      const totalReg = registrations.length;
-      const checkedInStudents = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      const activeRegs = isZoneUser 
+        ? registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === userZone)
+        : registrations;
+
+      // Calculate Statistics for active context (Zone or District)
+      const totalReg = activeRegs.length;
+      const checkedInStudents = activeRegs.filter(r => r.checkedIn === true || r.checkedIn === 'true');
       const totalCheckedIn = checkedInStudents.length;
       const pending = Math.max(0, totalReg - totalCheckedIn);
-      const walkins = registrations.filter(r => r.checkinMethod === 'WALK_IN').length;
+      const walkins = activeRegs.filter(r => r.checkinMethod === 'WALK_IN').length;
       const percentage = totalReg > 0 ? Math.round((totalCheckedIn / totalReg) * 100) : 0;
 
-      const vehicleCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
-      const directCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
-      const walkinCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
+      const vehicleCount = activeRegs.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
+      const directCount = activeRegs.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
+      const walkinCount = activeRegs.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
 
       // Update Summary DOM Cards
       const elTotal = document.getElementById('checkinStatTotalReg');
@@ -6775,6 +6863,14 @@
 
     // 2. Zone Drilldown Modal
     function openZoneDrilldown(zoneName) {
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const uZone = canonicalZone(sessionUser.target);
+        if (canonicalZone(zoneName) !== uZone) {
+          alert(`Access Denied: You only have permission to view drilldown for your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
+
       drilldownActiveZone = zoneName;
       const modal = document.getElementById('checkinDrilldownModal');
       if (!modal) return;
@@ -6922,23 +7018,32 @@
         `*Walk-ins Added:* ${zWalkins}%0A%0A` +
         `_Generated via TEENSPACE Admin Portal_`;
 
+      const waUrl = `https://wa.me/?text=${text}`;
+      window.open(waUrl, '_blank');
     }
     const shareDrilldownMandalamWhatsApp = shareDrilldownZoneWhatsApp;
 
     // 3. Direct Check-in Search & Card Listing
     function handleDirectCheckinSearch() {
+      applyCheckinRoleRestrictions();
+
       const searchVal = (document.getElementById('directCheckinSearchInput')?.value || '').trim().toLowerCase();
-      const zoneFilter = document.getElementById('directCheckinZoneFilter')?.value || '';
+      let zoneFilter = document.getElementById('directCheckinZoneFilter')?.value || '';
       const statusFilter = document.getElementById('directCheckinStatusFilter')?.value || 'all';
 
       const container = document.getElementById('directCheckinResultsContainer');
       const countInfo = document.getElementById('directCheckinCountInfo');
       if (!container) return;
 
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
       let filtered = registrations.slice();
 
-      // Zone filter
-      if (zoneFilter) {
+      // Zone filter: Hard restriction for Zone admins
+      if (isZoneUser) {
+        filtered = filtered.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === userZone);
+      } else if (zoneFilter) {
         filtered = filtered.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === zoneFilter);
       }
 
@@ -6971,7 +7076,9 @@
       }
 
       if (countInfo) {
-        countInfo.textContent = `Showing ${filtered.length} matching delegates`;
+        countInfo.textContent = isZoneUser 
+          ? `Showing ${filtered.length} matching delegates in ${userZone} Zone`
+          : `Showing ${filtered.length} matching delegates`;
       }
 
       container.innerHTML = '';
@@ -6982,7 +7089,7 @@
             <i class="fas fa-search" style="font-size:2.5rem; color:#CBD5E1; margin-bottom:1rem; display:block;"></i>
             <h4 style="margin:0 0 0.5rem 0; color:var(--text-main);">No matching delegates found</h4>
             <p style="margin:0; font-size:0.88rem; color:var(--text-muted);">
-              Try checking your spelling, search by phone number or ID, or clear active filters.
+              ${isZoneUser ? `No delegates matching your search were found in ${userZone} Zone.` : 'Try checking your spelling, search by phone number or ID, or clear active filters.'}
             </p>
           </div>
         `;
@@ -7081,12 +7188,23 @@
       const zoneSelect = document.getElementById('directCheckinZoneFilter');
       const statusSelect = document.getElementById('directCheckinStatusFilter');
       if (searchInput) searchInput.value = '';
-      if (zoneSelect) zoneSelect.value = '';
+      if (zoneSelect) {
+        if (sessionUser && sessionUser.role === 'Zone') {
+          zoneSelect.value = canonicalZone(sessionUser.target);
+        } else {
+          zoneSelect.value = '';
+        }
+      }
       if (statusSelect) statusSelect.value = 'pending';
       handleDirectCheckinSearch();
     }
 
     function quickFilterDirectZone(zoneName) {
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const uZone = canonicalZone(sessionUser.target);
+        if (zoneName && canonicalZone(zoneName) !== uZone) return;
+        zoneName = uZone;
+      }
       const zoneSelect = document.getElementById('directCheckinZoneFilter');
       if (zoneSelect) zoneSelect.value = zoneName;
       handleDirectCheckinSearch();
@@ -7097,6 +7215,16 @@
     function promptDirectCheckin(regId) {
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (!student) return;
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
 
       if (student.checkedIn === true || student.checkedIn === 'true') {
         alert(`This delegate (${student["Student Name"] || student.name}) is already checked in at venue!`);
@@ -7147,6 +7275,16 @@
     function promptVehicleCheckin(regId, vehicleId, isCurrentlyBoarded) {
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       if (!student) return;
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
 
       const sName = student["Student Name"] || student.name || 'Delegate';
 
@@ -7210,6 +7348,17 @@
         alert("⚠️ Error: Delegate record not found in system.");
         closeCheckinConfirmModal();
         return;
+      }
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
+          closeCheckinConfirmModal();
+          return;
+        }
       }
 
       const confirmBtn = document.getElementById('btnExecuteCheckinConfirm');
@@ -7277,6 +7426,16 @@
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       if (!student) return;
 
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
+
       const sName = student["Student Name"] || student.name || 'Delegate';
       if (!confirm(`Are you sure you want to CANCEL / UNDO venue check-in for "${sName}"?\n\nThis will return the delegate's status to Pending Arrival.`)) {
         return;
@@ -7288,6 +7447,16 @@
     async function executeCancelCheckin(regId, vehicleId) {
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       if (!student) return;
+
+      // Strict Zone Role Authorization Guard
+      if (sessionUser && sessionUser.role === 'Zone') {
+        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        const uZone = canonicalZone(sessionUser.target);
+        if (sZone !== uZone) {
+          alert(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
+          return;
+        }
+      }
 
       const sName = student["Student Name"] || student.name || 'Delegate';
 
@@ -7336,13 +7505,27 @@
 
       if (!pSelect || !zSelect || !uSelect) return;
 
-      const panchayaths = [...new Set(mapping.map(m => m.Panchayath))].filter(Boolean).sort();
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
+      const filteredMapping = isZoneUser 
+        ? mapping.filter(m => canonicalZone(m.Zone) === userZone)
+        : mapping;
+
+      const panchayaths = [...new Set(filteredMapping.map(m => m.Panchayath))].filter(Boolean).sort();
       pSelect.innerHTML = '<option value="">Select Panchayath</option>';
       panchayaths.forEach(p => pSelect.appendChild(new Option(p, p)));
 
-      // If zone already selected, update units
-      if (zSelect.value) {
+      if (isZoneUser) {
+        zSelect.innerHTML = `<option value="${userZone}">${userZone}</option>`;
+        zSelect.value = userZone;
+        zSelect.disabled = true;
         handleWalkinZoneChange();
+      } else {
+        zSelect.disabled = false;
+        if (zSelect.value) {
+          handleWalkinZoneChange();
+        }
       }
     }
 
@@ -7354,7 +7537,13 @@
       wardSelect.innerHTML = '<option value="">Select Ward</option>';
       if (!pVal) return;
 
-      const matching = mapping.filter(m => (m.Panchayath || '').trim().toLowerCase() === pVal.toLowerCase());
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
+      const matching = mapping.filter(m => 
+        (m.Panchayath || '').trim().toLowerCase() === pVal.toLowerCase() &&
+        (!isZoneUser || canonicalZone(m.Zone) === userZone)
+      );
       const wards = [...new Set(matching.map(m => m.Ward))].filter(Boolean).sort();
       wards.forEach(w => wardSelect.appendChild(new Option(w, w)));
     }
@@ -7367,10 +7556,19 @@
 
       if (!pVal || !wVal || !zSelect || !uSelect) return;
 
-      const match = mapping.find(m => (m.Panchayath || '').trim().toLowerCase() === pVal && (m.Ward || '').trim().toLowerCase() === wVal);
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
+      const match = mapping.find(m => 
+        (m.Panchayath || '').trim().toLowerCase() === pVal && 
+        (m.Ward || '').trim().toLowerCase() === wVal &&
+        (!isZoneUser || canonicalZone(m.Zone) === userZone)
+      );
       if (match && match.Zone) {
         const cZone = canonicalZone(match.Zone);
-        zSelect.value = cZone;
+        if (!isZoneUser) {
+          zSelect.value = cZone;
+        }
         handleWalkinZoneChange();
         if (match.Unit) {
           const cUnit = canonicalUnit(match.Unit);
@@ -7380,7 +7578,8 @@
     }
 
     function handleWalkinZoneChange() {
-      const zVal = document.getElementById('walkinZone')?.value || '';
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const zVal = isZoneUser ? canonicalZone(sessionUser.target) : (document.getElementById('walkinZone')?.value || '');
       const uSelect = document.getElementById('walkinUnit');
       if (!uSelect) return;
 
@@ -7435,11 +7634,14 @@
     async function handleWalkinFormSubmit(e) {
       e.preventDefault();
 
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
       const name = (document.getElementById('walkinStudentName')?.value || '').trim();
       const phone = (document.getElementById('walkinStudentPhone')?.value || '').trim();
       const parentPhone = (document.getElementById('walkinParentPhone')?.value || '').trim();
       const studentClass = document.getElementById('walkinStudentClass')?.value || '11th';
-      const zone = document.getElementById('walkinZone')?.value || '';
+      const zone = isZoneUser ? userZone : (document.getElementById('walkinZone')?.value || '');
       const unit = document.getElementById('walkinUnit')?.value || '';
       const panchayath = document.getElementById('walkinPanchayath')?.value || '';
       const ward = document.getElementById('walkinWard')?.value || '';
@@ -7448,6 +7650,11 @@
 
       if (!name || !phone || !zone || !unit || !panchayath || !ward || !place) {
         alert("Please complete all mandatory fields (*)");
+        return;
+      }
+
+      if (isZoneUser && canonicalZone(zone) !== userZone) {
+        alert(`Access Denied: You can only register and check in walk-in delegates for ${userZone} zone.`);
         return;
       }
 
@@ -7682,8 +7889,11 @@
 
       let list = registrations.slice();
 
-      // Zone filter
-      if (zoneFilter) {
+      // Zone role isolation: Zone users can ONLY see delegates from their respective zone
+      if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
+        const uZone = canonicalZone(sessionUser.target);
+        list = list.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === uZone);
+      } else if (zoneFilter) {
         list = list.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === zoneFilter);
       }
 
@@ -7773,9 +7983,16 @@
 
     // Export Check-in Attendance Records to CSV
     function exportCheckinToCSV() {
-      const checkedInList = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      let checkedInList = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone' && sessionUser.target;
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+
+      if (isZoneUser) {
+        checkedInList = checkedInList.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === userZone);
+      }
+
       if (checkedInList.length === 0) {
-        alert("No delegates have been checked in yet.");
+        alert(isZoneUser ? `No delegates have been checked in yet for ${userZone} Zone.` : "No delegates have been checked in yet.");
         return;
       }
 
@@ -7815,7 +8032,8 @@
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `teenspace_checkin_attendance_${new Date().toISOString().slice(0,10)}.csv`);
+      const filePrefix = isZoneUser ? `teenspace_${userZone.toLowerCase().replace(/\s+/g, '_')}_checkin_` : 'teenspace_checkin_attendance_';
+      link.setAttribute("download", `${filePrefix}${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -7823,6 +8041,37 @@
 
     // Share District & Zone Check-in status to WhatsApp
     function shareCheckinWhatsApp() {
+      const isZoneUser = sessionUser && sessionUser.role === 'Zone' && sessionUser.target;
+      const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      if (isZoneUser) {
+        const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === userZone);
+        const zTotal = zStudents.length;
+        const zChecked = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
+        const zPending = Math.max(0, zTotal - zChecked);
+        const zPct = zTotal > 0 ? Math.round((zChecked / zTotal) * 100) : 0;
+
+        const vCount = zStudents.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
+        const dCount = zStudents.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
+        const wCount = zStudents.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
+
+        let text = `*TEENSPACE 2026 - ${userZone.toUpperCase()} ZONE CHECK-IN REPORT*%0A` +
+          `*Time:* ${nowStr}%0A` +
+          `*Zone:* ${userZone}%0A%0A` +
+          `*Total Registered:* ${zTotal}%0A` +
+          `*Checked In at Venue:* ${zChecked} (${zPct}%%)%0A` +
+          `*Pending Arrivals:* ${zPending}%0A%0A` +
+          `*Check-in Breakdown:*%0A` +
+          `🚌 Vehicle Boarding: ${vCount}%0A` +
+          `🏢 Direct Venue Check-in: ${dCount}%0A` +
+          `🚶 Walk-in Registrations: ${wCount}%0A%0A` +
+          `_Generated via TEENSPACE Admin Portal (${userZone} Zone)_`;
+
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+        return;
+      }
+
       const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       const totalReg = registrations.length;
       const checkedInStudents = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
@@ -7833,8 +8082,6 @@
       const vCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'VEHICLE').length;
       const dCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'DIRECT').length;
       const wCount = registrations.filter(r => (r.checkedIn === true || r.checkedIn === 'true') && r.checkinMethod === 'WALK_IN').length;
-
-      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
       let text = `*TEENSPACE 2026 - EVENT VENUE CHECK-IN REPORT*%0A` +
         `*Time:* ${nowStr}%0A` +
@@ -8658,10 +8905,16 @@
       const datalist = document.getElementById('quickAddStudentDatalist');
       if (datalist) {
         datalist.innerHTML = '';
-        const unassigned = registrations.filter(r => {
+        let unassigned = registrations.filter(r => {
           const v = (r["Assigned Vehicle"] || r.assignedVehicle || '').trim();
           return !v;
         });
+
+        // Zone role isolation: restrict unassigned delegates to respective zone
+        if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
+          const uZone = canonicalZone(sessionUser.target);
+          unassigned = unassigned.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === uZone);
+        }
 
         const vZone = vehicle && vehicle.Zone ? canonicalZone(vehicle.Zone) : '';
 
@@ -8750,13 +9003,23 @@
                </div>`
             : `<span class="badge" style="background:#F1F5F9; color:#64748B; font-size:0.68rem; border:none; padding:0.18rem 0.45rem; font-weight:700;"><i class="fas fa-clock"></i> Pending Arrival</span>`;
 
-          const checkinActionBtn = isPickedUp
-            ? `<button class="btn btn-outline" style="padding:0.25rem 0.45rem; font-size:0.65rem; color:#15803D; border-color:#86EFAC; background:#F0FDF4; font-weight:700;" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', true)" title="Boarded & Venue Checked In - Click to undo">
+          const isZoneUser = sessionUser && sessionUser.role === 'Zone' && sessionUser.target;
+          const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+          const studentZone = canonicalZone(item["Organization Zone"] || item.zone);
+          const isOwnZone = !isZoneUser || (studentZone === userZone);
+
+          let checkinActionBtn = '';
+          if (!isOwnZone) {
+            checkinActionBtn = `<span class="badge" style="background:#F1F5F9; color:#94A3B8; font-size:0.65rem; border:none; padding:0.25rem 0.45rem;" title="Restricted to ${studentZone || 'assigned'} Zone"><i class="fas fa-lock"></i> Restricted</span>`;
+          } else if (isPickedUp) {
+            checkinActionBtn = `<button class="btn btn-outline" style="padding:0.25rem 0.45rem; font-size:0.65rem; color:#15803D; border-color:#86EFAC; background:#F0FDF4; font-weight:700;" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', true)" title="Boarded & Venue Checked In - Click to undo">
                  <i class="fas fa-check-double"></i> Boarded
-               </button>`
-            : `<button class="btn btn-primary" style="padding:0.25rem 0.55rem; font-size:0.65rem; font-weight:700; border-radius:6px; background:var(--grad-primary);" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', false)" title="Confirm delegate boarding & venue check-in">
+               </button>`;
+          } else {
+            checkinActionBtn = `<button class="btn btn-primary" style="padding:0.25rem 0.55rem; font-size:0.65rem; font-weight:700; border-radius:6px; background:var(--grad-primary);" onclick="promptVehicleCheckin('${item["Registration ID"] || item.regId}', '${vehicleId}', false)" title="Confirm delegate boarding & venue check-in">
                  <i class="fas fa-bus"></i> Check-in via Vehicle
                </button>`;
+          }
 
           const pickupPt = item["Pickup Point"] || item.pickupPoint || item.pickup_point || '';
           const pickupTm = item["Pickup Time"] || item.pickupTime || item.pickup_time || '';
@@ -9180,6 +9443,16 @@
 
       const sName = student["Student Name"] || student.name || 'Delegate';
       const studentIdVal = student.districtRegId || student["Registration ID"] || student.regId;
+
+      // Zone role isolation: ensure Zone admins can only assign passengers from their respective zone
+      if (sessionUser && sessionUser.role === 'Zone' && sessionUser.target) {
+        const userZone = canonicalZone(sessionUser.target);
+        const studentZone = canonicalZone(student["Organization Zone"] || student.zone);
+        if (studentZone !== userZone) {
+          alert(`Access Denied: You can only assign delegates from your assigned zone (${userZone}). "${sName}" belongs to ${studentZone || 'another zone'}.`);
+          return;
+        }
+      }
 
       const currentV = (student["Assigned Vehicle"] || student.assignedVehicle || '').trim();
       if (currentV.toLowerCase() === vehicleId.toLowerCase()) {
