@@ -107,6 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <label class="form-label" for="studentClass"><i class="fas fa-graduation-cap text-cyan"></i> Class *</label>
             <select id="studentClass" class="form-select" required>
               <option value="">Select Class</option>
+              <option value="8th">8th</option>
+              <option value="9th">9th</option>
               <option value="10th">10th</option>
               <option value="11th">11th</option>
               <option value="12th">12th</option>
@@ -927,7 +929,7 @@ function copyDonateDirectLink() {
 
 function shareDonateWhatsAppLink() {
   const url = getDonateDirectUrl();
-  const text = `🤝 *TEENSPACE 2026 - DONATE A STUDENT CONTACT* 🤝\n\nKnow a student studying in Class 10, 11, or 12? Help empower them by sharing their contact details so our team can invite and guide them for TEENSPACE 2026.\n\n👉 *Direct Link:* ${url}\n\n_Together, let's shape our teenagers' future!_ ✨`;
+  const text = `🤝 *TEENSPACE 2026 - DONATE A STUDENT CONTACT* 🤝\n\nKnow a student studying in Class 8, 9, 10, 11, or 12? Help empower them by sharing their contact details so our team can invite and guide them for TEENSPACE 2026.\n\n👉 *Direct Link:* ${url}\n\n_Together, let's shape our teenagers' future!_ ✨`;
   const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
   window.open(waUrl, '_blank');
 }

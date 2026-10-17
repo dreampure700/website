@@ -1666,6 +1666,22 @@
         </div>
 
         <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(0,168,232,0.06); color: var(--cyan);"><i class="fas fa-book-reader"></i></div>
+          <div>
+            <div class="stat-val" id="class8Count">0</div>
+            <div class="stat-label">8th Class</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(230,0,103,0.06); color: var(--magenta);"><i class="fas fa-user-edit"></i></div>
+          <div>
+            <div class="stat-val" id="class9Count">0</div>
+            <div class="stat-label">9th Class</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
           <div class="stat-icon" style="background: rgba(230,0,103,0.06); color: var(--magenta);"><i class="fas fa-school"></i></div>
           <div>
             <div class="stat-val" id="class10Count">0</div>
@@ -2454,6 +2470,8 @@
                 <div class="form-group">
                   <label class="form-label" for="walkinStudentClass" style="font-weight:700;">Class *</label>
                   <select id="walkinStudentClass" class="form-input" required>
+                    <option value="8th">8th Standard</option>
+                    <option value="9th">9th Standard</option>
                     <option value="10th">10th Standard</option>
                     <option value="11th" selected>11th Standard</option>
                     <option value="12th">12th Standard</option>
@@ -2701,6 +2719,8 @@
               <label class="form-label" style="font-size:0.8rem;">Class</label>
               <select id="filterClass" class="form-select" style="padding:0.5rem; font-size:0.85rem;" onchange="applyFilters()">
                 <option value="">All Classes</option>
+                <option value="8th">8th</option>
+                <option value="9th">9th</option>
                 <option value="10th">10th</option>
                 <option value="11th">11th</option>
                 <option value="12th">12th</option>
@@ -3495,6 +3515,8 @@
           <div class="form-group">
             <label class="form-label" for="studentClassInput">Class *</label>
             <select id="studentClassInput" class="form-select" required>
+              <option value="8th">8th</option>
+              <option value="9th">9th</option>
               <option value="10th">10th</option>
               <option value="11th">11th</option>
               <option value="12th">12th</option>
@@ -5205,6 +5227,10 @@
 
       // 2. Header counters
       document.getElementById('totalCount').textContent = filteredRegs.length;
+      const class8El = document.getElementById('class8Count');
+      if (class8El) class8El.textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '8th').length;
+      const class9El = document.getElementById('class9Count');
+      if (class9El) class9El.textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '9th').length;
       const class10El = document.getElementById('class10Count');
       if (class10El) class10El.textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '10th').length;
       document.getElementById('class11Count').textContent = filteredRegs.filter(r => (r.Class || r.student_class) === '11th').length;
@@ -7783,7 +7809,7 @@
       }
 
       // Filter inputs
-      if (classVal) filtered = filtered.filter(r => r.Class === classVal);
+      if (classVal) filtered = filtered.filter(r => (r.Class || r.student_class) === classVal);
       if (zoneVal) filtered = filtered.filter(r => (r["Organization Zone"] || r.zone) === zoneVal);
       if (unitVal) filtered = filtered.filter(r => (r["Organization Unit"] || r.unit) === unitVal);
       if (pVal) filtered = filtered.filter(r => r.Panchayath === pVal);
