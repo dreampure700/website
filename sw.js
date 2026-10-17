@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teenspace-cache-v60';
+const CACHE_NAME = 'teenspace-cache-v75';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,7 +6,6 @@ const ASSETS = [
   '/donate.html',
   '/schedule.html',
   '/media.html',
-  '/admin.html',
   '/css/main.css',
   '/css/components.css',
   '/css/responsive.css',
@@ -51,6 +50,12 @@ self.addEventListener('fetch', (e) => {
   if (e.request.url.includes('supabase.co')) return;
 
   const url = new URL(e.request.url);
+
+  // Admin panel must NEVER be intercepted or cached by service worker - direct live network always
+  if (url.pathname.includes('admin.html')) {
+    return;
+  }
+
   const isHtmlPage = e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/';
 
   if (isHtmlPage) {

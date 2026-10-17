@@ -3,6 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <script>
+    // Force purge of any legacy service worker cache storage for admin panel
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        keys.forEach(function(k) {
+          if (k !== 'teenspace-cache-v75') {
+            console.log("Evicting outdated cache:", k);
+            caches.delete(k);
+          }
+        });
+      });
+    }
+  </script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#FFFFFF">
   <!-- Preconnect for Fast Mobile Connection -->
@@ -4970,10 +4986,10 @@
           const primaryRegId = isZoneOrUnit ? mandalRegId : districtRegId;
           const secondaryRegId = isZoneOrUnit ? districtRegId : mandalRegId;
 
-            // Validate that assigned vehicle actually exists in vehicles table
+            // Validate assigned vehicle
             const rawV = (d.assigned_vehicle || "").trim();
             const validVObj = (rawV && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === rawV.toLowerCase()) : null;
-            let validVehicleId = validVObj ? validVObj["Vehicle ID"] : "";
+            let validVehicleId = validVObj ? validVObj["Vehicle ID"] : rawV;
 
             // Resolve check-in state
             const checkinInfo = studentCheckinMap.get(String(d.id)) ||
@@ -4985,7 +5001,7 @@
             if (!validVehicleId && checkinInfo && checkinInfo.vehicle) {
               const chkV = checkinInfo.vehicle.trim();
               const chkVObj = Array.isArray(vehicles) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === chkV.toLowerCase()) : null;
-              if (chkVObj) validVehicleId = chkVObj["Vehicle ID"];
+              validVehicleId = chkVObj ? chkVObj["Vehicle ID"] : chkV;
             }
 
             const isVehiclePickedUp = validVehicleId ? (d.picked_up === true || d.picked_up === "true") : false;
@@ -6065,7 +6081,7 @@
             </div>
           </td>
           <td data-label="Actions">
-            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${studentId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+            <button class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.75rem;" onclick="openAssignModal('${item.id || studentId}', '${(item["Student Name"] || item.name || '').replace(/'/g, "\\'")}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
               <i class="fas fa-bus"></i> Assign
             </button>
             ${vehicleAssigned ? `
@@ -6171,7 +6187,7 @@
             </div>
             
             <div class="student-card-actions">
-              <button class="btn btn-outline" onclick="openAssignModal('${item["Registration ID"] || item.regId}', '${item["Student Name"] || item.name}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
+              <button class="btn btn-outline" onclick="openAssignModal('${item.id || item["Registration ID"] || item.regId}', '${(item["Student Name"] || item.name || '').replace(/'/g, "\\'")}', '${item["Organization Zone"]}', '${item["Organization Unit"]}')">
                 <i class="fas fa-bus"></i> Assign
               </button>
               ${vehicleAssigned ? `
@@ -8078,7 +8094,7 @@
       document.getElementById('assignStudentZone').textContent = zone;
       document.getElementById('assignStudentUnit').textContent = unit;
 
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       const currPt = student ? (student["Pickup Point"] || student.pickupPoint || student.pickup_point || '') : '';
       const currTm = student ? (student["Pickup Time"] || student.pickupTime || student.pickup_time || '') : '';
       const ptInput = document.getElementById('assignPickupPoint');
@@ -8616,11 +8632,11 @@
             <td data-label="Action" style="padding:0.75rem 0.5rem; text-align:right;">
               <div style="display:inline-flex; align-items:center; gap:0.3rem;">
                 ${checkinActionBtn}
-                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="openPassengerPickupModal('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Edit Pickup Location & Time">
+                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:var(--cyan); border-color:rgba(0,168,232,0.25);" onclick="openPassengerPickupModal('${item.id || item["Registration ID"] || item.regId}', '${vehicleId}')" title="Edit Pickup Location & Time">
                   <i class="fas fa-map-pin"></i> Pickup
                 </button>
                 ${orderControls}
-                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item["Registration ID"] || item.regId}', '${vehicleId}')" title="Remove passenger">
+                <button class="btn btn-outline" style="padding:0.25rem 0.4rem; font-size:0.65rem; color:red; border-color:rgba(255,0,0,0.15);" onclick="unassignPassenger('${item.id || item["Registration ID"] || item.regId}', '${vehicleId}')" title="Remove passenger">
                   <i class="fas fa-user-minus"></i>
                 </button>
               </div>
@@ -8736,7 +8752,7 @@
     }
 
     function openPassengerPickupModal(regId, vehicleId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || (student && student.id === parseInt(regId, 10)) || r.id === parseInt(regId, 10));
       if (!student) {
         alert('Delegate not found.');
         return;
@@ -8987,7 +9003,7 @@
       const studentIdVal = student.districtRegId || student["Registration ID"] || student.regId;
 
       const currentV = (student["Assigned Vehicle"] || student.assignedVehicle || '').trim();
-      if (currentV === vehicleId) {
+      if (currentV.toLowerCase() === vehicleId.toLowerCase()) {
         alert(`"${sName}" is already assigned to this vehicle.`);
         input.value = '';
         return;
@@ -9023,38 +9039,60 @@
       renderTransportation();
       showToast(`Added ${sName} to vehicle ${vehicleId}`);
 
-      // 2. AWAITED PERSISTENCE TO SUPABASE
+      // 2. AWAITED PERSISTENCE TO SUPABASE WITH DUAL-LAYER BACKUP
       const submitBtn = document.getElementById('quickAddStudentSubmitBtn');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding to bus...';
       }
 
       const updateData = { assigned_vehicle: vehicleId, pickup_order: nextOrder };
-      let query;
-      if (student.id) {
-        query = supabase.from('registrations').update(updateData).eq('id', student.id);
-      } else {
-        const dbId = student.dbRegId || getRegistrationDbId(studentIdVal);
-        query = supabase.from('registrations').update(updateData).eq('reg_id', dbId);
-      }
+      const studentNumId = student.id ? student.id : null;
+      const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(studentIdVal);
 
       try {
-        const { error } = await query;
-        if (error) {
-          console.error("Failed to persist passenger assignment on Supabase:", error);
-          alert("Database notice: Could not save passenger assignment: " + error.message);
-          // Rollback local changes
-          student["Assigned Vehicle"] = prevV;
-          student.assignedVehicle = prevV;
-          student["Pickup Order"] = prevO;
-          student.pickupOrder = prevO;
-          openPassengerListModal(vehicleId);
-          renderDataList();
-          renderTransportation();
+        // Layer 1: Update main delegate registration row
+        let primaryResult = null;
+        if (studentNumId) {
+          primaryResult = await supabase.from('registrations').update(updateData).eq('id', studentNumId).select();
         }
+        if (!primaryResult || !primaryResult.data || primaryResult.data.length === 0) {
+          primaryResult = await supabase.from('registrations').update(updateData).eq('reg_id', targetDbId).select();
+        }
+
+        if (primaryResult && primaryResult.error) {
+          throw primaryResult.error;
+        }
+
+        // Layer 2: Redundant cloud backup checkpoint row (SYS_CHECKIN_)
+        // Guarantees that even across network glitches or schema anomalies, loadData automatically self-heals assigned_vehicle!
+        try {
+          const checkpointPayload = {
+            reg_id: 'SYS_CHECKIN_' + (studentNumId ? studentNumId.toString() : targetDbId),
+            name: student["Student Name"] || student.name || 'Delegate',
+            phone: student["Student Mobile Number"] || student.phone || '0000000000',
+            school: 'DIRECT',
+            place: sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin',
+            assigned_vehicle: vehicleId,
+            status: 'CHECKED_IN',
+            timestamp: new Date().toISOString()
+          };
+          await supabase.from('registrations').upsert([checkpointPayload], { onConflict: 'reg_id' });
+        } catch (chkErr) {
+          console.warn("Checkpoint dual-write notice:", chkErr);
+        }
+
       } catch (err) {
         console.error("Exception persisting passenger assignment:", err);
+        alert("⚠️ Database notice: Could not save passenger assignment: " + err.message + "\n\nThe assignment has been rolled back. Please try again.");
+        // Rollback local changes
+        student["Assigned Vehicle"] = prevV;
+        student.assignedVehicle = prevV;
+        student["Pickup Order"] = prevO;
+        student.pickupOrder = prevO;
+        openPassengerListModal(vehicleId);
+        renderDataList();
+        renderTransportation();
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -9064,7 +9102,7 @@
     }
 
     async function unassignPassenger(regId, vehicleId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
 
       if (!confirm(`Are you sure you want to remove "${sName}" from vehicle ${vehicleId}?`)) {
@@ -9096,7 +9134,7 @@
       if (typeof renderCheckinSection === 'function') renderCheckinSection();
       showToast(`Removed "${sName}" from vehicle ${vehicleId}`);
 
-      // 2. BACKGROUND PERSISTENCE TO SUPABASE
+      // 2. BACKGROUND PERSISTENCE TO SUPABASE WITH DUAL-LAYER CLEANUP
       const clearPayload = {
         assigned_vehicle: null,
         pickup_order: null,
@@ -9105,32 +9143,40 @@
         picked_up: false
       };
 
-      let query;
-      if (student && student.id) {
-        query = supabase.from('registrations').update(clearPayload).eq('id', student.id);
-      } else {
-        const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
-        query = supabase.from('registrations').update(clearPayload).eq('reg_id', targetDbId);
-      }
+      const studentNumId = student && student.id ? student.id : null;
+      const targetDbId = (student && student.dbRegId) ? student.dbRegId : getRegistrationDbId(regId);
 
       try {
-        const { error } = await query;
-        if (error) {
-          console.error("Error removing passenger on Supabase: ", error);
-          alert("Database notice: Could not remove passenger: " + error.message);
-          // Rollback
-          if (student) {
-            student["Assigned Vehicle"] = prevV;
-            student.assignedVehicle = prevV;
-            student["Pickup Order"] = prevO;
-            student.pickupOrder = prevO;
+        // Layer 1: Clear on registrations table
+        if (studentNumId) {
+          await supabase.from('registrations').update(clearPayload).eq('id', studentNumId);
+        }
+        await supabase.from('registrations').update(clearPayload).eq('reg_id', targetDbId);
+
+        // Layer 2: Clean up backup checkpoint row
+        try {
+          const delTargets = [];
+          if (studentNumId) delTargets.push(`SYS_CHECKIN_${studentNumId}`);
+          if (targetDbId) delTargets.push(`SYS_CHECKIN_${targetDbId}`);
+          for (const dt of delTargets) {
+            await supabase.from('registrations').delete().eq('reg_id', dt);
           }
-          openPassengerListModal(vehicleId);
-          renderDataList();
-          renderTransportation();
+        } catch (cErr) {
+          console.warn("Notice cleaning checkpoint row:", cErr);
         }
       } catch (err) {
         console.error("Exception in unassignPassenger:", err);
+        alert("Database notice: Could not remove passenger: " + err.message);
+        // Rollback
+        if (student) {
+          student["Assigned Vehicle"] = prevV;
+          student.assignedVehicle = prevV;
+          student["Pickup Order"] = prevO;
+          student.pickupOrder = prevO;
+        }
+        openPassengerListModal(vehicleId);
+        renderDataList();
+        renderTransportation();
       }
     }
 
@@ -9175,13 +9221,6 @@
       const prevPP = student ? (student["Pickup Point"] || "") : "";
       const prevPT = student ? (student["Pickup Time"] || "") : "";
 
-      let query;
-      if (student && student.id) {
-        query = supabase.from('registrations').update(updateData).eq('id', student.id);
-      } else {
-        query = supabase.from('registrations').update(updateData).eq('reg_id', targetDbId);
-      }
-
       // 1. INSTANT LOCAL UPDATE (0ms)
       if (student) {
         student["Assigned Vehicle"] = vehicleId;
@@ -9205,36 +9244,52 @@
       renderTransportation();
       showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
 
-      // 2. AWAITED PERSISTENCE TO SUPABASE
+      // 2. AWAITED PERSISTENCE TO SUPABASE WITH DUAL-LAYER PERSISTENCE
       try {
-        const { error } = await query;
-        if (error) {
-          console.error('Error updating assignment on Supabase:', error);
-          alert('⚠️ Failed to save vehicle assignment to database: ' + error.message + '\n\nThe assignment has been rolled back. Please try again.');
-          // Rollback local changes
-          if (student) {
-            student["Assigned Vehicle"] = prevV;
-            student.assignedVehicle = prevV;
-            student["Pickup Order"] = prevO;
-            student.pickupOrder = prevO;
-            student["Pickup Point"] = prevPP;
-            student.pickupPoint = prevPP;
-            student.pickup_point = prevPP;
-            student["Pickup Time"] = prevPT;
-            student.pickupTime = prevPT;
-            student.pickup_time = prevPT;
-          }
-          renderDataList();
-          renderTransportation();
+        const studentNumId = student && student.id ? student.id : null;
+        let primaryResult = null;
+        if (studentNumId) {
+          primaryResult = await supabase.from('registrations').update(updateData).eq('id', studentNumId).select();
+        }
+        if (!primaryResult || !primaryResult.data || primaryResult.data.length === 0) {
+          primaryResult = await supabase.from('registrations').update(updateData).eq('reg_id', targetDbId).select();
+        }
+
+        if (primaryResult && primaryResult.error) {
+          throw primaryResult.error;
+        }
+
+        // Layer 2: Redundant cloud backup checkpoint row (SYS_CHECKIN_)
+        try {
+          const checkpointPayload = {
+            reg_id: 'SYS_CHECKIN_' + (studentNumId ? studentNumId.toString() : targetDbId),
+            name: student ? (student["Student Name"] || student.name || 'Delegate') : 'Delegate',
+            phone: student ? (student["Student Mobile Number"] || student.phone || '0000000000') : '0000000000',
+            school: 'DIRECT',
+            place: sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin',
+            assigned_vehicle: vehicleId,
+            status: 'CHECKED_IN',
+            timestamp: new Date().toISOString()
+          };
+          await supabase.from('registrations').upsert([checkpointPayload], { onConflict: 'reg_id' });
+        } catch (chkErr) {
+          console.warn("Checkpoint dual-write notice in assignForm:", chkErr);
         }
       } catch (err) {
         console.error('Exception updating assignment on Supabase:', err);
-        alert('⚠️ Network error saving vehicle assignment. The assignment has been rolled back. Please try again.');
+        alert('⚠️ Failed to save vehicle assignment to database: ' + err.message + '\n\nThe assignment has been rolled back. Please try again.');
+        // Rollback local changes
         if (student) {
           student["Assigned Vehicle"] = prevV;
           student.assignedVehicle = prevV;
           student["Pickup Order"] = prevO;
           student.pickupOrder = prevO;
+          student["Pickup Point"] = prevPP;
+          student.pickupPoint = prevPP;
+          student.pickup_point = prevPP;
+          student["Pickup Time"] = prevPT;
+          student.pickupTime = prevPT;
+          student.pickup_time = prevPT;
         }
         renderDataList();
         renderTransportation();
