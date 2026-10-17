@@ -6271,12 +6271,12 @@
     function renderCoordinatorDashboard() {
       if (!sessionUser) return;
       const vehicleId = sessionUser.target;
-      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      const vehicle = vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === String(vehicleId || '').trim().toLowerCase());
       
       const vName = vehicle ? `${vehicle["Vehicle ID"]} - ${vehicle["Vehicle Name"]}` : vehicleId;
       document.getElementById('coordVehicleName').textContent = vName;
 
-      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vehicleId || '').trim().toLowerCase());
       const capacity = vehicle ? (parseInt(vehicle.Capacity) || 50) : 50;
       document.getElementById('coordSeatRatio').textContent = `${passengers.length} / ${capacity} seats filled`;
 
@@ -10745,7 +10745,7 @@
       }
 
       matchVehicles.forEach(vehicle => {
-        const filled = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicle["Vehicle ID"]).length;
+        const filled = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === (vehicle["Vehicle ID"] || '').trim().toLowerCase()).length;
         const capacity = parseInt(vehicle.Capacity) || 50;
         const available = capacity - filled;
 
