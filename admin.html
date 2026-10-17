@@ -2329,17 +2329,17 @@
             </div>
           </div>
 
-          <!-- Mandalam-level Monitoring Table -->
+          <!-- Zone-level Monitoring Table -->
           <div class="table-container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem;">
-              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-map-marked-alt text-cyan"></i> Mandalam Arrival Monitoring (Thrissur District)</h3>
-              <span style="font-size:0.8rem; color:var(--text-muted);">Click any Mandalam or "Drilldown" to view and check in individual delegates</span>
+              <h3 style="font-family: var(--font-heading); font-size: 1.25rem; margin:0;"><i class="fas fa-map-marked-alt text-cyan"></i> Zone Arrival Monitoring (Thrissur District)</h3>
+              <span style="font-size:0.8rem; color:var(--text-muted);">Click any Zone or "Drilldown" to view and check in individual delegates</span>
             </div>
             <div style="overflow-x: auto;">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Mandalam (Zone)</th>
+                    <th>Zone</th>
                     <th>Code</th>
                     <th>Registered</th>
                     <th>Checked In</th>
@@ -2350,7 +2350,7 @@
                     <th style="text-align: right;">Action</th>
                   </tr>
                 </thead>
-                <tbody id="checkinMandalamTableBody">
+                <tbody id="checkinZoneTableBody">
                   <!-- Dynamically populated -->
                 </tbody>
               </table>
@@ -2368,7 +2368,7 @@
               </div>
               <div style="flex:1; min-width:160px;">
                 <select id="directCheckinZoneFilter" class="form-input" style="height:46px; border-radius:12px;" onchange="handleDirectCheckinSearch()">
-                  <option value="">All Mandalams (Zones)</option>
+                  <option value="">All Zones</option>
                   <option value="Chavakkad">Chavakkad</option>
                   <option value="Pavaratty">Pavaratty</option>
                   <option value="Kunnamkulam">Kunnamkulam</option>
@@ -2396,14 +2396,14 @@
               </div>
               <!-- Quick Filter Pills -->
               <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('')" style="font-size:0.75rem;">All</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Chavakkad')" style="font-size:0.75rem;">Chavakkad</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Pavaratty')" style="font-size:0.75rem;">Pavaratty</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kunnamkulam')" style="font-size:0.75rem;">Kunnamkulam</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Guruvayoor')" style="font-size:0.75rem;">Guruvayoor</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Thrissur City')" style="font-size:0.75rem;">Thrissur City</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kodungallur')" style="font-size:0.75rem;">Kodungallur</button>
-                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectMandalam('Kaipamangalam')" style="font-size:0.75rem;">Kaipamangalam</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('')" style="font-size:0.75rem;">All</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Chavakkad')" style="font-size:0.75rem;">Chavakkad</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Pavaratty')" style="font-size:0.75rem;">Pavaratty</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Kunnamkulam')" style="font-size:0.75rem;">Kunnamkulam</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Guruvayoor')" style="font-size:0.75rem;">Guruvayoor</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Thrissur City')" style="font-size:0.75rem;">Thrissur City</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Kodungallur')" style="font-size:0.75rem;">Kodungallur</button>
+                <button type="button" class="btn btn-outline btn-xs" onclick="quickFilterDirectZone('Kaipamangalam')" style="font-size:0.75rem;">Kaipamangalam</button>
               </div>
             </div>
           </div>
@@ -2467,9 +2467,9 @@
                   <input type="text" id="walkinDistrict" class="form-input" value="Thrissur" readonly style="background:#F1F5F9; color:var(--text-muted); cursor:not-allowed;">
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="walkinZone" style="font-weight:700;">Mandalam (Zone) *</label>
+                  <label class="form-label" for="walkinZone" style="font-weight:700;">Zone *</label>
                   <select id="walkinZone" class="form-input" required onchange="handleWalkinZoneChange()">
-                    <option value="">Select Mandalam</option>
+                    <option value="">Select Zone</option>
                     <option value="Chavakkad">Chavakkad</option>
                     <option value="Pavaratty">Pavaratty</option>
                     <option value="Kunnamkulam">Kunnamkulam</option>
@@ -2546,8 +2546,8 @@
                 <input type="text" id="historySearchInput" class="form-input" placeholder="Search by name, phone, or ID..." oninput="renderCheckinHistory()" autocomplete="off">
               </div>
               <div style="flex:1; min-width:140px;">
-                <select id="historyMandalamFilter" class="form-input" onchange="renderCheckinHistory()">
-                  <option value="">All Mandalams</option>
+                <select id="historyZoneFilter" class="form-input" onchange="renderCheckinHistory()">
+                  <option value="">All Zones</option>
                   <option value="Chavakkad">Chavakkad</option>
                   <option value="Pavaratty">Pavaratty</option>
                   <option value="Kunnamkulam">Kunnamkulam</option>
@@ -2583,7 +2583,7 @@
                     <th>Reg ID</th>
                     <th>Delegate Name</th>
                     <th>Phone</th>
-                    <th>Mandalam / Unit</th>
+                    <th>Zone / Unit</th>
                     <th>Check-in Status</th>
                     <th>Source Method</th>
                     <th>Check-in Time</th>
@@ -3050,7 +3050,7 @@
         <form id="quickAddPassengerForm" onsubmit="executeQuickAddPassenger(event)" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
           <input type="hidden" id="quickAddVehicleId">
           <div style="flex-grow:1; min-width:240px; position:relative;">
-            <input type="text" id="quickAddStudentInput" class="form-control" placeholder="Type student Name, District ID, Mandal ID, or Mobile..." list="quickAddStudentDatalist" style="width:100%; padding:0.55rem 0.8rem; font-size:0.85rem; border-radius:8px; border:1px solid #BBF7D0; background:white;" autocomplete="off" required>
+            <input type="text" id="quickAddStudentInput" class="form-control" placeholder="Type student Name, District ID, Zone ID, or Mobile..." list="quickAddStudentDatalist" style="width:100%; padding:0.55rem 0.8rem; font-size:0.85rem; border-radius:8px; border:1px solid #BBF7D0; background:white;" autocomplete="off" required>
             <datalist id="quickAddStudentDatalist">
               <!-- Dynamically populated with unassigned students -->
             </datalist>
@@ -3777,18 +3777,18 @@
       <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
         <div>
           <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.25rem;" id="drilldownZoneTitle">
-            <i class="fas fa-map-marker-alt text-cyan"></i> Mandalam Drilldown
+            <i class="fas fa-map-marker-alt text-cyan"></i> Zone Drilldown
           </h3>
           <p style="color:var(--text-muted); font-size: 0.85rem; margin:0;" id="drilldownZoneSubtitle">
             Live delegate arrival status and direct check-in actions.
           </p>
         </div>
-        <button class="btn btn-outline btn-sm" style="color:#22C55E; border-color:rgba(34,197,94,0.3);" onclick="shareDrilldownMandalamWhatsApp()">
-          <i class="fab fa-whatsapp"></i> Share Mandalam Report
+        <button class="btn btn-outline btn-sm" style="color:#22C55E; border-color:rgba(34,197,94,0.3);" onclick="shareDrilldownZoneWhatsApp()">
+          <i class="fab fa-whatsapp"></i> Share Zone Report
         </button>
       </div>
 
-      <!-- Mandalam Stats Overview Cards -->
+      <!-- Zone Stats Overview Cards -->
       <div class="stats-grid" id="drilldownStatsGrid" style="margin-bottom: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;">
         <!-- Populated dynamically -->
       </div>
@@ -3796,7 +3796,7 @@
       <!-- Filter Controls -->
       <div style="background:#F8FAFC; border:1px solid rgba(15,23,42,0.06); padding:0.75rem 1rem; border-radius:12px; margin-bottom:1rem; display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center;">
         <div style="flex:2; min-width:200px;">
-          <input type="text" id="drilldownSearchInput" class="form-input" style="height:38px; font-size:0.85rem;" placeholder="Search delegates in this mandalam..." oninput="renderDrilldownDelegatesList()" autocomplete="off">
+          <input type="text" id="drilldownSearchInput" class="form-input" style="height:38px; font-size:0.85rem;" placeholder="Search delegates in this zone..." oninput="renderDrilldownDelegatesList()" autocomplete="off">
         </div>
         <div style="flex:1; min-width:140px;">
           <select id="drilldownStatusFilter" class="form-input" style="height:38px; font-size:0.85rem;" onchange="renderDrilldownDelegatesList()">
@@ -4175,7 +4175,7 @@
       return ORGANIZATIONAL_MAP[zName] || [];
     }
 
-    // Mandal (Zone) Prefix Mapping for Sequential Numbering
+    // Zone Prefix Mapping for Sequential Numbering
     const ZONE_PREFIXES = {
       'Chavakkad': 'CKD',
       'Pavaratty': 'PVT',
@@ -4193,7 +4193,7 @@
       return ZONE_PREFIXES[c] || 'REG';
     }
 
-    // Helper: robust lookup of registration by any ID (Display ID, Mandal ID e.g. "KPM 101", District ID e.g. "REG 101", numeric id, or legacy DB reg_id)
+    // Helper: robust lookup of registration by any ID (Display ID, Zone ID e.g. "KPM 101", District ID e.g. "REG 101", numeric id, or legacy DB reg_id)
     function findRegistration(identifier) {
       if (!identifier || !Array.isArray(registrations)) return null;
 
@@ -4219,7 +4219,7 @@
       });
       if (found) return found;
 
-      // 2. Priority 2: Match on Mandal/Zone Registration ID (e.g. "KPM 101", "KPM101", "CKD 104")
+      // 2. Priority 2: Match on Zone Registration ID (e.g. "KPM 101", "KPM101", "CKD 104")
       found = registrations.find(r => {
         const m1 = (r.mandalRegId || '').trim().toLowerCase();
         const m2 = (r.zoneRegId || r.zoneId || '').trim().toLowerCase();
@@ -4910,7 +4910,7 @@
           return (a.id || 0) - (b.id || 0);
         });
 
-        // Initialize Mandal (Zone) sequential counters starting from 100
+        // Initialize Zone sequential counters starting from 100
         const mandalCounters = {};
 
         registrations = studentRegData.map((d, index) => {
@@ -4935,7 +4935,7 @@
           const distSeq = 101 + index;
           const districtRegId = d.district_id || `REG ${distSeq}`;
 
-          // 2. Continuous Mandal (Zone) Sequential Numbering (starts from 101 with prefix code, e.g. KPM 101)
+          // 2. Continuous Zone Sequential Numbering (starts from 101 with prefix code, e.g. KPM 101)
           const zCanon = canonicalZone(resolvedZone);
           const prefix = getZonePrefix(zCanon);
           mandalCounters[prefix] = (mandalCounters[prefix] || 100) + 1;
@@ -5987,7 +5987,7 @@
           <td data-label="Reg ID">
             <div style="display:inline-flex; align-items:center; gap:0.35rem; flex-wrap:wrap;">
               <span class="badge-reg" style="background:#0F172A; color:#FFFFFF; font-weight:800; font-size:0.75rem; padding:0.25rem 0.5rem; border-radius:6px; letter-spacing:0.02em;" title="District Registration ID: ${item.districtRegId}">${item.districtRegId}</span>
-              <span class="badge-mandal" style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:6px; letter-spacing:0.02em;" title="Mandal (${item["Organization Zone"] || 'Zone'}) Registration ID: ${item.mandalRegId}">${item.mandalRegId}</span>
+              <span class="badge-mandal" style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:6px; letter-spacing:0.02em;" title="Zone Registration ID: ${item.mandalRegId}">${item.mandalRegId}</span>
               ${dupBadgeHtml}
             </div>
           </td>
@@ -6052,7 +6052,7 @@
                 <div class="student-name">${item["Student Name"] || item.name || 'N/A'}</div>
                 <div class="student-id" style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                   <span style="background:#0F172A; color:#FFFFFF; font-weight:800; font-size:0.75rem; padding:0.18rem 0.45rem; border-radius:5px;" title="District ID">${item.districtRegId}</span>
-                  <span style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.15rem 0.4rem; border-radius:5px;" title="Mandal ID">${item.mandalRegId}</span>
+                  <span style="background:rgba(0,168,232,0.12); color:var(--cyan); border:1px solid rgba(0,168,232,0.3); font-weight:800; font-size:0.75rem; padding:0.15rem 0.4rem; border-radius:5px;" title="Zone ID">${item.mandalRegId}</span>
                   ${dupBadgeHtml}
                 </div>
               </div>
@@ -6544,9 +6544,9 @@
       }
     }
 
-    // 1. Render Check-in Dashboard (District & Mandalam overview)
+    // 1. Render Check-in Dashboard (District & Zone overview)
     function renderCheckinDashboard() {
-      const mandalams = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       
       // Calculate District Level Statistics
       const totalReg = registrations.length;
@@ -6581,12 +6581,12 @@
       if (elMD) elMD.textContent = directCount;
       if (elMW) elMW.textContent = walkinCount;
 
-      // Render Mandalam-level table
-      const tbody = document.getElementById('checkinMandalamTableBody');
+      // Render Zone-level table
+      const tbody = document.getElementById('checkinZoneTableBody') || document.getElementById('checkinMandalamTableBody');
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      mandalams.forEach(m => {
+      zones.forEach(m => {
         const prefix = getZonePrefix(m);
         const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === m);
         const zTotal = zStudents.length;
@@ -6597,8 +6597,8 @@
 
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td data-label="Mandalam" style="font-weight:700;">
-            <a href="javascript:void(0)" onclick="openMandalamDrilldown('${m}')" style="color:var(--text-main); text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem;">
+          <td data-label="Zone" style="font-weight:700;">
+            <a href="javascript:void(0)" onclick="openZoneDrilldown('${m}')" style="color:var(--text-main); text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem;">
               <i class="fas fa-map-marker-alt text-cyan"></i> ${m}
             </a>
           </td>
@@ -6614,7 +6614,7 @@
             </div>
           </td>
           <td data-label="Action" style="text-align: right;">
-            <button class="btn btn-outline btn-xs" style="color:var(--cyan); border-color:rgba(0,168,232,0.3); font-weight:700;" onclick="openMandalamDrilldown('${m}')">
+            <button class="btn btn-outline btn-xs" style="color:var(--cyan); border-color:rgba(0,168,232,0.3); font-weight:700;" onclick="openZoneDrilldown('${m}')">
               <i class="fas fa-eye"></i> Drilldown
             </button>
           </td>
@@ -6623,21 +6623,21 @@
       });
     }
 
-    // 2. Mandalam Drilldown Modal
-    function openMandalamDrilldown(mandalamName) {
-      drilldownActiveZone = mandalamName;
+    // 2. Zone Drilldown Modal
+    function openZoneDrilldown(zoneName) {
+      drilldownActiveZone = zoneName;
       const modal = document.getElementById('checkinDrilldownModal');
       if (!modal) return;
 
-      const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === mandalamName);
+      const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === zoneName);
       const zTotal = zStudents.length;
       const zCheckedIn = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
       const zPending = Math.max(0, zTotal - zCheckedIn);
       const zWalkins = zStudents.filter(r => r.checkinMethod === 'WALK_IN').length;
       const zPct = zTotal > 0 ? Math.round((zCheckedIn / zTotal) * 100) : 0;
 
-      document.getElementById('drilldownZoneTitle').innerHTML = `<i class="fas fa-map-marker-alt text-cyan"></i> ${mandalamName} Mandalam Drilldown`;
-      document.getElementById('drilldownZoneSubtitle').textContent = `Tracking venue check-in progress for delegates from ${mandalamName} zone.`;
+      document.getElementById('drilldownZoneTitle').innerHTML = `<i class="fas fa-map-marker-alt text-cyan"></i> ${zoneName} Zone Drilldown`;
+      document.getElementById('drilldownZoneSubtitle').textContent = `Tracking venue check-in progress for delegates from ${zoneName} zone.`;
 
       // Render mini stat cards
       const statsGrid = document.getElementById('drilldownStatsGrid');
@@ -6674,6 +6674,7 @@
       renderDrilldownDelegatesList();
       modal.classList.add('active');
     }
+    const openMandalamDrilldown = openZoneDrilldown;
 
     function closeCheckinDrilldownModal() {
       const modal = document.getElementById('checkinDrilldownModal');
@@ -6752,7 +6753,7 @@
       });
     }
 
-    function shareDrilldownMandalamWhatsApp() {
+    function shareDrilldownZoneWhatsApp() {
       if (!drilldownActiveZone) return;
       const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === drilldownActiveZone);
       const zTotal = zStudents.length;
@@ -6762,8 +6763,8 @@
       const zPct = zTotal > 0 ? Math.round((zCheckedIn / zTotal) * 100) : 0;
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
-      const text = `*TEENSPACE 2026 - MANDALAM CHECK-IN REPORT*%0A` +
-        `*Mandalam:* ${drilldownActiveZone}%0A` +
+      const text = `*TEENSPACE 2026 - ZONE CHECK-IN REPORT*%0A` +
+        `*Zone:* ${drilldownActiveZone}%0A` +
         `*Time:* ${nowStr}%0A%0A` +
         `*Total Registered:* ${zTotal}%0A` +
         `*Checked In:* ${zCheckedIn} (${zPct}%%)%0A` +
@@ -6771,8 +6772,8 @@
         `*Walk-ins Added:* ${zWalkins}%0A%0A` +
         `_Generated via TEENSPACE Admin Portal_`;
 
-      window.open(`https://wa.me/?text=${text}`, '_blank');
     }
+    const shareDrilldownMandalamWhatsApp = shareDrilldownZoneWhatsApp;
 
     // 3. Direct Check-in Search & Card Listing
     function handleDirectCheckinSearch() {
@@ -6935,11 +6936,12 @@
       handleDirectCheckinSearch();
     }
 
-    function quickFilterDirectMandalam(mandalamName) {
+    function quickFilterDirectZone(zoneName) {
       const zoneSelect = document.getElementById('directCheckinZoneFilter');
-      if (zoneSelect) zoneSelect.value = mandalamName;
+      if (zoneSelect) zoneSelect.value = zoneName;
       handleDirectCheckinSearch();
     }
+    const quickFilterDirectMandalam = quickFilterDirectZone;
 
     // 4. Check-in Confirmation Dialogs
     function promptDirectCheckin(regId) {
@@ -6972,8 +6974,8 @@
           <div style="font-size:1.05rem; font-weight:800; color:var(--text-main); margin-bottom:0.5rem;">${sName}</div>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem;">
             <div><strong>District ID:</strong> <span class="badge-reg">${dId}</span></div>
-            <div><strong>Mandal ID:</strong> <span class="badge-reg">${mId}</span></div>
-            <div><strong>Mandalam:</strong> ${zone}</div>
+            <div><strong>Zone ID:</strong> <span class="badge-reg">${mId}</span></div>
+            <div><strong>Zone:</strong> ${zone}</div>
             <div><strong>Unit:</strong> ${unit}</div>
             <div><strong>Mobile:</strong> ${phone}</div>
             <div><strong>Vehicle:</strong> ${vId ? vId : '<em style="color:#94a3b8;">Direct Venue</em>'}</div>
@@ -7025,7 +7027,7 @@
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.5rem; font-size:0.85rem;">
             <div><strong>Delegate ID:</strong> <span class="badge-reg">${mId} (${dId})</span></div>
             <div><strong>Vehicle:</strong> <strong style="color:var(--cyan);">${vehicleId}</strong></div>
-            <div><strong>Mandalam:</strong> ${zone}</div>
+            <div><strong>Zone:</strong> ${zone}</div>
             <div><strong>Unit:</strong> ${unit}</div>
           </div>
           <div style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px dashed #CBD5E1; font-weight:700; color:#15803D;">
@@ -7220,7 +7222,7 @@
           const isChk = match.checkedIn === true || match.checkedIn === 'true';
           warningText.innerHTML = `
             <strong>${match["Student Name"] || match.name}</strong> is already registered with this phone number.<br>
-            • ID: <span class="badge-reg">${match.mandalRegId || match.districtRegId || match.regId}</span> • Mandalam: <strong>${match["Organization Zone"] || match.zone}</strong><br>
+            • ID: <span class="badge-reg">${match.mandalRegId || match.districtRegId || match.regId}</span> • Zone: <strong>${match["Organization Zone"] || match.zone}</strong><br>
             • Status: <strong style="color:${isChk ? '#15803D' : '#D97706'};">${isChk ? '✓ Already Checked In' : '⏳ Pending Arrival'}</strong>
           `;
           return;
@@ -7283,7 +7285,7 @@
               <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:10px; padding:0.75rem; margin-top:0.35rem;">
                 <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${dupMatch["Student Name"] || dupMatch.name}</div>
                 <div>ID: <span class="badge-reg">${dupMatch.mandalRegId || dupMatch.districtRegId || dupMatch.regId}</span> • Phone: <strong>${dupMatch["Student Mobile Number"] || dupMatch.phone}</strong></div>
-                <div>Mandalam: <strong>${dupMatch["Organization Zone"] || dupMatch.zone}</strong> • Unit: ${dupMatch["Organization Unit"] || dupMatch.unit}</div>
+                <div>Zone: <strong>${dupMatch["Organization Zone"] || dupMatch.zone}</strong> • Unit: ${dupMatch["Organization Unit"] || dupMatch.unit}</div>
                 <div>Status: <strong style="color:${isChk ? '#15803D' : '#D97706'};">${isChk ? 'Checked In' : 'Pending Arrival'}</strong></div>
               </div>
             </div>
@@ -7291,7 +7293,7 @@
               <strong style="font-size:0.95rem; color:#92400E;">New Walk-in Info Entered:</strong>
               <div style="background:#FFFFFF; border:1px solid #FDE68A; border-radius:10px; padding:0.75rem; margin-top:0.35rem;">
                 <div style="font-weight:700; font-size:1rem; color:var(--text-main);">${name}</div>
-                <div>Phone: <strong>${phone}</strong> • Mandalam: <strong>${zone}</strong> • Unit: ${unit}</div>
+                <div>Phone: <strong>${phone}</strong> • Zone: <strong>${zone}</strong> • Unit: ${unit}</div>
               </div>
             </div>
           `;
@@ -7340,7 +7342,7 @@
         const nowIso = new Date().toISOString();
         const prefix = getZonePrefix(zone);
 
-        // 1. Calculate continuous District and Mandal sequential numbering
+        // 1. Calculate continuous District and Zone sequential numbering
         let maxDistNum = 100;
         registrations.forEach(r => {
           const dId = r.districtRegId || r.districtId || r["Registration ID"] || '';
@@ -7458,7 +7460,7 @@
         // Reset form
         resetWalkinForm();
 
-        alert(`🎉 Success! Walk-in delegate "${name}" registered and checked in successfully!\n\n• Mandal ID: ${newMandalRegId}\n• District ID: ${newDistrictRegId}\n• Mandalam: ${zone}\n• Source: WALK_IN`);
+        alert(`🎉 Success! Walk-in delegate "${name}" registered and checked in successfully!\n\n• Zone ID: ${newMandalRegId}\n• District ID: ${newDistrictRegId}\n• Zone: ${zone}\n• Source: WALK_IN`);
 
         // Re-render checkin section
         renderCheckinSection();
@@ -7477,7 +7479,7 @@
     // 6. Check-in History & Reports
     function renderCheckinHistory() {
       const searchVal = (document.getElementById('historySearchInput')?.value || '').trim().toLowerCase();
-      const mandalamFilter = document.getElementById('historyMandalamFilter')?.value || '';
+      const zoneFilter = document.getElementById('historyZoneFilter')?.value || document.getElementById('historyMandalamFilter')?.value || '';
       const methodFilter = document.getElementById('historyMethodFilter')?.value || '';
       const statusFilter = document.getElementById('historyStatusFilter')?.value || 'CHECKED_IN';
 
@@ -7489,9 +7491,9 @@
 
       let list = registrations.slice();
 
-      // Mandalam filter
-      if (mandalamFilter) {
-        list = list.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === mandalamFilter);
+      // Zone filter
+      if (zoneFilter) {
+        list = list.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === zoneFilter);
       }
 
       // Status filter
@@ -7557,7 +7559,7 @@
           <td data-label="Reg ID"><span class="badge-reg">${regDisplay}</span></td>
           <td data-label="Delegate Name"><strong>${item["Student Name"] || item.name || 'N/A'}</strong></td>
           <td data-label="Phone">${item["Student Mobile Number"] || item.phone || 'N/A'}</td>
-          <td data-label="Mandalam / Unit">${item["Organization Zone"] || item.zone || 'N/A'} ${item["Organization Unit"] ? '• ' + item["Organization Unit"] : ''}</td>
+          <td data-label="Zone / Unit">${item["Organization Zone"] || item.zone || 'N/A'} ${item["Organization Unit"] ? '• ' + item["Organization Unit"] : ''}</td>
           <td data-label="Status">${isChecked ? '<span class="badge" style="background:#DCFCE7; color:#15803D; font-weight:700;"><i class="fas fa-check-circle"></i> Checked In</span>' : '<span class="badge" style="background:#FEF3C7; color:#D97706; font-weight:700;"><i class="fas fa-clock"></i> Pending</span>'}</td>
           <td data-label="Method">${isChecked ? `<span class="badge-checkin-method ${methodClass}">${method}</span>` : '<span style="color:#94a3b8;">-</span>'}</td>
           <td data-label="Time" style="font-size:0.8rem;">${isChecked ? timeFormatted : '-'}</td>
@@ -7587,8 +7589,8 @@
       }
 
       const headers = [
-        "Sl No", "District ID", "Mandal ID", "Student Name", "Mobile Number", "Parent Mobile",
-        "Mandalam", "Unit", "Class", "School", "Panchayath", "Ward", "Place",
+        "Sl No", "District ID", "Zone ID", "Student Name", "Mobile Number", "Parent Mobile",
+        "Zone", "Unit", "Class", "School", "Panchayath", "Ward", "Place",
         "Check-in Status", "Source Method", "Check-in Timestamp", "Confirmed By", "Assigned Vehicle"
       ];
 
@@ -7628,9 +7630,9 @@
       document.body.removeChild(link);
     }
 
-    // Share District & Mandalam Check-in status to WhatsApp
+    // Share District & Zone Check-in status to WhatsApp
     function shareCheckinWhatsApp() {
-      const mandalams = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
+      const zones = ['Chavakkad', 'Pavaratty', 'Kunnamkulam', 'Guruvayoor', 'Thrissur City', 'Kodungallur', 'Kaipamangalam'];
       const totalReg = registrations.length;
       const checkedInStudents = registrations.filter(r => r.checkedIn === true || r.checkedIn === 'true');
       const totalCheckedIn = checkedInStudents.length;
@@ -7653,9 +7655,9 @@
         `🚌 Vehicle Boarding: ${vCount}%0A` +
         `🏢 Direct Venue Check-in: ${dCount}%0A` +
         `🚶 Walk-in Registrations: ${wCount}%0A%0A` +
-        `*Mandalam Breakdown:*%0A`;
+        `*Zone Breakdown:*%0A`;
 
-      mandalams.forEach(m => {
+      zones.forEach(m => {
         const zStudents = registrations.filter(r => canonicalZone(r["Organization Zone"] || r.zone) === m);
         const zTotal = zStudents.length;
         const zChecked = zStudents.filter(r => r.checkedIn === true || r.checkedIn === 'true').length;
@@ -8216,12 +8218,12 @@
       const displayName = (student["Student Name"] || student.name || 'N/A').toUpperCase();
       ctx.fillText(displayName.length > 22 ? displayName.substring(0, 22) + '...' : displayName, 30, 145);
 
-      // Reg ID (Both District & Mandal Sequential IDs)
+      // Reg ID (Both District & Zone Sequential IDs)
       const distId = student.districtRegId || student["Registration ID"] || student.regId || 'N/A';
       const mandalId = student.mandalRegId || '';
       ctx.fillStyle = '#00A8E8'; // Cyan
       ctx.font = '700 13px "Inter", sans-serif';
-      ctx.fillText(`DISTRICT ID: ${distId}${mandalId ? `   ·   MANDAL: ${mandalId}` : ''}`, 30, 170);
+      ctx.fillText(`DISTRICT ID: ${distId}${mandalId ? `   ·   ZONE ID: ${mandalId}` : ''}`, 30, 170);
 
       // Horizontal separator line
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -8318,7 +8320,7 @@
         const unitVal = student["Organization Unit"] || student.unit || '';
 
         const idInfo = mandalId 
-          ? `*District Reg ID:* ${distId}\n*Mandal Reg ID:* ${mandalId}\n`
+          ? `*District Reg ID:* ${distId}\n*Zone Reg ID:* ${mandalId}\n`
           : `*District Reg ID:* ${distId}\n`;
 
         const pickupPt = student["Pickup Point"] || student.pickupPoint || student.pickup_point || '';
@@ -8455,7 +8457,7 @@
           const zoneDesc = zoneU ? (unitU ? `${zoneU} • ${unitU}` : zoneU) : '';
           const idToken = `[ID:${u.id}]`;
 
-          // Format: Name | Mandal ID | District ID | Zone • Unit | Phone | [ID:18]
+          // Format: Name | Zone ID | District ID | Zone • Unit | Phone | [ID:18]
           const tokens = [uName];
           if (mandalId) tokens.push(mandalId);
           if (distId && distId !== mandalId) tokens.push(distId);
@@ -8875,7 +8877,7 @@
           student = exactMatches[0];
         } else if (exactMatches.length > 1) {
           const listStr = exactMatches.slice(0, 4).map(m => `• ${m["Student Name"]} (${m.mandalRegId || m.districtRegId || ''} - ${m["Organization Zone"] || ''})`).join('\n');
-          alert(`Multiple delegates found with name "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Mandal ID (e.g. KPM 101).`);
+          alert(`Multiple delegates found with name "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Zone ID (e.g. KPM 101).`);
           return;
         }
 
@@ -8899,14 +8901,14 @@
             student = partialMatches[0];
           } else if (partialMatches.length > 1) {
             const listStr = partialMatches.slice(0, 4).map(m => `• ${m["Student Name"]} (${m.mandalRegId || m.districtRegId || ''} - ${m["Organization Zone"] || ''})`).join('\n');
-            alert(`Multiple delegates match "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Mandal ID (e.g. KPM 101).`);
+            alert(`Multiple delegates match "${rawVal}":\n\n${listStr}\n\nPlease select the specific delegate from the dropdown list or type their Zone ID (e.g. KPM 101).`);
             return;
           }
         }
       }
 
       if (!student) {
-        alert(`Could not find delegate "${rawVal}". Please select a delegate from the dropdown suggestions or search with their exact Name, Mandal ID (e.g. KPM 101), District ID, or Mobile number.`);
+        alert(`Could not find delegate "${rawVal}". Please select a delegate from the dropdown suggestions or search with their exact Name, Zone ID (e.g. KPM 101), District ID, or Mobile number.`);
         return;
       }
 
@@ -9327,7 +9329,7 @@
       if (!items || items.length === 0) return '';
       const headers = [
         "District Reg ID",
-        "Mandal Reg ID",
+        "Zone Reg ID",
         "Student Name",
         "Class",
         "Calling Status",
