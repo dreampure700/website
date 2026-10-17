@@ -4950,13 +4950,21 @@
             // Validate that assigned vehicle actually exists in vehicles table
             const rawV = (d.assigned_vehicle || "").trim();
             const validVObj = (rawV && Array.isArray(vehicles)) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === rawV.toLowerCase()) : null;
-            const validVehicleId = validVObj ? validVObj["Vehicle ID"] : "";
+            let validVehicleId = validVObj ? validVObj["Vehicle ID"] : "";
 
             // Resolve check-in state
             const checkinInfo = studentCheckinMap.get(String(d.id)) ||
                                 studentCheckinMap.get(d.reg_id) ||
                                 (districtRegId ? studentCheckinMap.get(districtRegId) : null) ||
                                 (mandalRegId ? studentCheckinMap.get(mandalRegId) : null);
+
+            // Self-healing fallback: If delegate was checked in to a vehicle, recover vehicle assignment
+            if (!validVehicleId && checkinInfo && checkinInfo.vehicle) {
+              const chkV = checkinInfo.vehicle.trim();
+              const chkVObj = Array.isArray(vehicles) ? vehicles.find(v => (v["Vehicle ID"] || "").trim().toLowerCase() === chkV.toLowerCase()) : null;
+              if (chkVObj) validVehicleId = chkVObj["Vehicle ID"];
+            }
+
             const isVehiclePickedUp = validVehicleId ? (d.picked_up === true || d.picked_up === "true") : false;
             const isCheckedIn = !!checkinInfo || isVehiclePickedUp;
             const resolvedMethod = checkinInfo ? (checkinInfo.method || 'DIRECT') : (isVehiclePickedUp ? 'VEHICLE' : '');
@@ -5745,7 +5753,7 @@
       // Calculate dynamic vehicle capacity stats based on filtered activeVehicles
       const totalVehicles = activeVehicles.length;
       const totalCapacity = activeVehicles.reduce((sum, v) => sum + (parseInt(v.Capacity) || 50), 0);
-      const totalFilled = registrations.filter(r => activeVehicles.some(v => v["Vehicle ID"] === r["Assigned Vehicle"])).length;
+      const totalFilled = registrations.filter(r => activeVehicles.some(v => (v["Vehicle ID"] || '').trim().toLowerCase() === (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase())).length;
       const availableSeats = totalCapacity - totalFilled;
 
       // Update summary cards in the UI
@@ -5756,7 +5764,7 @@
 
       activeVehicles.forEach(vehicle => {
         // Count how many registrations have been assigned this vehicle ID or name
-        const filled = registrations.filter(r => r["Assigned Vehicle"] === vehicle["Vehicle ID"]).length;
+        const filled = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === (vehicle["Vehicle ID"] || '').trim().toLowerCase()).length;
         const capacity = parseInt(vehicle.Capacity) || 50;
         const percentage = Math.min(Math.round((filled / capacity) * 100), 100);
 
@@ -5784,6 +5792,14 @@
         tbody.appendChild(row);
       });
     }
+
+    // Alias renderVehicles to renderTransportation for universal compatibility
+    function renderVehicles(filteredRegs) {
+      if (typeof renderTransportation === 'function') {
+        renderTransportation(filteredRegs);
+      }
+    }
+    window.renderVehicles = renderVehicles;
 
     // Helper to generate a soft background circle avatar with the student's first initial
     function getStudentAvatarHtml(name) {
@@ -8385,13 +8401,13 @@
     }
 
     function openPassengerListModal(vehicleId) {
-      const vehicle = vehicles.find(v => v["Vehicle ID"] === vehicleId);
+      const vehicle = vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === String(vehicleId).trim().toLowerCase());
       if (!vehicle) return;
 
       const modal = document.getElementById('passengerListModal');
       document.getElementById('passengerVehicleName').textContent = `${vehicle["Vehicle ID"]} - ${vehicle["Vehicle Name"]}`;
       
-      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const passengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vehicleId).trim().toLowerCase());
       const capacity = parseInt(vehicle.Capacity) || 50;
       
       // Sort by pickup order
@@ -8644,6 +8660,12 @@
 
       // Persist on database
       const updatePromises = passengers.map((p, idx) => {
+        if (p.id) {
+          return supabase
+            .from('registrations')
+            .update({ pickup_order: idx + 1 })
+            .eq('id', p.id);
+        }
         const targetDbId = p.dbRegId || getRegistrationDbId(p["Registration ID"] || p.regId);
         return supabase
           .from('registrations')
@@ -8927,7 +8949,7 @@
       }
 
       // Calculate next pickup order
-      const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '') === vehicleId);
+      const vehiclePassengers = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === vehicleId.trim().toLowerCase());
       let maxOrder = 0;
       vehiclePassengers.forEach(p => {
         const ord = parseInt(p["Pickup Order"] || p.pickupOrder, 10);
@@ -8936,6 +8958,8 @@
       const nextOrder = maxOrder + 1;
 
       // 1. INSTANT LOCAL UPDATE (0ms)
+      const prevV = student["Assigned Vehicle"] || "";
+      const prevO = student["Pickup Order"] || "";
       student["Assigned Vehicle"] = vehicleId;
       student.assignedVehicle = vehicleId;
       student["Pickup Order"] = nextOrder;
@@ -8947,10 +8971,16 @@
 
       openPassengerListModal(vehicleId);
       renderDataList();
-      renderVehicles();
+      renderTransportation();
       showToast(`Added ${sName} to vehicle ${vehicleId}`);
 
-      // 2. BACKGROUND PERSISTENCE TO SUPABASE
+      // 2. AWAITED PERSISTENCE TO SUPABASE
+      const submitBtn = document.getElementById('quickAddStudentSubmitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+      }
+
       const updateData = { assigned_vehicle: vehicleId, pickup_order: nextOrder };
       let query;
       if (student.id) {
@@ -8960,22 +8990,40 @@
         query = supabase.from('registrations').update(updateData).eq('reg_id', dbId);
       }
 
-      query.then(({ error }) => {
+      try {
+        const { error } = await query;
         if (error) {
           console.error("Failed to persist passenger assignment on Supabase:", error);
-          alert("Database notice: " + error.message);
-          loadData();
+          alert("Database notice: Could not save passenger assignment: " + error.message);
+          // Rollback local changes
+          student["Assigned Vehicle"] = prevV;
+          student.assignedVehicle = prevV;
+          student["Pickup Order"] = prevO;
+          student.pickupOrder = prevO;
+          openPassengerListModal(vehicleId);
+          renderDataList();
+          renderTransportation();
         }
-      });
+      } catch (err) {
+        console.error("Exception persisting passenger assignment:", err);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Bus';
+        }
+      }
     }
 
-    function unassignPassenger(regId, vehicleId) {
+    async function unassignPassenger(regId, vehicleId) {
       const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
       const sName = student ? (student["Student Name"] || student.name || regId) : regId;
 
       if (!confirm(`Are you sure you want to remove "${sName}" from vehicle ${vehicleId}?`)) {
         return;
       }
+
+      const prevV = student ? (student["Assigned Vehicle"] || "") : "";
+      const prevO = student ? (student["Pickup Order"] || "") : "";
 
       // 1. INSTANT LOCAL UPDATE (0ms lag)
       if (student) {
@@ -8995,7 +9043,7 @@
 
       openPassengerListModal(vehicleId);
       renderDataList();
-      renderVehicles();
+      renderTransportation();
       if (typeof renderCheckinSection === 'function') renderCheckinSection();
       showToast(`Removed "${sName}" from vehicle ${vehicleId}`);
 
@@ -9016,13 +9064,25 @@
         query = supabase.from('registrations').update(clearPayload).eq('reg_id', targetDbId);
       }
 
-      query.then(({ error }) => {
+      try {
+        const { error } = await query;
         if (error) {
           console.error("Error removing passenger on Supabase: ", error);
-          alert("Database notice: " + error.message);
-          loadData();
+          alert("Database notice: Could not remove passenger: " + error.message);
+          // Rollback
+          if (student) {
+            student["Assigned Vehicle"] = prevV;
+            student.assignedVehicle = prevV;
+            student["Pickup Order"] = prevO;
+            student.pickupOrder = prevO;
+          }
+          openPassengerListModal(vehicleId);
+          renderDataList();
+          renderTransportation();
         }
-      });
+      } catch (err) {
+        console.error("Exception in unassignPassenger:", err);
+      }
     }
 
     // Assign Form Submit
@@ -9087,7 +9147,7 @@
 
       closeAssignModal();
       renderDataList();
-      renderVehicles();
+      renderTransportation();
       showToast(`Assigned ${vehicleId} to ${student ? (student["Student Name"] || 'delegate') : 'delegate'}`);
 
       // 2. BACKGROUND PERSISTENCE TO SUPABASE
@@ -9099,6 +9159,10 @@
           alert('Database notice: ' + error.message);
           loadData();
         }
+      }).catch(err => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle Assignment';
+        console.error('Exception updating assignment on Supabase:', err);
       });
     });
 
@@ -10222,7 +10286,7 @@
         }
       });
       vehicles = vehicles.filter(v => (v["Vehicle ID"] || '').trim().toLowerCase() !== String(vId).trim().toLowerCase());
-      renderVehicles();
+      renderTransportation();
       renderDataList();
       showToast(`Vehicle ${vId} deleted.`);
 
