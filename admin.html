@@ -3083,7 +3083,7 @@
           </span>
           <span id="quickAddRemainingInfo" style="font-size:0.75rem; color:#15803D; font-weight:700;"></span>
         </div>
-        <form id="quickAddPassengerForm" onsubmit="executeQuickAddPassenger(event)" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <form id="quickAddPassengerForm" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
           <input type="hidden" id="quickAddVehicleId">
           <div style="flex-grow:1; min-width:240px; position:relative;">
             <input type="text" id="quickAddStudentInput" class="form-control" placeholder="Type student Name, District ID, Zone ID, or Mobile..." list="quickAddStudentDatalist" style="width:100%; padding:0.55rem 0.8rem; font-size:0.85rem; border-radius:8px; border:1px solid #BBF7D0; background:white;" autocomplete="off" required>
@@ -3428,9 +3428,9 @@
       <form id="vehicleForm">
         <input type="hidden" id="vehicleMode" value="add">
         
-        <div class="form-group" style="display: none;">
+        <div class="form-group" id="vehicleIdGroup" style="display: none;">
           <label class="form-label" for="vehicleIdInput">Vehicle ID</label>
-          <input type="text" id="vehicleIdInput" class="form-input">
+          <input type="text" id="vehicleIdInput" class="form-input" readonly style="background:var(--bg-light); cursor:not-allowed;">
         </div>
 
         <div class="form-group">
@@ -4813,11 +4813,12 @@
         const { data: vehicleData, error: vehicleErr } = await supabase.from('vehicles').select('*');
         if (vehicleErr) throw vehicleErr;
         vehicles = (vehicleData || []).map(d => ({
+          id: d.id,
           "Vehicle ID": d.vehicle_id,
           "Vehicle Name": d.name,
           Zone: canonicalZone(d.zone),
-          Unit: canonicalUnit(d.unit) || "",
-          Capacity: d.capacity.toString(),
+          Unit: (d.unit && d.unit.trim() !== '' && d.unit.trim().toUpperCase() !== 'N/A') ? canonicalUnit(d.unit) : "",
+          Capacity: d.capacity ? d.capacity.toString() : "50",
           "Coordinator Username": d.coord_user || "",
           "Coordinator Password": d.coord_pass || "",
           "Asst Coordinator Username": d.asst_user || "",
@@ -5837,11 +5838,16 @@
         const capacity = parseInt(vehicle.Capacity) || 50;
         const percentage = Math.min(Math.round((filled / capacity) * 100), 100);
 
+        const unitDisplay = (vehicle.Unit && vehicle.Unit.trim() !== '' && vehicle.Unit.trim().toUpperCase() !== 'N/A')
+          ? ` / ${vehicle.Unit}`
+          : '';
+        const zoneDisplay = `${vehicle.Zone || 'N/A'}${unitDisplay}`;
+
         const row = document.createElement('tr');
         row.innerHTML = `
           <td data-label="Vehicle ID"><span class="badge-reg badge-vehicle">${vehicle["Vehicle ID"]}</span></td>
           <td data-label="Name"><strong>${vehicle["Vehicle Name"]}</strong></td>
-          <td data-label="Zone / Unit">${vehicle.Zone} ${vehicle.Unit ? '/ ' + vehicle.Unit : ''}</td>
+          <td data-label="Zone / Unit">${zoneDisplay}</td>
           <td data-label="Filled"><strong>${filled}</strong></td>
           <td data-label="Capacity">${capacity} seats</td>
           <td data-label="Status">
@@ -10323,7 +10329,15 @@
       
       document.getElementById('vehicleModalTitle').innerHTML = '<i class="fas fa-bus text-cyan"></i> Add Vehicle';
       document.getElementById('vehicleMode').value = 'add';
-      document.getElementById('vehicleIdInput').disabled = false;
+      
+      const idGroup = document.getElementById('vehicleIdGroup');
+      if (idGroup) idGroup.style.display = 'none';
+
+      const idInput = document.getElementById('vehicleIdInput');
+      if (idInput) {
+        idInput.value = '';
+        idInput.disabled = false;
+      }
 
       // Clear coordinator fields
       document.getElementById('vehicleCoordUser').value = '';
@@ -10337,18 +10351,26 @@
 
     function openVehicleEditModal(vId) {
       const modal = document.getElementById('vehicleModal');
-      const vehicle = vehicles.find(v => v["Vehicle ID"] === vId);
-      if (!vehicle) return;
+      const vehicle = vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === String(vId).trim().toLowerCase());
+      if (!vehicle) {
+        alert("Vehicle not found: " + vId);
+        return;
+      }
 
       document.getElementById('vehicleModalTitle').innerHTML = '<i class="fas fa-bus text-cyan"></i> Edit Vehicle';
       document.getElementById('vehicleMode').value = 'edit';
       
+      const idGroup = document.getElementById('vehicleIdGroup');
+      if (idGroup) idGroup.style.display = 'block';
+
       const idInput = document.getElementById('vehicleIdInput');
-      idInput.value = vehicle["Vehicle ID"];
-      idInput.disabled = true;
+      if (idInput) {
+        idInput.value = vehicle["Vehicle ID"];
+        idInput.disabled = true;
+      }
 
       document.getElementById('vehicleNameInput').value = vehicle["Vehicle Name"] || '';
-      document.getElementById('vehicleCapacityInput').value = vehicle.Capacity || '';
+      document.getElementById('vehicleCapacityInput').value = vehicle.Capacity || '50';
 
       // Populate coordinator fields
       document.getElementById('vehicleCoordUser').value = vehicle["Coordinator Username"] || '';
@@ -10356,10 +10378,8 @@
       document.getElementById('vehicleAsstUser').value = vehicle["Asst Coordinator Username"] || '';
       document.getElementById('vehicleAsstPass').value = vehicle["Asst Coordinator Password"] || '';
 
-      populateVehicleDropdowns();
-      
-      document.getElementById('vehicleZoneInput').value = vehicle.Zone || '';
-      document.getElementById('vehicleUnitInput').value = vehicle.Unit || '';
+      const cleanUnit = (vehicle.Unit && vehicle.Unit !== 'N/A') ? vehicle.Unit : '';
+      populateVehicleDropdowns(vehicle.Zone || '', cleanUnit);
 
       modal.classList.add('active');
     }
@@ -10368,7 +10388,7 @@
       document.getElementById('vehicleModal').classList.remove('active');
     }
 
-    function populateVehicleDropdowns() {
+    function populateVehicleDropdowns(selectedZone = '', selectedUnit = '') {
       const zoneSelect = document.getElementById('vehicleZoneInput');
       const unitSelect = document.getElementById('vehicleUnitInput');
 
@@ -10378,23 +10398,27 @@
       zoneSelect.innerHTML = '<option value="">Select Zone</option>';
       zones.forEach(z => zoneSelect.appendChild(new Option(z, z)));
 
-      function updateVehicleUnits() {
+      function updateVehicleUnits(keepUnit = '') {
         const zoneVal = zoneSelect.value;
         unitSelect.innerHTML = '<option value="">Select Unit (Optional)</option>';
         if (!zoneVal) return;
 
-        const zoneUnits = ORGANIZATIONAL_MAP[zoneVal] || [];
+        const zoneUnits = typeof getOrganizationalUnits === 'function' ? getOrganizationalUnits(zoneVal) : (ORGANIZATIONAL_MAP[zoneVal] || []);
         zoneUnits.forEach(u => unitSelect.appendChild(new Option(u, u)));
+
+        if (keepUnit) {
+          unitSelect.value = keepUnit;
+        }
       }
 
-      zoneSelect.onchange = updateVehicleUnits;
+      zoneSelect.onchange = () => updateVehicleUnits('');
 
       // Lock based on role
-      if (sessionUser.role === 'Zone') {
+      if (sessionUser && sessionUser.role === 'Zone') {
         zoneSelect.value = sessionUser.target;
         zoneSelect.disabled = true;
-        updateVehicleUnits();
-      } else if (sessionUser.role === 'Unit') {
+        updateVehicleUnits(selectedUnit);
+      } else if (sessionUser && sessionUser.role === 'Unit') {
         let userZone = 'Chavakkad';
         for (const [z, uList] of Object.entries(ORGANIZATIONAL_MAP)) {
           if (uList.includes(sessionUser.target)) {
@@ -10404,13 +10428,18 @@
         }
         zoneSelect.value = userZone;
         zoneSelect.disabled = true;
-        updateVehicleUnits();
-        
+        updateVehicleUnits(sessionUser.target);
         unitSelect.value = sessionUser.target;
         unitSelect.disabled = true;
       } else {
         zoneSelect.disabled = false;
         unitSelect.disabled = false;
+        if (selectedZone) {
+          zoneSelect.value = selectedZone;
+          updateVehicleUnits(selectedUnit);
+        } else {
+          updateVehicleUnits('');
+        }
       }
     }
 
@@ -10420,18 +10449,30 @@
       const mode = document.getElementById('vehicleMode').value;
       const vehicleId = document.getElementById('vehicleIdInput').value.trim();
       const name = document.getElementById('vehicleNameInput').value.trim();
-      const capacity = document.getElementById('vehicleCapacityInput').value;
+      const capacityVal = parseInt(document.getElementById('vehicleCapacityInput').value, 10);
       
       const coordUser = document.getElementById('vehicleCoordUser').value.trim();
       const coordPass = document.getElementById('vehicleCoordPass').value.trim();
       const asstUser = document.getElementById('vehicleAsstUser').value.trim();
       const asstPass = document.getElementById('vehicleAsstPass').value.trim();
 
-      // Temporarily enable fields to grab values if they are disabled
       const zoneSelect = document.getElementById('vehicleZoneInput');
       const unitSelect = document.getElementById('vehicleUnitInput');
-      const zone = zoneSelect.value;
-      const unit = unitSelect.value;
+      const zone = zoneSelect.value.trim();
+      const unit = unitSelect.value.trim();
+
+      if (!name) {
+        alert("Please enter a vehicle name.");
+        return;
+      }
+      if (isNaN(capacityVal) || capacityVal <= 0) {
+        alert("Please enter a valid seating capacity.");
+        return;
+      }
+      if (!zone) {
+        alert("Please select a zone.");
+        return;
+      }
 
       const submitBtn = document.getElementById('vehicleSubmitBtn');
       submitBtn.disabled = true;
@@ -10452,63 +10493,110 @@
         return prefixes[zoneName] || 'BUS';
       }
 
-      let dbQuery;
-      if (mode === 'add') {
-        // Calculate next sequence ID
-        const prefix = getZonePrefix(zone);
-        let maxNum = 0;
-        vehicles.forEach(v => {
-          const idVal = v["Vehicle ID"] || '';
-          if (idVal.startsWith(prefix + '-BUS-')) {
-            const num = parseInt(idVal.replace(prefix + '-BUS-', ''), 10);
-            if (!isNaN(num) && num > maxNum) {
-              maxNum = num;
+      try {
+        if (mode === 'add') {
+          // Calculate next sequence ID
+          const prefix = getZonePrefix(zone);
+          let maxNum = 0;
+          vehicles.forEach(v => {
+            const idVal = v["Vehicle ID"] || '';
+            if (idVal.startsWith(prefix + '-BUS-')) {
+              const num = parseInt(idVal.replace(prefix + '-BUS-', ''), 10);
+              if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+              }
             }
-          }
-        });
-        const nextNum = maxNum + 1;
-        const formattedNum = nextNum.toString().padStart(2, '0');
-        const calculatedId = `${prefix}-BUS-${formattedNum}`;
+          });
+          const nextNum = maxNum + 1;
+          const formattedNum = nextNum.toString().padStart(2, '0');
+          const calculatedId = `${prefix}-BUS-${formattedNum}`;
 
-        dbQuery = supabase
-          .from('vehicles')
-          .insert([{
+          const payload = {
             vehicle_id: calculatedId,
             name: name,
             zone: zone,
             unit: unit || null,
-            capacity: parseInt(capacity, 10),
+            capacity: capacityVal,
             coord_user: coordUser || null,
             coord_pass: coordPass || null,
             asst_user: asstUser || null,
             asst_pass: asstPass || null
-          }]);
-      } else {
-        dbQuery = supabase
-          .from('vehicles')
-          .update({
+          };
+
+          const { data, error } = await supabase
+            .from('vehicles')
+            .insert([payload])
+            .select();
+
+          if (error) throw error;
+          if (!data || data.length === 0) throw new Error("No vehicle data returned by database insert.");
+
+          const insertedRow = data[0];
+          // Update local vehicles state
+          vehicles.push({
+            id: insertedRow.id,
+            "Vehicle ID": insertedRow.vehicle_id || calculatedId,
+            "Vehicle Name": insertedRow.name || name,
+            Zone: canonicalZone(insertedRow.zone || zone),
+            Unit: (insertedRow.unit && insertedRow.unit.trim() !== '' && insertedRow.unit.trim().toUpperCase() !== 'N/A') ? canonicalUnit(insertedRow.unit) : "",
+            Capacity: (insertedRow.capacity || capacityVal).toString(),
+            "Coordinator Username": insertedRow.coord_user || coordUser,
+            "Coordinator Password": insertedRow.coord_pass || coordPass,
+            "Asst Coordinator Username": insertedRow.asst_user || asstUser,
+            "Asst Coordinator Password": insertedRow.asst_pass || asstPass
+          });
+
+          closeVehicleModal();
+          renderTransportation();
+          showToast(`Vehicle ${calculatedId} added successfully!`);
+        } else {
+          // Edit mode
+          const vObj = vehicles.find(v => (v["Vehicle ID"] || '').trim().toLowerCase() === vehicleId.trim().toLowerCase());
+          const updatePayload = {
             name: name,
             zone: zone,
             unit: unit || null,
-            capacity: parseInt(capacity, 10),
+            capacity: capacityVal,
             coord_user: coordUser || null,
             coord_pass: coordPass || null,
             asst_user: asstUser || null,
             asst_pass: asstPass || null
-          })
-          .eq('vehicle_id', vehicleId);
-      }
+          };
 
-      const { error } = await dbQuery;
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle';
-      
-      if (!error) {
-        alert('Vehicle saved successfully!');
-        closeVehicleModal();
-        loadData();
-      } else {
-        alert('Error saving vehicle: ' + error.message);
+          let updateRes;
+          if (vObj && vObj.id) {
+            updateRes = await supabase.from('vehicles').update(updatePayload).eq('id', vObj.id).select();
+          } else {
+            updateRes = await supabase.from('vehicles').update(updatePayload).eq('vehicle_id', vehicleId).select();
+          }
+
+          if (updateRes.error) throw updateRes.error;
+          if (!updateRes.data || updateRes.data.length === 0) throw new Error(`Vehicle ${vehicleId} not found in database.`);
+
+          const updatedRow = updateRes.data[0];
+          // Update local vehicles state
+          if (vObj) {
+            vObj.id = updatedRow.id || vObj.id;
+            vObj["Vehicle Name"] = updatedRow.name || name;
+            vObj.Zone = canonicalZone(updatedRow.zone || zone);
+            vObj.Unit = (updatedRow.unit && updatedRow.unit.trim() !== '' && updatedRow.unit.trim().toUpperCase() !== 'N/A') ? canonicalUnit(updatedRow.unit) : "";
+            vObj.Capacity = (updatedRow.capacity || capacityVal).toString();
+            vObj["Coordinator Username"] = updatedRow.coord_user || coordUser;
+            vObj["Coordinator Password"] = updatedRow.coord_pass || coordPass;
+            vObj["Asst Coordinator Username"] = updatedRow.asst_user || asstUser;
+            vObj["Asst Coordinator Password"] = updatedRow.asst_pass || asstPass;
+          }
+
+          closeVehicleModal();
+          renderTransportation();
+          showToast(`Vehicle ${vehicleId} updated successfully!`);
+        }
+      } catch (err) {
+        console.error("Error saving vehicle:", err);
+        alert("⚠️ Failed to save vehicle: " + (err.message || err));
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Vehicle';
       }
     });
 
@@ -10524,47 +10612,23 @@
 
       if (!confirm(confirmMsg)) return;
 
-      // 1. INSTANT LOCAL UPDATE (0ms delay)
-      registrations.forEach(r => {
-        if ((r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()) {
-          r["Assigned Vehicle"] = "";
-          r.assignedVehicle = "";
-          r["Pickup Order"] = "";
-          r.pickupOrder = "";
-          r["Pickup Point"] = "";
-          r.pickupPoint = "";
-          r.pickup_point = "";
-          r["Pickup Time"] = "";
-          r.pickupTime = "";
-          r.pickup_time = "";
-          r["Picked Up"] = "false";
-          r.pickedUp = "false";
-        }
-      });
-      vehicles = vehicles.filter(v => (v["Vehicle ID"] || '').trim().toLowerCase() !== String(vId).trim().toLowerCase());
-      renderTransportation();
-      renderDataList();
-      showToast(`Vehicle ${vId} deleted.`);
-
-      // 2. PERSIST TO SUPABASE
-      // Step A: Delete vehicle directly from vehicles table FIRST!
+      // 1. SUPABASE DELETION FIRST (database-first principle)
       try {
         let vDelQuery;
         if (vObj && vObj.id) {
-          vDelQuery = supabase.from('vehicles').delete().or(`id.eq.${vObj.id},vehicle_id.eq.${vId}`);
+          vDelQuery = supabase.from('vehicles').delete().eq('id', vObj.id).select();
         } else {
-          vDelQuery = supabase.from('vehicles').delete().eq('vehicle_id', vId);
+          vDelQuery = supabase.from('vehicles').delete().eq('vehicle_id', vId).select();
         }
 
-        const { error: vErr } = await vDelQuery;
+        const { data: delData, error: vErr } = await vDelQuery;
         if (vErr) {
           console.error("Failed to delete vehicle row from Supabase:", vErr);
-          alert("Could not delete vehicle: " + vErr.message);
-          loadData();
+          alert("Could not delete vehicle from database: " + vErr.message);
           return;
         }
 
-        // Step B: Unassign delegates (awaited, with per-student fallback)
+        // 2. Unassign delegates in Supabase
         if (assignedCount > 0) {
           const unassignPayload = { 
             assigned_vehicle: null, 
@@ -10574,7 +10638,6 @@
             picked_up: false 
           };
 
-          // First try bulk unassign by vehicle ID
           const { error: regErr } = await supabase
             .from('registrations')
             .update(unassignPayload)
@@ -10582,26 +10645,47 @@
 
           if (regErr) {
             console.warn("Bulk unassign failed, falling back to per-student updates:", regErr);
-            // Fallback: unassign each passenger individually using primary key
-            const affectedStudents = registrations.filter(r => {
-              const rV = (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase();
-              return rV === String(vId).trim().toLowerCase() || rV === '';
-            });
+            const affectedStudents = registrations.filter(r => (r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase());
             for (const s of affectedStudents) {
               try {
                 if (s.id) {
-                  await supabase.from('registrations').update({ assigned_vehicle: null, pickup_order: null, picked_up: false }).eq('id', s.id);
+                  await supabase.from('registrations').update(unassignPayload).eq('id', s.id);
                 } else {
                   const sDbId = s.dbRegId || getRegistrationDbId(s["Registration ID"] || s.regId);
-                  await supabase.from('registrations').update({ assigned_vehicle: null, pickup_order: null, picked_up: false }).eq('reg_id', sDbId);
+                  await supabase.from('registrations').update(unassignPayload).eq('reg_id', sDbId);
                 }
               } catch(e) {}
             }
           }
         }
+
+        // 3. UPDATE LOCAL STATE ONLY AFTER SUCCESSFUL DATABASE WRITE
+        registrations.forEach(r => {
+          if ((r["Assigned Vehicle"] || r.assignedVehicle || '').trim().toLowerCase() === String(vId).trim().toLowerCase()) {
+            r["Assigned Vehicle"] = "";
+            r.assignedVehicle = "";
+            r["Pickup Order"] = "";
+            r.pickupOrder = "";
+            r["Pickup Point"] = "";
+            r.pickupPoint = "";
+            r.pickup_point = "";
+            r["Pickup Time"] = "";
+            r.pickupTime = "";
+            r.pickup_time = "";
+            r["Picked Up"] = "false";
+            r.pickedUp = "false";
+          }
+        });
+        vehicles = vehicles.filter(v => (v["Vehicle ID"] || '').trim().toLowerCase() !== String(vId).trim().toLowerCase());
+        
+        // 4. RE-RENDER UI
+        renderTransportation();
+        renderDataList();
+        showToast(`Vehicle ${vId} deleted successfully.`);
+
       } catch (err) {
         console.error("Exception in deleteVehicle:", err);
-        alert("Error deleting vehicle: " + err.message);
+        alert("Error deleting vehicle: " + (err.message || err));
         loadData();
       }
     }
