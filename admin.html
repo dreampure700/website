@@ -11,7 +11,7 @@
     if ('caches' in window) {
       caches.keys().then(function(keys) {
         keys.forEach(function(k) {
-          if (k !== 'teenspace-cache-v85') {
+          if (k !== 'teenspace-cache-v86') {
             console.log("Evicting outdated cache:", k);
             caches.delete(k);
           }

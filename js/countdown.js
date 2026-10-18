@@ -19,6 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
       hoursEl.textContent = '00';
       minsEl.textContent = '00';
       secsEl.textContent = '00';
+      const titleEl = document.querySelector('.countdown-title');
+      if (titleEl) {
+        titleEl.innerHTML = '<i class="fas fa-check-circle text-magenta"></i> Event Concluded';
+      }
       return;
     }
 
