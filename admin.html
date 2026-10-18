@@ -11,7 +11,7 @@
     if ('caches' in window) {
       caches.keys().then(function(keys) {
         keys.forEach(function(k) {
-          if (k !== 'teenspace-cache-v84') {
+          if (k !== 'teenspace-cache-v85') {
             console.log("Evicting outdated cache:", k);
             caches.delete(k);
           }
@@ -8001,9 +8001,12 @@
         }
 
         if (proceedAnywayBtn) {
-          proceedAnywayBtn.onclick = () => {
+          proceedAnywayBtn.onclick = async () => {
+            const payloadToSave = pendingDuplicateWalkinPayload ? { ...pendingDuplicateWalkinPayload } : {
+              name, phone, parentPhone, studentClass, zone, unit, panchayath, ward, place, school
+            };
             closeCheckinDuplicateModal();
-            executeWalkinSave(pendingDuplicateWalkinPayload);
+            await executeWalkinSave(payloadToSave);
           };
         }
 
@@ -8029,6 +8032,23 @@
       }
 
       try {
+        if (!payload) {
+          const isZoneUser = sessionUser && sessionUser.role === 'Zone';
+          const userZone = isZoneUser ? canonicalZone(sessionUser.target) : '';
+          payload = {
+            name: (document.getElementById('walkinStudentName')?.value || '').trim(),
+            phone: (document.getElementById('walkinStudentPhone')?.value || '').trim(),
+            parentPhone: (document.getElementById('walkinParentPhone')?.value || '').trim(),
+            studentClass: document.getElementById('walkinStudentClass')?.value || '11th',
+            zone: isZoneUser ? userZone : (document.getElementById('walkinZone')?.value || ''),
+            unit: document.getElementById('walkinUnit')?.value || '',
+            panchayath: document.getElementById('walkinPanchayath')?.value || '',
+            ward: document.getElementById('walkinWard')?.value || '',
+            place: (document.getElementById('walkinPlace')?.value || '').trim(),
+            school: (document.getElementById('walkinSchool')?.value || '').trim()
+          };
+        }
+
         const { name, phone, parentPhone, studentClass, zone, unit, panchayath, ward, place, school } = payload;
         const nowIso = new Date().toISOString();
         const prefix = getZonePrefix(zone);
