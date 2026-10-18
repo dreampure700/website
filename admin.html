@@ -11,7 +11,7 @@
     if ('caches' in window) {
       caches.keys().then(function(keys) {
         keys.forEach(function(k) {
-          if (k !== 'teenspace-cache-v83') {
+          if (k !== 'teenspace-cache-v84') {
             console.log("Evicting outdated cache:", k);
             caches.delete(k);
           }
@@ -4245,6 +4245,66 @@
       return ZONE_PREFIXES[c] || 'REG';
     }
 
+    // Helper: calculate guaranteed collision-free sequential IDs across both in-memory and Supabase database records
+    function getNextGuaranteedUniqueIds(prefix, extraRows) {
+      const takenRegIds = new Set();
+      let maxDistNum = 100;
+      let maxMandalNum = 100;
+
+      const allSources = Array.isArray(registrations) ? registrations.concat(extraRows || []) : (extraRows || []);
+
+      allSources.forEach(r => {
+        if (!r) return;
+        // 1. Gather all taken reg_ids in lower-case
+        if (r.reg_id) takenRegIds.add(String(r.reg_id).trim().toLowerCase());
+        if (r.dbRegId) takenRegIds.add(String(r.dbRegId).trim().toLowerCase());
+        if (r.district_id) takenRegIds.add(String(r.district_id).trim().toLowerCase());
+        if (r.zone_id) takenRegIds.add(String(r.zone_id).trim().toLowerCase());
+        if (r['Registration ID']) takenRegIds.add(String(r['Registration ID']).trim().toLowerCase());
+
+        // 2. Scan district numbers
+        [r.district_id, r.districtRegId, r.reg_id, r.dbRegId, r['Registration ID']].forEach(val => {
+          if (!val) return;
+          const m = String(val).match(/REG\s*(\d+)/i);
+          if (m) {
+            const n = parseInt(m[1], 10);
+            if (!isNaN(n) && n > maxDistNum) maxDistNum = n;
+          }
+        });
+
+        // 3. Scan zone numbers for this prefix across ALL possible fields
+        [r.zone_id, r.mandalRegId, r.zoneRegId, r.reg_id, r.dbRegId, r.rawRegId, r['Registration ID']].forEach(val => {
+          if (!val) return;
+          const regex = new RegExp('^' + prefix + '\\s*(\\d+)', 'i');
+          const m = String(val).match(regex);
+          if (m) {
+            const n = parseInt(m[1], 10);
+            if (!isNaN(n) && n > maxMandalNum) maxMandalNum = n;
+          }
+        });
+      });
+
+      let nextDistSeq = maxDistNum + 1;
+      let newDistrictRegId = `REG ${nextDistSeq}`;
+      let newDbDistRegId = `REG${nextDistSeq}`;
+      while (takenRegIds.has(newDbDistRegId.toLowerCase()) || takenRegIds.has(newDistrictRegId.toLowerCase())) {
+        nextDistSeq++;
+        newDistrictRegId = `REG ${nextDistSeq}`;
+        newDbDistRegId = `REG${nextDistSeq}`;
+      }
+
+      let nextMandalSeq = maxMandalNum + 1;
+      let newMandalRegId = `${prefix} ${nextMandalSeq}`;
+      let newDbRegId = `${prefix}${nextMandalSeq}`;
+      while (takenRegIds.has(newDbRegId.toLowerCase()) || takenRegIds.has(newMandalRegId.toLowerCase())) {
+        nextMandalSeq++;
+        newMandalRegId = `${prefix} ${nextMandalSeq}`;
+        newDbRegId = `${prefix}${nextMandalSeq}`;
+      }
+
+      return { nextDistSeq, newDistrictRegId, nextMandalSeq, newMandalRegId, newDbRegId };
+    }
+
     // Helper: robust lookup of registration by any ID (Display ID, Zone ID e.g. "KPM 101", District ID e.g. "REG 101", numeric id, or legacy DB reg_id)
     function findRegistration(identifier) {
       if (!identifier || !Array.isArray(registrations)) return null;
@@ -7973,35 +8033,23 @@
         const nowIso = new Date().toISOString();
         const prefix = getZonePrefix(zone);
 
-        // 1. Calculate continuous District and Zone sequential numbering
-        let maxDistNum = 100;
-        registrations.forEach(r => {
-          const dId = r.districtRegId || r.districtId || r["Registration ID"] || '';
-          const match = dId.match(/REG\s*(\d+)/i);
-          if (match) {
-            const num = parseInt(match[1], 10);
-            if (!isNaN(num) && num > maxDistNum) maxDistNum = num;
-          }
-        });
-        const nextDistSeq = maxDistNum + 1;
-        const newDistrictRegId = `REG ${nextDistSeq}`;
+        // Fetch any recently added rows directly from Supabase for this prefix and REG prefix to guarantee 100% collision-free IDs
+        let latestDbRows = [];
+        try {
+          const { data: dbCheck } = await supabase
+            .from('registrations')
+            .select('reg_id, district_id, zone_id')
+            .or(`reg_id.ilike.${prefix}%,zone_id.ilike.${prefix}%,reg_id.ilike.REG%,district_id.ilike.REG%`);
+          if (dbCheck) latestDbRows = dbCheck;
+        } catch(e) {
+          console.warn("Notice fetching latest IDs from Supabase:", e);
+        }
 
-        let maxMandalNum = 100;
-        registrations.forEach(r => {
-          const mId = r.mandalRegId || r.zoneRegId || r.zoneId || '';
-          const regex = new RegExp(`^${prefix}\\s*(\\d+)`, 'i');
-          const match = mId.match(regex);
-          if (match) {
-            const num = parseInt(match[1], 10);
-            if (!isNaN(num) && num > maxMandalNum) maxMandalNum = num;
-          }
-        });
-        const nextMandalSeq = maxMandalNum + 1;
-        const newMandalRegId = `${prefix} ${nextMandalSeq}`;
-        const newDbRegId = `${prefix}${nextMandalSeq}`;
+        // 1. Calculate guaranteed unique District and Zone sequential numbering
+        let { nextDistSeq, newDistrictRegId, nextMandalSeq, newMandalRegId, newDbRegId } = getNextGuaranteedUniqueIds(prefix, latestDbRows);
 
-        // 2. Insert into Supabase registrations table
-        const insertPayload = {
+        // 2. Insert into Supabase registrations table with automatic collision retry
+        let insertPayload = {
           reg_id: newDbRegId,
           district_id: newDistrictRegId,
           zone_id: newMandalRegId,
@@ -8021,8 +8069,31 @@
           timestamp: nowIso
         };
 
-        const { data: insertedData, error: insertError } = await supabase.from('registrations').insert([insertPayload]).select();
+        let insertedData = null;
+        let insertError = null;
+
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const res = await supabase.from('registrations').insert([insertPayload]).select();
+          if (!res.error && res.data && res.data.length > 0) {
+            insertedData = res.data;
+            insertError = null;
+            break;
+          }
+          if (res.error && (res.error.message?.includes('unique constraint') || res.error.code === '23505')) {
+            console.warn(`reg_id collision on ${newDbRegId}, auto-incrementing and retrying...`);
+            nextMandalSeq++;
+            newMandalRegId = `${prefix} ${nextMandalSeq}`;
+            newDbRegId = `${prefix}${nextMandalSeq}`;
+            insertPayload.reg_id = newDbRegId;
+            insertPayload.zone_id = newMandalRegId;
+            continue;
+          }
+          insertError = res.error;
+          break;
+        }
+
         if (insertError) throw insertError;
+        if (!insertedData || insertedData.length === 0) throw new Error("Could not insert delegate into database.");
 
         const generatedId = (insertedData && insertedData[0]) ? insertedData[0].id : Date.now();
         const operator = sessionUser ? (sessionUser.username || sessionUser.role) : 'Admin';
@@ -11844,41 +11915,64 @@
 
       const convertDonatedId = (document.getElementById('convertFromDonatedRegId')?.value || '').trim();
 
-      let dbQuery;
       let calculatedRegId = regId;
-      if (mode === 'add' || mode === 'convert') {
-        // Calculate next sequential registration ID starting from 101
-        const prefix = getZonePrefix(zone);
-        let maxNum = 100;
-        registrations.forEach(r => {
-          const idVal = r.dbRegId || r["Registration ID"] || r.regId || '';
-          if (idVal.startsWith(prefix)) {
-            const num = parseInt(idVal.substring(prefix.length), 10);
-            if (!isNaN(num) && num > maxNum) {
-              maxNum = num;
-            }
-          }
-        });
-        const nextNum = maxNum + 1;
-        calculatedRegId = `${prefix}${nextNum}`;
+      let saveError = null;
 
-        dbQuery = supabase
-          .from('registrations')
-          .insert([{
-            reg_id: calculatedRegId,
-            name: name,
-            phone: phone,
-            parent_phone: parentPhone || null,
-            student_class: studentClass,
-            school: school || 'N/A',
-            place: place,
-            panchayath: panchayath,
-            ward: ward,
-            unit: unit,
-            zone: zone,
-            assigned_vehicle: assignedVehicle || null,
-            timestamp: new Date().toISOString()
-          }]);
+      if (mode === 'add' || mode === 'convert') {
+        const prefix = getZonePrefix(zone);
+
+        // Fetch any recently added rows directly from Supabase for this prefix and REG prefix to guarantee 100% collision-free IDs
+        let latestDbRows = [];
+        try {
+          const { data: dbCheck } = await supabase
+            .from('registrations')
+            .select('reg_id, district_id, zone_id')
+            .or(`reg_id.ilike.${prefix}%,zone_id.ilike.${prefix}%,reg_id.ilike.REG%,district_id.ilike.REG%`);
+          if (dbCheck) latestDbRows = dbCheck;
+        } catch(e) {
+          console.warn("Notice fetching latest IDs from Supabase:", e);
+        }
+
+        let { nextDistSeq, newDistrictRegId, nextMandalSeq, newMandalRegId, newDbRegId } = getNextGuaranteedUniqueIds(prefix, latestDbRows);
+        calculatedRegId = newDbRegId;
+
+        const insertPayload = {
+          reg_id: newDbRegId,
+          district_id: newDistrictRegId,
+          zone_id: newMandalRegId,
+          name: name,
+          phone: phone,
+          parent_phone: parentPhone || null,
+          student_class: studentClass,
+          school: school || 'N/A',
+          place: place,
+          panchayath: panchayath,
+          ward: ward,
+          unit: unit,
+          zone: zone,
+          assigned_vehicle: assignedVehicle || null,
+          timestamp: new Date().toISOString()
+        };
+
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const res = await supabase.from('registrations').insert([insertPayload]);
+          if (!res.error) {
+            saveError = null;
+            break;
+          }
+          if (res.error && (res.error.message?.includes('unique constraint') || res.error.code === '23505')) {
+            console.warn(`reg_id collision on ${newDbRegId}, auto-incrementing and retrying...`);
+            nextMandalSeq++;
+            newMandalRegId = `${prefix} ${nextMandalSeq}`;
+            newDbRegId = `${prefix}${nextMandalSeq}`;
+            insertPayload.reg_id = newDbRegId;
+            insertPayload.zone_id = newMandalRegId;
+            calculatedRegId = newDbRegId;
+            continue;
+          }
+          saveError = res.error;
+          break;
+        }
       } else {
         calculatedRegId = targetDbId || regId;
         const studentDbId = document.getElementById('studentDbIdInput')?.value;
@@ -11896,18 +11990,19 @@
           assigned_vehicle: assignedVehicle || null
         };
 
+        let res;
         if (studentDbId) {
-          dbQuery = supabase.from('registrations').update(updatePayload).eq('id', studentDbId);
+          res = await supabase.from('registrations').update(updatePayload).eq('id', studentDbId);
         } else {
-          dbQuery = supabase.from('registrations').update(updatePayload).eq('reg_id', calculatedRegId);
+          res = await supabase.from('registrations').update(updatePayload).eq('reg_id', calculatedRegId);
         }
+        if (res.error) saveError = res.error;
       }
 
-      const { error } = await dbQuery;
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<i class="fas fa-check"></i> Save Delegate Profile';
       
-      if (!error) {
+      if (!saveError) {
         // Save confirmation status
         const statusInputVal = document.getElementById('studentStatusInput')?.value || 'pending';
         try {
@@ -11929,7 +12024,7 @@
         closeStudentModal();
         loadData();
       } else {
-        alert('Error saving profile: ' + error.message);
+        alert('Error saving profile: ' + saveError.message);
       }
     });
 
