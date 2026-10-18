@@ -11,7 +11,7 @@
     if ('caches' in window) {
       caches.keys().then(function(keys) {
         keys.forEach(function(k) {
-          if (k !== 'teenspace-cache-v75') {
+          if (k !== 'teenspace-cache-v83') {
             console.log("Evicting outdated cache:", k);
             caches.delete(k);
           }
@@ -4333,6 +4333,11 @@
     };
 
     function saveAuthSession(userObj) {
+      if (userObj && userObj.role === 'Zone' && userObj.target) {
+        userObj.target = canonicalZone(userObj.target);
+      } else if (userObj && userObj.role === 'Unit' && userObj.target) {
+        userObj.target = canonicalUnit(userObj.target);
+      }
       sessionUser = userObj;
       try {
         sessionStorage.setItem('auth_user', JSON.stringify(sessionUser));
@@ -4547,10 +4552,12 @@
             const acc = accounts[0];
             const dbPass = (acc.password || '').trim();
             if (dbPass === p || dbPass.toLowerCase() === pLower) {
+              const role = acc.role || (acc.target ? 'Zone' : 'District');
+              const target = role === 'Zone' ? canonicalZone(acc.target) : (role === 'Unit' ? canonicalUnit(acc.target) : (acc.target || ""));
               saveAuthSession({ 
                 username: acc.username, 
-                role: acc.role || (acc.target ? 'Zone' : 'District'), 
-                target: acc.target || "" 
+                role: role, 
+                target: target 
               });
               initDashboard();
               return;
@@ -6703,9 +6710,15 @@
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           throw new Error(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
         }
       }
@@ -6718,7 +6731,6 @@
       const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || null;
 
       // 1. Update the student's primary record in registrations table
-      // Mark picked_up: true as the persistent database flag for physical check-in presence
       const studentUpdatePayload = {
         picked_up: true
       };
@@ -6727,51 +6739,79 @@
       }
 
       let updateResult = null;
+      let lastUpdateErr = null;
+
+      // Primary strategy: Update by primary numeric ID
       if (studentNumId) {
-        updateResult = await supabase.from('registrations').update(studentUpdatePayload).eq('id', studentNumId).select();
+        try {
+          const res = await supabase.from('registrations').update(studentUpdatePayload).eq('id', studentNumId).select();
+          if (res && res.data && res.data.length > 0) {
+            updateResult = res;
+          } else if (res && res.error) {
+            lastUpdateErr = res.error;
+          }
+        } catch(e) {
+          lastUpdateErr = e;
+        }
       }
+
+      // Fallback strategy: Match by candidate identifiers
       if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
-        updateResult = await supabase.from('registrations').update(studentUpdatePayload).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+        const candidateIds = [
+          cleanDbRegId,
+          rawDbRegId,
+          student.regId,
+          student["Registration ID"],
+          student.districtRegId,
+          student.zoneId,
+          student.mandalRegId
+        ].filter(Boolean).map(s => String(s).trim()).filter(s => s.length > 0);
+
+        const uniqueCandidateIds = [...new Set(candidateIds)];
+        for (const cid of uniqueCandidateIds) {
+          try {
+            const cleanCid = cid.replace(/\s+/g, '');
+            const res = await supabase.from('registrations')
+              .update(studentUpdatePayload)
+              .or(`reg_id.eq.${cleanCid},reg_id.eq.${cid},district_id.eq.${cleanCid},district_id.eq.${cid},zone_id.eq.${cleanCid},zone_id.eq.${cid}`)
+              .select();
+            if (res && res.data && res.data.length > 0) {
+              updateResult = res;
+              break;
+            } else if (res && res.error) {
+              lastUpdateErr = res.error;
+            }
+          } catch(e) {
+            lastUpdateErr = e;
+          }
+        }
       }
 
-      if (updateResult && updateResult.error) {
-        throw new Error("Failed to update student check-in status in database: " + updateResult.error.message);
-      }
       if (!updateResult || !updateResult.data || updateResult.data.length === 0) {
-        throw new Error("Student record was not found in Supabase database. Check-in cannot be saved.");
+        throw new Error(lastUpdateErr ? (lastUpdateErr.message || JSON.stringify(lastUpdateErr)) : "Student record was not found in Supabase database. Check-in cannot be saved.");
       }
 
-      // 2. Upsert the detailed check-in audit checkpoint row (SYS_CHECKIN_)
-      const targetDbId = studentNumId ? studentNumId.toString() : cleanDbRegId;
-      const sysPayload = {
-        reg_id: 'SYS_CHECKIN_' + targetDbId,
-        name: student["Student Name"] || student.name || 'Delegate',
-        phone: student["Student Mobile Number"] || student.phone || '0000000000',
-        school: method || 'DIRECT', // Check-in method: VEHICLE, DIRECT, WALK_IN
-        place: opName, // Operator/User who performed check-in
-        assigned_vehicle: vId,
-        status: 'CHECKED_IN',
-        timestamp: nowIso
-      };
+      const verifiedRecord = updateResult.data[0];
 
-      const { error: chkErr } = await supabase.from('registrations').upsert([sysPayload], { onConflict: 'reg_id' });
-      if (chkErr) {
-        console.warn("Checkpoint audit row notice:", chkErr);
+      // 2. Upsert the detailed check-in audit checkpoint row (SYS_CHECKIN_) (safe non-blocking)
+      try {
+        const targetDbId = studentNumId ? studentNumId.toString() : (cleanDbRegId || (verifiedRecord && verifiedRecord.id ? verifiedRecord.id.toString() : String(Date.now())));
+        const sysPayload = {
+          reg_id: 'SYS_CHECKIN_' + targetDbId,
+          name: student["Student Name"] || student.name || 'Delegate',
+          phone: student["Student Mobile Number"] || student.phone || '0000000000',
+          school: method || 'DIRECT', // Check-in method: VEHICLE, DIRECT, WALK_IN
+          place: opName, // Operator/User who performed check-in
+          assigned_vehicle: vId,
+          status: 'CHECKED_IN',
+          timestamp: nowIso
+        };
+        await supabase.from('registrations').upsert([sysPayload], { onConflict: 'reg_id' });
+      } catch (chkErr) {
+        console.warn("Checkpoint audit row notice (non-fatal):", chkErr);
       }
 
-      // 3. Re-query from Supabase to guarantee that the record is persisted
-      const verifiedId = updateResult.data[0].id;
-      const { data: verifiedData, error: verifyErr } = await supabase
-        .from('registrations')
-        .select('*')
-        .eq('id', verifiedId)
-        .single();
-
-      if (verifyErr || !verifiedData) {
-        throw new Error("Verification failed: Could not read back check-in status from database.");
-      }
-
-      return verifiedData;
+      return verifiedRecord;
     }
 
     // Remove Check-in record from Supabase (Administrative Correction / Undo)
@@ -6780,9 +6820,15 @@
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           throw new Error(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
         }
       }
@@ -6793,30 +6839,70 @@
 
       // 1. Reset picked_up to false on the primary student row
       let resetResult = null;
+      let lastResetErr = null;
+
       if (studentNumId) {
-        resetResult = await supabase.from('registrations').update({ picked_up: false }).eq('id', studentNumId).select();
+        try {
+          const res = await supabase.from('registrations').update({ picked_up: false }).eq('id', studentNumId).select();
+          if (res && res.data && res.data.length > 0) {
+            resetResult = res;
+          } else if (res && res.error) {
+            lastResetErr = res.error;
+          }
+        } catch(e) {
+          lastResetErr = e;
+        }
       }
+
       if (!resetResult || !resetResult.data || resetResult.data.length === 0) {
-        resetResult = await supabase.from('registrations').update({ picked_up: false }).or(`reg_id.eq.${cleanDbRegId},reg_id.eq.${rawDbRegId}`).select();
+        const candidateIds = [
+          cleanDbRegId,
+          rawDbRegId,
+          student.regId,
+          student["Registration ID"],
+          student.districtRegId,
+          student.zoneId,
+          student.mandalRegId
+        ].filter(Boolean).map(s => String(s).trim()).filter(s => s.length > 0);
+
+        const uniqueCandidateIds = [...new Set(candidateIds)];
+        for (const cid of uniqueCandidateIds) {
+          try {
+            const cleanCid = cid.replace(/\s+/g, '');
+            const res = await supabase.from('registrations')
+              .update({ picked_up: false })
+              .or(`reg_id.eq.${cleanCid},reg_id.eq.${cid},district_id.eq.${cleanCid},district_id.eq.${cid},zone_id.eq.${cleanCid},zone_id.eq.${cid}`)
+              .select();
+            if (res && res.data && res.data.length > 0) {
+              resetResult = res;
+              break;
+            } else if (res && res.error) {
+              lastResetErr = res.error;
+            }
+          } catch(e) {
+            lastResetErr = e;
+          }
+        }
       }
 
       if (resetResult && resetResult.error) {
         throw new Error("Failed to reset check-in status in database: " + resetResult.error.message);
       }
 
-      // 2. Delete any matching SYS_CHECKIN_ records
-      const delTargets = [];
-      if (studentNumId) delTargets.push(`SYS_CHECKIN_${studentNumId}`);
-      if (cleanDbRegId) delTargets.push(`SYS_CHECKIN_${cleanDbRegId}`);
-      if (rawDbRegId && rawDbRegId !== cleanDbRegId) delTargets.push(`SYS_CHECKIN_${rawDbRegId}`);
-      if (student.districtRegId) delTargets.push(`SYS_CHECKIN_${student.districtRegId.replace(/\s+/g, '')}`);
-      if (student.mandalRegId) delTargets.push(`SYS_CHECKIN_${student.mandalRegId.replace(/\s+/g, '')}`);
+      // 2. Delete any matching SYS_CHECKIN_ records (non-fatal)
+      try {
+        const delTargets = [];
+        if (studentNumId) delTargets.push(`SYS_CHECKIN_${studentNumId}`);
+        if (cleanDbRegId) delTargets.push(`SYS_CHECKIN_${cleanDbRegId}`);
+        if (rawDbRegId && rawDbRegId !== cleanDbRegId) delTargets.push(`SYS_CHECKIN_${rawDbRegId}`);
+        if (student.districtRegId) delTargets.push(`SYS_CHECKIN_${student.districtRegId.replace(/\s+/g, '')}`);
+        if (student.mandalRegId) delTargets.push(`SYS_CHECKIN_${student.mandalRegId.replace(/\s+/g, '')}`);
 
-      for (const dt of [...new Set(delTargets)]) {
-        const { error: delErr } = await supabase.from('registrations').delete().eq('reg_id', dt);
-        if (delErr) {
-          console.warn("Notice deleting checkpoint row " + dt + ":", delErr);
+        for (const dt of [...new Set(delTargets)]) {
+          await supabase.from('registrations').delete().eq('reg_id', dt);
         }
+      } catch(delErr) {
+        console.warn("Notice deleting checkpoint row (non-fatal):", delErr);
       }
 
       return true;
@@ -7033,11 +7119,11 @@
           </td>
           <td data-label="Action" style="text-align: right;">
             ${isChecked ? `
-              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')">
+              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item.id || item["Registration ID"] || item.regId}')">
                 <i class="fas fa-undo"></i> Undo
               </button>
             ` : `
-              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item.id || item["Registration ID"] || item.regId}')">
                 <i class="fas fa-check"></i> Check In
               </button>
             `}
@@ -7216,12 +7302,12 @@
                 <button class="btn btn-outline" disabled style="flex:1; height:38px; font-size:0.85rem; font-weight:700; color:#15803D; border-color:#86EFAC; background:#F0FDF4; cursor:default;">
                   <i class="fas fa-check-double"></i> Checked In
                 </button>
-                <button class="btn btn-outline btn-xs" style="margin-left:0.5rem; height:38px; color:#DC2626; border-color:rgba(220,38,38,0.25); padding:0 0.65rem;" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')" title="Undo check-in for correction">
+                <button class="btn btn-outline btn-xs" style="margin-left:0.5rem; height:38px; color:#DC2626; border-color:rgba(220,38,38,0.25); padding:0 0.65rem;" onclick="promptCancelCheckin('${item.id || item["Registration ID"] || item.regId}')" title="Undo check-in for correction">
                   <i class="fas fa-undo"></i> Undo
                 </button>
               </div>
             ` : `
-              <button class="btn btn-primary" style="width:100%; height:44px; font-size:0.95rem; font-weight:700; display:flex; justify-content:center; align-items:center; gap:0.5rem;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+              <button class="btn btn-primary" style="width:100%; height:44px; font-size:0.95rem; font-weight:700; display:flex; justify-content:center; align-items:center; gap:0.5rem;" onclick="promptDirectCheckin('${item.id || item["Registration ID"] || item.regId}')">
                 <i class="fas fa-user-check"></i> Check In Delegate
               </button>
             `}
@@ -7261,14 +7347,30 @@
 
     // 4. Check-in Confirmation Dialogs
     function promptDirectCheckin(regId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
-      if (!student) return;
+      let student = null;
+      const numId = parseInt(regId, 10);
+      if (!isNaN(numId) && String(numId) === String(regId).trim()) {
+        student = registrations.find(r => r.id === numId);
+      }
+      if (!student) {
+        student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numId);
+      }
+      if (!student) {
+        alert("⚠️ Error: Delegate record not found in system.");
+        return;
+      }
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
           return;
         }
@@ -7312,7 +7414,15 @@
         `;
       }
 
-      pendingCheckinAction = { regId, method: 'DIRECT', vehicleId: '', action: 'checkin' };
+      pendingCheckinAction = {
+        student,
+        regId: student.id || regId,
+        studentId: student.id,
+        method: 'DIRECT',
+        vehicleId: '',
+        action: 'checkin'
+      };
+
       if (confirmBtn) {
         confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Direct Check-in';
         confirmBtn.onclick = executeConfirmedCheckin;
@@ -7321,14 +7431,27 @@
     }
 
     function promptVehicleCheckin(regId, vehicleId, isCurrentlyBoarded) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId);
+      let student = null;
+      const numId = parseInt(regId, 10);
+      if (!isNaN(numId) && String(numId) === String(regId).trim()) {
+        student = registrations.find(r => r.id === numId);
+      }
+      if (!student) {
+        student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numId);
+      }
       if (!student) return;
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
           return;
         }
@@ -7340,7 +7463,7 @@
         if (!confirm(`Are you sure you want to undo boarding & check-in for "${sName}" on vehicle ${vehicleId}?`)) {
           return;
         }
-        toggleStudentPickup(regId, true, vehicleId);
+        toggleStudentPickup(student.id || regId, true, vehicleId);
         return;
       }
 
@@ -7372,7 +7495,14 @@
         `;
       }
 
-      pendingCheckinAction = { regId, method: 'VEHICLE', vehicleId, action: 'checkin' };
+      pendingCheckinAction = {
+        student,
+        regId: student.id || regId,
+        studentId: student.id,
+        method: 'VEHICLE',
+        vehicleId,
+        action: 'checkin'
+      };
       if (confirmBtn) {
         confirmBtn.innerHTML = '<i class="fas fa-bus"></i> Confirm & Board Passenger';
         confirmBtn.onclick = executeConfirmedCheckin;
@@ -7390,8 +7520,18 @@
     async function executeConfirmedCheckin() {
       if (!pendingCheckinAction) return;
 
-      const { regId, method, vehicleId } = pendingCheckinAction;
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      const { student: cachedStudent, studentId, regId, method, vehicleId } = pendingCheckinAction;
+      let student = cachedStudent || (studentId ? registrations.find(r => r.id === studentId) : null);
+      if (!student && regId) {
+        const numId = parseInt(regId, 10);
+        if (!isNaN(numId) && String(numId) === String(regId).trim()) {
+          student = registrations.find(r => r.id === numId);
+        }
+        if (!student) {
+          student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numId);
+        }
+      }
+
       if (!student) {
         alert("⚠️ Error: Delegate record not found in system.");
         closeCheckinConfirmModal();
@@ -7400,9 +7540,15 @@
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           alert(`Access Denied: You only have permission to check in delegates from your respective zone (${sessionUser.target}).`);
           closeCheckinConfirmModal();
           return;
@@ -7422,7 +7568,6 @@
 
       try {
         // 1. DIRECT SUPABASE INTEGRATION FIRST:
-        // Perform asynchronous database write and verify completion
         const verifiedData = await saveCheckinToSupabase(student, method, targetVehicle, operator);
 
         // 2. UPDATE LOCAL IN-MEMORY STATE ONLY AFTER DATABASE SUCCESS
@@ -7442,19 +7587,25 @@
         // Close modal
         closeCheckinConfirmModal();
 
-        // 3. REAL-TIME UI SYNC
-        if (typeof renderCheckinSection === 'function') renderCheckinSection();
-        if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
-        if (typeof openPassengerListModal === 'function' && targetVehicle) {
-          const modal = document.getElementById('passengerListModal');
-          if (modal && modal.classList.contains('active')) {
-            await loadPassengerList(targetVehicle);
-            await openPassengerListModal(targetVehicle, true);
+        // 3. REAL-TIME UI SYNC (Safeguarded so UI quirks never trigger check-in failure)
+        try {
+          if (typeof renderCheckinSection === 'function') renderCheckinSection();
+          if (typeof renderDrilldownDelegatesList === 'function' && typeof drilldownActiveZone !== 'undefined' && drilldownActiveZone) {
+            renderDrilldownDelegatesList();
           }
+          if (typeof openPassengerListModal === 'function' && targetVehicle) {
+            const modal = document.getElementById('passengerListModal');
+            if (modal && modal.classList.contains('active')) {
+              await loadPassengerList(targetVehicle);
+              await openPassengerListModal(targetVehicle, true);
+            }
+          }
+          if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+          if (typeof renderVehicles === 'function') renderVehicles();
+          if (typeof renderDataList === 'function') renderDataList();
+        } catch (uiSyncErr) {
+          console.warn("UI refresh notice after check-in:", uiSyncErr);
         }
-        if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-        if (typeof renderVehicles === 'function') renderVehicles();
-        if (typeof renderDataList === 'function') renderDataList();
 
         showToast(`🎉 "${student["Student Name"] || student.name}" checked in successfully via ${method}!`);
 
@@ -7471,14 +7622,27 @@
 
     // Cancel / Undo Check-in (Administrative correction)
     function promptCancelCheckin(regId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+      let student = null;
+      const numId = parseInt(regId, 10);
+      if (!isNaN(numId) && String(numId) === String(regId).trim()) {
+        student = registrations.find(r => r.id === numId);
+      }
+      if (!student) {
+        student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numId);
+      }
       if (!student) return;
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           alert(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
           return;
         }
@@ -7489,18 +7653,33 @@
         return;
       }
 
-      executeCancelCheckin(regId);
+      executeCancelCheckin(student.id || regId, null, student);
     }
 
-    async function executeCancelCheckin(regId, vehicleId) {
-      const student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === parseInt(regId, 10));
+    async function executeCancelCheckin(regId, vehicleId, studentRef) {
+      let student = studentRef;
+      if (!student) {
+        const numId = parseInt(regId, 10);
+        if (!isNaN(numId) && String(numId) === String(regId).trim()) {
+          student = registrations.find(r => r.id === numId);
+        }
+        if (!student) {
+          student = findRegistration(regId) || registrations.find(r => (r["Registration ID"] || r.regId) === regId || r.id === numId);
+        }
+      }
       if (!student) return;
 
       // Strict Zone Role Authorization Guard
       if (sessionUser && sessionUser.role === 'Zone') {
-        const sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
         const uZone = canonicalZone(sessionUser.target);
-        if (sZone !== uZone) {
+        let sZone = canonicalZone(student["Organization Zone"] || student.zone || '');
+        if ((!sZone || sZone === 'N/A') && student.Panchayath && student.Ward && typeof mappingLookup !== 'undefined') {
+          const key = (student.Panchayath || '').trim().toUpperCase() + '__' + (student.Ward || '').trim().toUpperCase();
+          if (mappingLookup && mappingLookup.has(key)) {
+            sZone = canonicalZone(mappingLookup.get(key).zone);
+          }
+        }
+        if (uZone && uZone !== 'N/A' && sZone && sZone !== 'N/A' && sZone !== uZone) {
           alert(`Access Denied: You only have permission to manage check-in for delegates from your respective zone (${sessionUser.target}).`);
           return;
         }
@@ -7522,20 +7701,26 @@
         student["Picked Up"] = "false";
         student.pickedUp = "false";
 
-        // 3. REAL-TIME UI SYNC
-        if (typeof renderCheckinSection === 'function') renderCheckinSection();
-        if (typeof renderDrilldownDelegatesList === 'function' && drilldownActiveZone) renderDrilldownDelegatesList();
-        const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
-        if (vId && typeof openPassengerListModal === 'function') {
-          const modal = document.getElementById('passengerListModal');
-          if (modal && modal.classList.contains('active')) {
-            await loadPassengerList(vId);
-            await openPassengerListModal(vId, true);
+        // 3. REAL-TIME UI SYNC (Safeguarded)
+        try {
+          if (typeof renderCheckinSection === 'function') renderCheckinSection();
+          if (typeof renderDrilldownDelegatesList === 'function' && typeof drilldownActiveZone !== 'undefined' && drilldownActiveZone) {
+            renderDrilldownDelegatesList();
           }
+          const vId = vehicleId || student["Assigned Vehicle"] || student.assignedVehicle || '';
+          if (vId && typeof openPassengerListModal === 'function') {
+            const modal = document.getElementById('passengerListModal');
+            if (modal && modal.classList.contains('active')) {
+              await loadPassengerList(vId);
+              await openPassengerListModal(vId, true);
+            }
+          }
+          if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
+          if (typeof renderVehicles === 'function') renderVehicles();
+          if (typeof renderDataList === 'function') renderDataList();
+        } catch(uiErr) {
+          console.warn("UI sync notice after checkin cancel:", uiErr);
         }
-        if (typeof renderCoordinatorDashboard === 'function') renderCoordinatorDashboard();
-        if (typeof renderVehicles === 'function') renderVehicles();
-        if (typeof renderDataList === 'function') renderDataList();
 
         showToast(`↩️ Check-in cancelled for "${sName}"`);
 
@@ -8015,11 +8200,11 @@
           <td data-label="Operator" style="font-size:0.8rem;">${isChecked ? (item.checkinBy || 'Admin') : '-'}</td>
           <td data-label="Action" style="text-align: right;">
             ${isChecked ? `
-              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item["Registration ID"] || item.regId}')">
+              <button class="btn btn-outline btn-xs" style="color:#DC2626; border-color:rgba(220,38,38,0.25);" onclick="promptCancelCheckin('${item.id || item["Registration ID"] || item.regId}')">
                 <i class="fas fa-undo"></i> Undo
               </button>
             ` : `
-              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item["Registration ID"] || item.regId}')">
+              <button class="btn btn-primary btn-xs" style="font-weight:700;" onclick="promptDirectCheckin('${item.id || item["Registration ID"] || item.regId}')">
                 <i class="fas fa-check"></i> Check In
               </button>
             `}
